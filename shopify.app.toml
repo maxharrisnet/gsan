@@ -1,0 +1,32 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "817c9fab0e11b2343b3f704a572d8a39"
+application_url = "https://com-connecting-stuck-motivation.trycloudflare.com"
+embedded = true
+name = "gsan"
+handle = "gsan"
+
+[webhooks]
+api_version = "2024-10"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks/app/uninstalled"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "write_products"
+
+[auth]
+redirect_urls = [
+  "https://com-connecting-stuck-motivation.trycloudflare.com/auth/callback",
+  "https://com-connecting-stuck-motivation.trycloudflare.com/auth/shopify/callback",
+  "https://com-connecting-stuck-motivation.trycloudflare.com/api/auth/callback"
+]
+
+[pos]
+embedded = false
+
+[build]
+dev_store_url = "gsan-test.myshopify.com"
+automatically_update_urls_on_dev = true
