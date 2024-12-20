@@ -1,9 +1,9 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "817c9fab0e11b2343b3f704a572d8a39"
-application_url = "https://com-connecting-stuck-motivation.trycloudflare.com"
-embedded = true
-name = "gsan"
+application_url = "https://18ee-2604-3d08-4e82-a500-5832-3853-c5b9-4b01.ngrok-free.app"
+embedded = false
+name = "gsan-003"
 handle = "gsan"
 
 [webhooks]
@@ -15,13 +15,13 @@ api_version = "2024-10"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products"
+scopes = "read_customers,read_orders,unauthenticated_read_customers"
 
 [auth]
 redirect_urls = [
-  "https://com-connecting-stuck-motivation.trycloudflare.com/auth/callback",
-  "https://com-connecting-stuck-motivation.trycloudflare.com/auth/shopify/callback",
-  "https://com-connecting-stuck-motivation.trycloudflare.com/api/auth/callback"
+  "https://18ee-2604-3d08-4e82-a500-5832-3853-c5b9-4b01.ngrok-free.app/auth",
+  "https://18ee-2604-3d08-4e82-a500-5832-3853-c5b9-4b01.ngrok-free.app/auth/shopify/callback",
+  "https://18ee-2604-3d08-4e82-a500-5832-3853-c5b9-4b01.ngrok-free.app/api/auth/callback"
 ]
 
 [pos]
@@ -30,3 +30,4 @@ embedded = false
 [build]
 dev_store_url = "gsan-test.myshopify.com"
 automatically_update_urls_on_dev = true
+include_config_on_deploy = true
