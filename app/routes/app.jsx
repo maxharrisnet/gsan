@@ -2,10 +2,8 @@ import { Link, Outlet, useLoaderData, useRouteError } from '@remix-run/react';
 import { boundary } from '@shopify/shopify-app-remix/server';
 import { AppProvider } from '@shopify/shopify-app-remix/react';
 import { NavMenu } from '@shopify/app-bridge-react';
-import polarisStyles from '@shopify/polaris/build/esm/styles.css?url';
 import { authenticate } from '../shopify.server';
-
-export const links = () => [{ rel: 'stylesheet', href: polarisStyles }];
+import { UserProvider } from '../context/UserContext';
 
 export const loader = async ({ request }) => {
 	await authenticate.admin(request);
@@ -13,7 +11,7 @@ export const loader = async ({ request }) => {
 	return { apiKey: process.env.SHOPIFY_API_KEY || '' };
 };
 
-export default function App() {
+export default function App({ initialUser, shop }) {
 	const { apiKey } = useLoaderData();
 
 	return (
@@ -21,16 +19,21 @@ export default function App() {
 			isEmbeddedApp={false}
 			apiKey={apiKey}
 		>
-			<NavMenu>
-				<Link
-					to='/app'
-					rel='home'
-				>
-					Home
-				</Link>
-				<Link to='/app/additional'>Additional page</Link>
-			</NavMenu>
-			<Outlet />
+			<UserProvider
+				initialUser={initialUser}
+				shop={shop}
+			>
+				<NavMenu>
+					<Link
+						to='/app'
+						rel='home'
+					>
+						Home
+					</Link>
+					<Link to='/app/additional'>Additional page</Link>
+				</NavMenu>
+				<Outlet />
+			</UserProvider>
 		</AppProvider>
 	);
 }

@@ -1,41 +1,35 @@
 import { json } from '@remix-run/node';
-import { getSession } from '../session.server';
 import { useLoaderData } from '@remix-run/react';
+import { getSession } from '../session.server';
 
 export const loader = async ({ request }) => {
-	const url = new URL(request.url);
-	const shop = url.searchParams.get('shop');
-
-	if (!shop) {
-		return json({ error: 'Shop parameter is missing' }, { status: 400 });
-	}
-
-	// Retrieve the access token from the session
 	const session = await getSession(request.headers.get('Cookie'));
-	const accessToken = session.get(`accessToken:${shop}`);
+	const customerAccessToken = session.get('customerAccessToken');
 
-	if (!accessToken) {
-		return json({ error: 'Access token is missing or invalid' }, { status: 401 });
+	if (!customerAccessToken) {
+		return new Response('Unauthorized', { status: 401 });
 	}
 
 	try {
-		// Make a direct request to the Shopify Admin API
-		const response = await fetch(`https://${shop}/admin/api/2024-01/graphql.json`, {
+		const response = await fetch(`https://${process.env.SHOPIFY_STORE_DOMAIN}/api/2024-01/graphql.json`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
-				'X-Shopify-Access-Token': accessToken,
+				'X-Shopify-Storefront-Access-Token': customerAccessToken,
 			},
 			body: JSON.stringify({
 				query: `
           query {
-            customers(first: 10) {
-              edges {
-                node {
-                  id
-                  email
-                  firstName
-                  lastName
+            customer {
+              firstName
+              lastName
+              email
+              orders(first: 10) {
+                edges {
+                  node {
+                    id
+                    totalPrice
+                  }
                 }
               }
             }
@@ -46,45 +40,38 @@ export const loader = async ({ request }) => {
 
 		const data = await response.json();
 
-		if (response.ok && data?.data?.customers?.edges) {
-			return json({ customers: data.data.customers.edges });
-		} else {
-			console.error('GraphQL Errors:', data.errors || response.statusText);
-			return json({ error: 'Failed to fetch customers' }, { status: response.status });
+		if (!response.ok) {
+			throw new Error('Failed to fetch customer data');
 		}
+
+		return json(data.data.customer);
 	} catch (error) {
-		console.error('Error fetching customers:', error);
-		return json({ error: 'Failed to fetch customers' }, { status: 500 });
+		console.error('Error fetching dashboard data:', error);
+		return json({ error: 'Failed to load data' }, { status: 500 });
 	}
 };
 
 export default function Dashboard() {
-	const { customers = [], error } = useLoaderData();
+	const customer = useLoaderData();
 
-	if (error) {
-		return (
-			<div>
-				<h1>Dashboard</h1>
-				<div className='error'>Error: {error}</div>
-			</div>
-		);
+	if (!customer) {
+		return <div>Error loading dashboard data</div>;
 	}
 
 	return (
 		<div>
 			<h1>Dashboard</h1>
-			<h2>Customers</h2>
-			{customers.length > 0 ? (
-				customers.map(({ node }) => (
-					<div key={node.id}>
-						<p>
-							{node.firstName} {node.lastName} - {node.email}
-						</p>
-					</div>
-				))
-			) : (
-				<p>No customers found.</p>
-			)}
+			<h2>
+				Welcome, {customer.firstName} {customer.lastName}
+			</h2>
+			<h3>Your Orders:</h3>
+			<ul>
+				{customer.orders.edges.map(({ node }) => (
+					<li key={node.id}>
+						Order ID: {node.id}, Total: {node.totalPrice}
+					</li>
+				))}
+			</ul>
 		</div>
 	);
 }

@@ -1,29 +1,56 @@
 import { createCookieSessionStorage } from '@remix-run/node';
-const secret = process.env.SESSION_SECRET || 'default-hardcoded-secret';
-console.log('Resolved Secret:', secret);
-// Set up session storage with secure cookie settings
+
 export const sessionStorage = createCookieSessionStorage({
 	cookie: {
-		name: '__session', // Cookie name
-		httpOnly: true, // Prevent client-side access
-		secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-		sameSite: 'lax', // Prevent CSRF attacks
-		path: '/', // Cookie is accessible across the entire app
-		secrets: [secret], // Secret for encrypting the session
+		name: '__session',
+		httpOnly: true,
+		secure: process.env.NODE_ENV === 'production',
+		sameSite: 'lax',
+		path: '/',
+		secrets: [process.env.SESSION_SECRET],
 	},
 });
 
-// Retrieve the session from the request
+// Retrieve session
 export async function getSession(cookieHeader) {
-	return sessionStorage.getSession(cookieHeader);
+	return sessionStorage.getSession(cookieHeader || '');
 }
 
-// Commit (save) the session and return the Set-Cookie header
+// Commit session changes
 export async function commitSession(session) {
 	return sessionStorage.commitSession(session);
 }
 
-// Destroy the session and return the Set-Cookie header for clearing it
+// Destroy session
 export async function destroySession(session) {
 	return sessionStorage.destroySession(session);
+}
+
+// Save the admin session (Shopify store access token)
+export async function createAdminSession({ accessToken }, redirectTo) {
+	const session = await sessionStorage.getSession();
+	session.set('adminAccessToken', accessToken);
+
+	return new Response(null, {
+		headers: {
+			'Set-Cookie': await commitSession(session),
+			Location: redirectTo,
+		},
+		status: 302,
+	});
+}
+
+// Save the user session (Customer access token)
+export async function createUserSession({ customerAccessToken, expiresAt }, redirectTo) {
+	const session = await sessionStorage.getSession();
+	session.set('customerAccessToken', customerAccessToken);
+	session.set('customerExpiresAt', expiresAt);
+
+	return new Response(null, {
+		headers: {
+			'Set-Cookie': await commitSession(session),
+			Location: redirectTo,
+		},
+		status: 302,
+	});
 }

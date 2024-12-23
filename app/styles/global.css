@@ -1,0 +1,248 @@
+/* @import '@webdatarocks/webdatarocks/webdatarocks.css'; */
+
+:root {
+	--font-family-base: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+	--font-size-base: 16px;
+	--font-size-large: 20px;
+	--font-size-small: 14px;
+
+	--container-width: 1200px;
+	--spacing-base: 16px;
+	--spacing-large: 24px;
+	--spacing-xlarge: 32px;
+	--spacing-xxlarge: 48px;
+	--spacing-small: 8px;
+	--border-radius: 4px;
+	--border-radius-large: 8px;
+
+	/* Colors */
+	--color-primary: #000;
+	--color-secondary: #006fbb;
+	--color-background: #f4f6f8;
+	--color-background-light: #e0e0e0;
+	--color-text: #212b36;
+	--color-text-light: #637381;
+	--color-border: #dfe3e8;
+
+	/* Original colors */
+	--wifi-green: #4caf50; /* A more vibrant green */
+	--monitor-blue: #2196f3; /* A more vibrant blue */
+	--phone-orange: #ff9800; /* A more vibrant orange */
+	--text-black: #212121; /* A slightly darker black */
+	--background-white: #ffffff; /* Keeping the white as is */
+
+	/* Lighter colors */
+	--wifi-green-light: #a9d870;
+	--monitor-blue-light: #8bcff0;
+	--phone-orange-light: #f69263;
+	--text-black-light: #666666;
+
+	/* Darker colors */
+	--wifi-green-dark: #618c2e;
+	--monitor-blue-dark: #3986a8;
+	--phone-orange-dark: #c5522b;
+	--text-black-dark: #111111;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	border: 0;
+}
+
+body {
+	font-family: var(--font-family-base);
+	font-size: var(--font-size-base);
+	color: var(--color-text);
+	background-color: var(--color-background);
+	margin: 0;
+	padding: 0;
+}
+
+img {
+	max-width: 100%;
+	height: auto;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	color: var(--color-text);
+	margin-top: 0;
+}
+
+h1,
+h2,
+h3 {
+	font-weight: 300;
+}
+
+h1 {
+	font-size: 2rem;
+	margin: 0 0 var(--spacing-large);
+	text-align: center;
+}
+
+h2 {
+	font-size: 1.75rem;
+}
+
+h3 {
+	font-size: 1.5rem;
+}
+
+h4 {
+	font-size: 1.25rem;
+}
+
+h5 {
+	font-size: 1rem;
+}
+
+h6 {
+	font-size: 0.875rem;
+}
+
+p {
+	margin: 0 0 var(--spacing-base);
+}
+
+a {
+	color: var(--color-primary);
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+.capitalize {
+	text-transform: capitalize;
+	font-weight: 500;
+	font-size: var(--font-size-large);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	border: 1px solid #e0e0e0;
+	border-radius: var(--border-radius);
+	padding: var(--spacing-base);
+}
+
+.button-wrapper {
+	display: flex;
+	justify-content: space-between;
+	gap: var(--spacing-base);
+	padding: var(--spacing-large);
+	width: 100%;
+}
+
+.login-button-wrapper {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.login-button-wrapper > div {
+	display: flex;
+	flex-flow: column;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--spacing-large);
+}
+
+.login-button-wrapper img {
+	height: 50px;
+	width: auto;
+}
+
+.login-logo {
+	margin-bottom: var(--spacing-xlarge);
+	width: 280px;
+	height: auto;
+}
+
+button,
+.button {
+	font-family: var(--font-family-base);
+	font-size: var(--font-size-base);
+	font-weight: 400;
+	color: #fff;
+	background-color: var(--color-primary);
+	border: none;
+	border-radius: var(--border-radius);
+	padding: var(--spacing-small) var(--spacing-base);
+	cursor: pointer;
+}
+
+button:hover,
+.button:hover {
+	background-color: var(--color-secondary);
+	text-decoration: none;
+}
+
+.bar-button {
+	border-bottom: 1px solid var(--color-border);
+	cursor: pointer;
+	display: flex;
+	font-weight: 500;
+	align-items: center;
+	justify-content: flex-start;
+	gap: var(--spacing-base);
+	padding: var(--spacing-base);
+	/* transition: background-color 0.3s; */
+}
+
+.bar-button:hover {
+	background-color: var(--color-background-light);
+}
+
+.form-group {
+	display: flex;
+	flex-flow: column;
+	align-items: center;
+	gap: var(--spacing-base);
+	padding: 0 var(--spacing-base);
+}
+
+.form-group label {
+	text-align: left;
+	width: 100%;
+	font-weight: bold;
+}
+
+input,
+textarea,
+select {
+	font-family: var(--font-family-base);
+	font-size: var(--font-size-base);
+	color: var(--color-text);
+	border: 1px solid var(--color-border);
+	padding: var(--spacing-small);
+	margin: 0 0 var(--spacing-base);
+	width: 100%;
+	box-sizing: border-box;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+	border-color: var(--color-primary);
+	outline: none;
+}
+
+.feather {
+	width: 16px;
+	height: 16px;
+}
