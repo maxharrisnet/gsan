@@ -11,26 +11,68 @@ export const links = () => [
 ];
 
 export const loader = async ({ request }) => {
-	const user = await getSession(request);
-	const shop = process.env.SHOPIFY_STORE_DOMAIN; // Access the environment variable
+	const url = new URL(request.url);
+	const path = url.pathname;
+	const shop = process.env.SHOPIFY_STORE_DOMAIN;
+	const session = await getSession(request.headers.get('Cookie'));
 
-	// If there is a user session and the path is /login, redirect to /performance
-	// if (path.endsWith('/login') && user) {
-	// 	console.log('🏓 Redirecting to dashboard');
-	// 	return redirect('/performance');
-	// }
+	// Check for admin session (Shopify store access token)
+	const adminAccessToken = session.get(`accessToken:${shop}`) || process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
+	if (!adminAccessToken) {
+		console.log('🏓 Missing admin session. Redirecting to /auth');
+		return redirect(`/auth?shop=${shop}`);
+	}
 
-	// If there is no user session and the path is not /login, redirect to /login
-	// if (!path.endsWith('/login') && !user) {
-	// 	console.log('🏓 Redirecting to login');
-	// 	return redirect('/login');
-	// }
+	// Check for user session (Shopify customer access token)
+	const customerAccessToken = session.get('customerAccessToken');
+	if (!customerAccessToken && path !== '/gsan/login') {
+		console.log('🏓 Missing user session. Redirecting to /gsan/login');
+		return redirect(`/gsan/login?shop=${shop}`);
+	}
 
-	return { user, shop };
+	// Fetch customer data using the customerAccessToken
+	let user = null;
+	if (customerAccessToken) {
+		try {
+			const response = await fetch(`https://${shop}/api/2024-01/graphql.json`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-Shopify-Storefront-Access-Token': customerAccessToken,
+				},
+				body: JSON.stringify({
+					query: `
+            query {
+              customer {
+                id
+                firstName
+                lastName
+                email
+              }
+            }
+          `,
+				}),
+			});
+
+			const data = await response.json();
+			if (response.ok && data?.data?.customer) {
+				const { id, firstName, lastName, email } = data.data.customer;
+				user = { id, firstName, lastName, email };
+			} else {
+				console.error('Error fetching customer data:', data.errors || response.statusText);
+			}
+		} catch (error) {
+			console.error('Error during customer data fetch:', error);
+		}
+	}
+
+	// Pass session data to the component
+	return { shop, user };
 };
 
 export default function Root() {
 	const { user, shop } = useLoaderData();
+
 	return (
 		<html lang='en'>
 			<head>
@@ -44,7 +86,7 @@ export default function Root() {
 			</head>
 			<body>
 				<UserProvider
-					initialUser={user}
+					currentUser={user}
 					shop={shop}
 				>
 					<Outlet />

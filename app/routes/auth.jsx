@@ -1,6 +1,6 @@
 import { redirect } from '@remix-run/node';
-import { getSession, commitSession } from '../session.server';
 import crypto from 'crypto';
+import { createAdminSession } from '../session.server';
 
 // Validate HMAC signature from query parameters
 function validateHmac(queryParams, hmac) {
@@ -14,8 +14,6 @@ function validateHmac(queryParams, hmac) {
 		.join('&');
 
 	const calculatedHmac = crypto.createHmac('sha256', secret).update(sortedParams).digest('hex');
-	console.log('👾 Calculated HMAC:', calculatedHmac);
-
 	return calculatedHmac === hmac;
 }
 
@@ -35,15 +33,12 @@ export const loader = async ({ request }) => {
 
 	// Redirect to Shopify OAuth if no code is provided
 	if (!code) {
-		const redirectUri = process.env.SHOPIFY_REDIRECT_URI || `${url.origin}/auth`;
+		// const redirectUri = process.env.SHOPIFY_REDIRECT_URI || `${url.origin}/auth`;
+		const redirectUri = 'https://713b-2604-3d08-4e82-a500-91cc-1bde-64a8-1527.ngrok-free.app/auth';
 		const apiKey = process.env.SHOPIFY_API_KEY;
 		const scopes = process.env.SCOPES;
-
-		console.log('🔶 API Key:', apiKey);
-		console.log('Scopes:', scopes);
-		console.log('Redirect URI:', redirectUri);
-
 		const authUrl = `https://${shop}/admin/oauth/authorize?client_id=${apiKey}&scope=${scopes}&redirect_uri=${redirectUri}`;
+		
 		return redirect(authUrl);
 	}
 
@@ -67,14 +62,7 @@ export const loader = async ({ request }) => {
 		const { access_token: accessToken } = await tokenResponse.json();
 		console.log('💠 Access Token:', accessToken);
 
-		// Store the access token in the session
-		const session = await getSession(request.headers.get('Cookie'));
-		session.set(`accessToken:${shop}`, accessToken);
-
-		// Redirect to the dashboard
-		return redirect(`/dashboard?shop=${shop}`, {
-			headers: { 'Set-Cookie': await commitSession(session) },
-		});
+		return await createAdminSession({ accessToken, shop }, `/gsan/login?shop=${shop}`);
 	} catch (error) {
 		console.error('🔴 Error during OAuth:', error);
 		return redirect('/error?message=Authentication failed');

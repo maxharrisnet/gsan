@@ -1,21 +1,14 @@
-import { redirect } from '@remix-run/node';
-import { getSession } from '../../session.server';
+import { Link } from '@remix-run/react';
+import Layout from '../../components/layout/Layout';
+import styles from './styles.module.css';
 
-export const loader = async ({ request }) => {
-	const url = new URL(request.url);
-	const shop = url.searchParams.get('shop');
-
-	if (!shop) {
-		return new Response('Missing shop parameter', { status: 400 });
-	}
-
-	const session = await getSession(request.headers.get('Cookie'));
-
-	// Redirect to /auth if session is missing
-	if (!session || !session.get(`accessToken:${shop}`)) {
-		return redirect(`/auth?${url.searchParams.toString()}`);
-	}
-
-	// If session exists, redirect to dashboard
-	return redirect('/dashboard');
-};
+export default function App() {
+	return (
+		<Layout>
+			<main className='content content-centered'>
+				<h1 className={styles.heading}>GSAN Customer Portal</h1>
+				<Link to='/login'>Login</Link>
+			</main>
+		</Layout>
+	);
+}

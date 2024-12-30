@@ -1,7 +1,7 @@
-import { json } from '@remix-run/node';
+import { redirect } from '@remix-run/node';
 import { useActionData } from '@remix-run/react';
 import shopify from '../shopify.server';
-import { createUserSession } from '../session.server';
+import { createUserSession, getSession } from '../session.server';
 import Layout from '../components/layout/Layout';
 
 const customerLoginMutation = `
@@ -21,17 +21,16 @@ const customerLoginMutation = `
 
 // Loader to handle GET requests and serve the login page
 export const loader = async ({ request }) => {
-	const url = new URL(request.url);
 	const session = await getSession(request.headers.get('Cookie'));
 	const customerAccessToken = session.get('customerAccessToken');
 
 	// If the user is already logged in, redirect to the dashboard
 	if (customerAccessToken) {
-		return json({ redirectTo: '/dashboard' });
+		return redirect('/dashboard');
 	}
 
 	// Return an empty response to render the login page
-	return json({});
+	return {};
 };
 
 // Action to handle POST requests for customer login
@@ -45,8 +44,20 @@ export const action = async ({ request }) => {
 	}
 
 	try {
-		const { storefront } = await shopify.unauthenticated.storefront(process.env.SHOPIFY_STORE_DOMAIN);
+		// Ensure the storefront access token is set
+		const storefrontAccessToken = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
+		const shop = process.env.SHOPIFY_STORE_DOMAIN;
+		console.log('🛒 Storefront Access Token: ', storefrontAccessToken);
+		console.log('⚽ Shop: ', shop);
 
+		if (!storefrontAccessToken) {
+			throw new Error('Missing SHOPIFY_STOREFRONT_ACCESS_TOKEN in environment variables');
+		}
+
+		// Create a storefront context
+		const { storefront } = await shopify.unauthenticated.storefront(shop, storefrontAccessToken);
+
+		// Execute the customer login mutation
 		const response = await storefront.query({
 			data: customerLoginMutation,
 			variables: { input: { email, password } },
@@ -63,7 +74,7 @@ export const action = async ({ request }) => {
 		// Save the user session and redirect to /dashboard
 		return await createUserSession({ customerAccessToken: accessToken, expiresAt }, '/dashboard');
 	} catch (error) {
-		console.error('Error during customer login:', error);
+		console.error('🐸 Error during customer login:', error);
 		return { errors: [{ message: 'An unexpected error occurred. Please try again.' }] }, { status: 500 };
 	}
 };
