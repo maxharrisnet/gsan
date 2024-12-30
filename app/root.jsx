@@ -16,8 +16,10 @@ export const loader = async ({ request }) => {
 	const shop = process.env.SHOPIFY_STORE_DOMAIN;
 	const session = await getSession(request.headers.get('Cookie'));
 
+	console.log('🛩️  Navigating to page: ', path);
+
 	// Check for admin session (Shopify store access token)
-	const adminAccessToken = session.get(`accessToken:${shop}`) || process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
+	const adminAccessToken = session.get(`accessToken:${shop}`);
 	if (!adminAccessToken) {
 		console.log('🏓 Missing admin session. Redirecting to /auth');
 		return redirect(`/auth?shop=${shop}`);

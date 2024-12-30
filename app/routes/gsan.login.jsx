@@ -1,6 +1,5 @@
-import { redirect } from '@remix-run/node';
 import { useActionData } from '@remix-run/react';
-import shopify from '../shopify.server';
+import { redirect } from '@remix-run/node';
 import { createUserSession, getSession } from '../session.server';
 import Layout from '../components/layout/Layout';
 
@@ -9,27 +8,50 @@ const customerLoginMutation = `
     customerAccessTokenCreate(input: $input) {
       customerAccessToken {
         accessToken
-        expiresAt
       }
       customerUserErrors {
-        field
         message
       }
     }
   }
 `;
 
+// Helper for Storefront API
+const fetchStorefrontApi = async ({ shop, storefrontAccessToken, query, variables }) => {
+	try {
+		const response = await fetch(`https://${shop}/api/2024-01/graphql.json`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-Shopify-Storefront-Access-Token': storefrontAccessToken,
+			},
+			body: JSON.stringify({ query, variables }),
+		});
+
+		if (!response.ok) {
+			const errorText = await response.text();
+			throw new Error(`Storefront API error: ${errorText}`);
+		}
+
+		const result = await response.json();
+		return result;
+	} catch (error) {
+		console.error('Error in Storefront API call:', error);
+		throw error;
+	}
+};
+
 // Loader to handle GET requests and serve the login page
 export const loader = async ({ request }) => {
 	const session = await getSession(request.headers.get('Cookie'));
 	const customerAccessToken = session.get('customerAccessToken');
 
-	// If the user is already logged in, redirect to the dashboard
+	// Redirect to the dashboard if the user is already logged in
 	if (customerAccessToken) {
 		return redirect('/dashboard');
 	}
 
-	// Return an empty response to render the login page
+	// Render the login page if no customer session exists
 	return {};
 };
 
@@ -44,26 +66,21 @@ export const action = async ({ request }) => {
 	}
 
 	try {
-		// Ensure the storefront access token is set
-		const storefrontAccessToken = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
 		const shop = process.env.SHOPIFY_STORE_DOMAIN;
-		console.log('🛒 Storefront Access Token: ', storefrontAccessToken);
-		console.log('⚽ Shop: ', shop);
+		const storefrontAccessToken = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
 
-		if (!storefrontAccessToken) {
-			throw new Error('Missing SHOPIFY_STOREFRONT_ACCESS_TOKEN in environment variables');
+		if (!shop || !storefrontAccessToken) {
+			throw new Error('Missing shop or storefront access token in environment variables');
 		}
 
-		// Create a storefront context
-		const { storefront } = await shopify.unauthenticated.storefront(shop, storefrontAccessToken);
-
-		// Execute the customer login mutation
-		const response = await storefront.query({
-			data: customerLoginMutation,
+		const response = await fetchStorefrontApi({
+			shop,
+			storefrontAccessToken,
+			query: customerLoginMutation,
 			variables: { input: { email, password } },
 		});
 
-		const { customerAccessTokenCreate } = response.body.data;
+		const { customerAccessTokenCreate } = response.data;
 
 		if (customerAccessTokenCreate.customerUserErrors.length) {
 			return { errors: customerAccessTokenCreate.customerUserErrors }, { status: 401 };

@@ -4,9 +4,8 @@ import { createAdminSession } from '../session.server';
 
 // Validate HMAC signature from query parameters
 function validateHmac(queryParams, hmac) {
+	console.log('🤓 Query Params: ', queryParams);
 	const secret = process.env.SHOPIFY_API_SECRET;
-	console.log('🗝️ API Secret:', secret);
-
 	const sortedParams = Object.keys(queryParams)
 		.filter((key) => key !== 'hmac') // Exclude 'hmac'
 		.sort()
@@ -21,6 +20,7 @@ export const loader = async ({ request }) => {
 	const url = new URL(request.url);
 	const queryParams = Object.fromEntries(url.searchParams.entries());
 	const { shop, code, hmac } = queryParams;
+	console.log('🍔 HMAC: ', hmac);
 
 	if (!shop) {
 		throw new Response('Missing shop parameter', { status: 400 });
@@ -28,17 +28,18 @@ export const loader = async ({ request }) => {
 
 	// Validate HMAC
 	if (!hmac || !validateHmac(queryParams, hmac)) {
-		return new Response('Invalid HMAC', { status: 403 });
+		return new Response('🍅 Invalid HMAC', { status: 403 });
 	}
 
 	// Redirect to Shopify OAuth if no code is provided
 	if (!code) {
+		console.log('🥕 ENV Redirect URI: ', process.env.SHOPIFY_REDIRECT_URI);
 		// const redirectUri = process.env.SHOPIFY_REDIRECT_URI || `${url.origin}/auth`;
 		const redirectUri = 'https://713b-2604-3d08-4e82-a500-91cc-1bde-64a8-1527.ngrok-free.app/auth';
 		const apiKey = process.env.SHOPIFY_API_KEY;
 		const scopes = process.env.SCOPES;
 		const authUrl = `https://${shop}/admin/oauth/authorize?client_id=${apiKey}&scope=${scopes}&redirect_uri=${redirectUri}`;
-		
+
 		return redirect(authUrl);
 	}
 
