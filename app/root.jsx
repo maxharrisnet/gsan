@@ -19,11 +19,11 @@ export const loader = async ({ request }) => {
 	console.log('🛩️  Navigating to page: ', path);
 
 	// Check for admin session (Shopify store access token)
-	const adminAccessToken = session.get(`accessToken:${shop}`);
-	if (!adminAccessToken) {
-		console.log('🏓 Missing admin session. Redirecting to /auth');
-		return redirect(`/auth?shop=${shop}`);
-	}
+	// const adminAccessToken = session.get(`accessToken:${shop}`);
+	// if (!adminAccessToken) {
+	// 	console.log('🏓 Missing admin session. Redirecting to /auth');
+	// 	return redirect(`/auth?shop=${shop}`);
+	// }
 
 	// Check for user session (Shopify customer access token)
 	const customerAccessToken = session.get('customerAccessToken');

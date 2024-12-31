@@ -1,10 +1,10 @@
-import { createCookieSessionStorage } from '@remix-run/node';
+import { createCookieSessionStorage, redirect } from '@remix-run/node';
 
 const secret = process.env.SHOPIFY_API_SECRET;
 
 export const sessionStorage = createCookieSessionStorage({
 	cookie: {
-		name: '__session',
+		name: 'gsan_customer_session',
 		httpOnly: true,
 		secure: process.env.NODE_ENV === 'production',
 		sameSite: 'lax',
@@ -12,6 +12,18 @@ export const sessionStorage = createCookieSessionStorage({
 		secrets: [secret],
 	},
 });
+
+export async function createUserSession(userData, redirectTo) {
+	const session = await sessionStorage.getSession();
+	session.set('customerAccessToken', userData.customerAccessToken);
+	session.set('expiresAt', userData.expiresAt);
+
+	return redirect(redirectTo, {
+		headers: {
+			'Set-Cookie': await sessionStorage.commitSession(session),
+		},
+	});
+}
 
 export async function getSession(cookieHeader) {
 	return sessionStorage.getSession(cookieHeader || '');

@@ -68,6 +68,7 @@ export const action = async ({ request }) => {
 	try {
 		const shop = process.env.SHOPIFY_STORE_DOMAIN;
 		const storefrontAccessToken = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
+		console.log('🦁 Storefront Access Token: ', storefrontAccessToken);
 
 		if (!shop || !storefrontAccessToken) {
 			throw new Error('Missing shop or storefront access token in environment variables');
