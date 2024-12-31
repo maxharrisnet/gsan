@@ -40,7 +40,7 @@ export const loader = async ({ request }) => {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					'X-Shopify-Storefront-Access-Token': customerAccessToken,
+					'X-Shopify-Storefront-Access-Token': process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN,
 				},
 				body: JSON.stringify({
 					query: `
@@ -61,10 +61,10 @@ export const loader = async ({ request }) => {
 				const { id, firstName, lastName, email } = data.data.customer;
 				user = { id, firstName, lastName, email };
 			} else {
-				console.error('Error fetching customer data:', data.errors || response.statusText);
+				console.error('🍳 Error fetching customer data:', data.errors || response.statusText);
 			}
 		} catch (error) {
-			console.error('Error during customer data fetch:', error);
+			console.error('🍳 Error during customer data fetch:', error);
 		}
 	}
 
