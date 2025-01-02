@@ -6,7 +6,7 @@ import { Link, Form } from '@remix-run/react';
 const Header = () => {
 	const location = useLocation();
 	const path = location.pathname;
-  const userContext = useUser(); // Retrieve the context
+	const userContext = useUser(); // Retrieve the context
 	if (!userContext) {
 		console.error('Header rendered without UserContext');
 		return null;
@@ -41,14 +41,17 @@ const Header = () => {
 				<nav className='nav'>
 					<ul className='nav-list'>
 						<li className='nav-item'>
-							<Link to={`/customers?shop=${shop}`}>Customers</Link>
+							<Link to={`/map`}>Map</Link>
 						</li>
 						<li className='nav-item'>
-							<Link to={`/performance?shop=${shop}`}>Performance</Link>
+							<Link to={`/performance`}>Performance</Link>
 						</li>
 						<li className='nav-item'>
-							<Link to={`/reports/starlink/usage?shop=${shop}`}>Reports</Link>
+							<Link to={`/reports/starlink/usage`}>Reports</Link>
 						</li>
+						<li className='nav-item'>
+							<Link to={`/customers`}>Customers</Link>
+						</li>{' '}
 					</ul>
 					<div className='user-avatar'>
 						<img
