@@ -15,24 +15,14 @@ export const loader = async ({ request }) => {
 	const path = url.pathname;
 	const shop = process.env.SHOPIFY_STORE_DOMAIN;
 	const session = await getSession(request.headers.get('Cookie'));
+	console.log('🛩️ Navigating to page: ', path);
 
-	console.log('🛩️  Navigating to page: ', path);
-
-	// Check for admin session (Shopify store access token)
-	// const adminAccessToken = session.get(`accessToken:${shop}`);
-	// if (!adminAccessToken) {
-	// 	console.log('🏓 Missing admin session. Redirecting to /auth');
-	// 	return redirect(`/auth?shop=${shop}`);
-	// }
-
-	// Check for user session (Shopify customer access token)
 	const customerAccessToken = session.get('customerAccessToken');
 	if (!customerAccessToken && path !== '/gsan/login') {
 		console.log('🏓 Missing user session. Redirecting to /gsan/login');
 		return redirect(`/gsan/login?shop=${shop}`);
 	}
 
-	// Fetch customer data using the customerAccessToken
 	let user = null;
 	if (customerAccessToken) {
 		try {
@@ -44,8 +34,8 @@ export const loader = async ({ request }) => {
 				},
 				body: JSON.stringify({
 					query: `
-            query {
-              customer {
+            query($customerAccessToken: String!) {
+              customer(customerAccessToken: $customerAccessToken) {
                 id
                 firstName
                 lastName
@@ -53,44 +43,34 @@ export const loader = async ({ request }) => {
               }
             }
           `,
+					variables: { customerAccessToken },
 				}),
 			});
-
 			const data = await response.json();
 			if (response.ok && data?.data?.customer) {
 				const { id, firstName, lastName, email } = data.data.customer;
 				user = { id, firstName, lastName, email };
 			} else {
-				console.error('🍳 Error fetching customer data:', data.errors || response.statusText);
+				console.error('Error fetching customer data:', data.errors || response.statusText);
 			}
 		} catch (error) {
-			console.error('🍳 Error during customer data fetch:', error);
+			console.error('Error during customer data fetch:', error);
 		}
 	}
 
-	// Pass session data to the component
 	return { shop, user };
 };
 
 export default function Root() {
 	const { user, shop } = useLoaderData();
-
 	return (
 		<html lang='en'>
 			<head>
-				<meta charSet='utf-8' />
-				<meta
-					name='viewport'
-					content='width=device-width, initial-scale=1'
-				/>
 				<Meta />
 				<Links />
 			</head>
 			<body>
-				<UserProvider
-					currentUser={user}
-					shop={shop}
-				>
+				<UserProvider value={user}>
 					<Outlet />
 				</UserProvider>
 				<ScrollRestoration />
@@ -100,19 +80,17 @@ export default function Root() {
 	);
 }
 
-export function ErrorBoundary({ error }) {
+export function ErrorBoundary() {
+	const error = useRouteError();
 	return (
-		<html>
+		<html lang='en'>
 			<head>
-				<title>Oh no!</title>
 				<Meta />
 				<Links />
 			</head>
 			<body>
-				<div style={{ display: 'block', textAlign: 'center', height: '100vh', maxWidth: '800px', margin: '0 auto', padding: '80px' }}>
-					<h1>Something went wrong</h1>
-					<p style={{ textAlign: 'left', lineHeight: '1.4rem' }}>{error?.message}</p>
-				</div>
+				<h1>Error</h1>
+				<p>{error?.message || 'Unknown error occurred'}</p>
 				<Scripts />
 			</body>
 		</html>

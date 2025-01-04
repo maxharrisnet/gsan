@@ -1,6 +1,4 @@
-import { json } from '@remix-run/node';
 import axios from 'axios';
-// import { getCompassAccessToken } from './routes/api.get-compass-access-token';
 
 // API variables
 const username = process.env.COMPASS_API_USERNAME;
@@ -55,7 +53,7 @@ export const fetchServicesAndModemData = async () => {
 			})
 		);
 
-		return json({ services: servicesWithModemDetails });
+		return { services: servicesWithModemDetails };
 	} catch (error) {
 		console.error('Error fetching performance data:', error);
 		throw new Response('Internal Server Error', { status: 500 });

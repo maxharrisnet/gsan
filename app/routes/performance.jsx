@@ -22,11 +22,11 @@ export const loader = async ({ request }) => {
 	try {
 		console.log('🏈 Loading dashboard Service data...');
 		const services = await fetchServicesAndModemData();
-		console.log('🏈 Finisehd loading dashboard Service data:', services);
+		console.log('🏈 Finished loading dashboard Service data:', services);
 		return services;
 	} catch (error) {
 		console.error('Error loading dashboard data:', error);
-		throw new Response('Failed to load dashboard data', { status: 500 });
+		return { error: 'Failed to load dashboard data' }, { status: 500 };
 	}
 
 	// const accountResponse = await getSonarAccountData(user.accountId);

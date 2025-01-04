@@ -1,69 +1,17 @@
+import { redirect } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { getSession } from '../session.server';
 import Layout from '../components/layout/Layout';
 
 export const loader = async ({ request }) => {
 	const session = await getSession(request.headers.get('Cookie'));
-	const customerAccessToken = session.get('customerAccessToken');
-	console.log('🥚 Customer Access Token', customerAccessToken);
+	const user = session.get('userData');
 
-	if (!customerAccessToken) {
-		return new Response('Unauthorized', { status: 401 });
+	if (!user) {
+		return redirect('/gsan/login');
 	}
 
-	try {
-		const response = await fetch(`https://${process.env.SHOPIFY_STORE_DOMAIN}/api/2024-01/graphql.json`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'X-Shopify-Storefront-Access-Token': process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN,
-			},
-			body: JSON.stringify({
-				query: `
-          query($customerAccessToken: String!) {
-            customer(customerAccessToken: $customerAccessToken) {
-              firstName
-              lastName
-              email
-              orders(first: 10) {
-                edges {
-                  node {
-                    id
-                    orderNumber
-                    totalPrice {
-                      amount
-                      currencyCode
-                    }
-                    processedAt
-                    lineItems(first: 1) {
-                      edges {
-                        node {
-                          title
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        `,
-				variables: {
-					customerAccessToken,
-				},
-			}),
-		});
-
-		const data = await response.json();
-		if (!response.ok) {
-			throw new Error('🍩 Failed to fetch customer data');
-		}
-		console.log('🐷 Customer Data: ', data);
-		return data.data.customer;
-	} catch (error) {
-		console.error('Error fetching dashboard data:', error);
-		return { error: 'Failed to load data', status: 500 };
-	}
+	return user;
 };
 
 export default function Dashboard() {
