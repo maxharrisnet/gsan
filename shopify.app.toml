@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "817c9fab0e11b2343b3f704a572d8a39"
-application_url = "https://funk-abroad-arbitrary-conf.trycloudflare.com"
+application_url = "https://usb-directly-epinions-mean.trycloudflare.com"
 embedded = false
 name = "gsan-003"
 handle = "gsan"
@@ -19,9 +19,9 @@ scopes = "read_customers,read_orders,unauthenticated_read_customers"
 
 [auth]
 redirect_urls = [
-  "https://funk-abroad-arbitrary-conf.trycloudflare.com/auth/callback",
-  "https://funk-abroad-arbitrary-conf.trycloudflare.com/auth/shopify/callback",
-  "https://funk-abroad-arbitrary-conf.trycloudflare.com/api/auth/callback"
+  "https://usb-directly-epinions-mean.trycloudflare.com/auth/callback",
+  "https://usb-directly-epinions-mean.trycloudflare.com/auth/shopify/callback",
+  "https://usb-directly-epinions-mean.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]

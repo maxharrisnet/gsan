@@ -1,91 +1,39 @@
+// app/routes/customers.jsx
 import { useLoaderData } from '@remix-run/react';
-import shopify from '../shopify.server';
+import { getProviderCustomers } from '../utils/provider.server';
+import Layout from '../components/layout/Layout';
 
-export async function loader({ request }) {
-	console.log('🔐 Fetching Shopify customers from app/routes/customers.jsx');
-	const { admin } = await shopify.authenticate.admin(request);
-	console.log('🔐 Admin:', admin);
+export const loader = async ({ request }) => {
+	const customers = await getProviderCustomers(request);
+	return { customers };
+};
 
-	const shopifyResponse = await admin.graphql(
-		`#graphql
-		query getShopifyCustomers {
-			customers (first: 10) {
-				edges {
-					node {
-						id
-						firstName
-						lastName
-						email
-					}
-				}
-			}
-		}`
-	);
-
-	const shopifyCustomersData = await shopifyResponse.json();
-	const shopifyCustomers = shopifyCustomersData.data.customers.edges;
-
-	return { shopifyCustomers };
-
-	// TODO: handle errors
-
-	// Fetch Sonar customers
-	// const sonarUsername = process.env.SONAR_USERNAME;
-	// const sonarPassword = process.env.SONAR_PASSWORD;
-	// const sonarAuth = Buffer.from(`${sonarUsername}:${sonarPassword}`).toString('base64');
-
-	// try {
-	// 	const sonarResponse = await axios.get('https://switch.sonar.software/api/v1/accounts', {
-	// 		headers: {
-	// 			Authorization: `Basic ${sonarAuth}`,
-	// 		},
-	// 		params: {
-	// 			limit: 10,
-	// 			page: 1,
-	// 		},
-	// 	});
-
-	// 	const sonarCustomers = sonarResponse.data.data;
-
-	// 	return json({ shopifyCustomers, sonarCustomers });
-	// } catch (error) {
-	// 	console.error('Error fetching Sonar customers:', error);
-	// 	throw new Response('Internal Server Error! 🛸', { status: 500 });
-	// }
-}
-
-export default function CustomerList() {
-	const { shopifyCustomers } = useLoaderData();
+export default function Customers() {
+	const { customers } = useLoaderData();
 
 	return (
-		<div>
-			<h1>Customers</h1>
-			<div style={{ display: 'flex', justifyContent: 'center', padding: '80px', gap: '80px' }}>
-				<div>
-					<h2>Shopify Customers</h2>
-					<ul>
-						{shopifyCustomers.map((customer) => (
-							<li key={customer.node.id}>
-								<a href={`/customers/${customer.id}`}>
-									{customer.node.firstName} {customer.node.lastName} ({customer.node.email})
-								</a>
-							</li>
-						))}
-					</ul>
-				</div>
-				<div>
-					<h2>Sonar Customers</h2>{' '}
-					{/* <ul>
-						{sonarCustomers.map((customer) => (
-							<li key={customer.id}>
-								<a href={`/sonar-customers/${customer.id}`}>
-									{customer.name} ({customer.email_address})
-								</a>
-							</li>
-						))}
-					</ul> */}
-				</div>
-			</div>
-		</div>
+		<Layout>
+			<h1>Your Customers</h1>
+			<table>
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Email</th>
+						<th>Service</th>
+						<th>Status</th>
+					</tr>
+				</thead>
+				<tbody>
+					{customers.map((customer) => (
+						<tr key={customer.id}>
+							<td>{customer.name}</td>
+							<td>{customer.email}</td>
+							<td>{customer.service}</td>
+							<td>{customer.status}</td>
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</Layout>
 	);
 }
