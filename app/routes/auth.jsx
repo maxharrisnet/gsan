@@ -1,5 +1,6 @@
-// app/routes/auth.jsx
-import { authenticateShopifyCustomer, authenticateSonarUser } from '../utils/auth.server';
+import { Form, useActionData } from '@remix-run/react';
+import { authenticateShopifyCustomer, authenticateSonarUser } from '../utils/user.server';
+import Layout from '../components/layout/Layout';
 
 export async function action({ request }) {
 	const formData = await request.formData();
@@ -15,17 +16,42 @@ export async function action({ request }) {
 }
 
 export default function Auth() {
+	const actionData = useActionData();
+
 	return (
-		<div>
-			<h1>Login</h1>
-			<Form method='post'>
-				<select name='loginType'>
-					<option value='shopify'>GSAN Customer</option>
-					<option value='sonar'>Switch User</option>
-				</select>
-				{/* Add input fields for username/email and password */}
-				<button type='submit'>Login</button>
-			</Form>
-		</div>
+		<Layout>
+			<div className='container'>
+				<h1>GSAN Customer Portal</h1>
+				<div className='content-centered'>
+					<img
+						src='/assets/images/GSAN-logo.png'
+						alt='GSAN Logo'
+						className='login-logo'
+					/>
+					<Form method='post'>
+						<div className='form-group'>
+							<select name='loginType'>
+								<option value='shopify'>GSAN Customer</option>
+								<option value='sonar'>Sonar User</option>
+							</select>
+							<input
+								type='text'
+								name='email'
+								placeholder='Email/Username'
+								required
+							/>
+							<input
+								type='password'
+								name='password'
+								placeholder='Password'
+								required
+							/>
+							<button type='submit'>Login</button>
+						</div>
+						{actionData?.error && <p className='error'>{actionData.error}</p>}
+					</Form>
+				</div>
+			</div>
+		</Layout>
 	);
 }

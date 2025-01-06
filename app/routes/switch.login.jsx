@@ -1,7 +1,5 @@
-import axios from 'axios';
-import { json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
-import { createUserSession } from '../session.server';
+import { createUserSession } from '../utils/session.server';
 import authenticateSonarUser from '../sonar.server';
 import Layout from '../components/layout/Layout';
 
@@ -16,11 +14,11 @@ export async function action({ request }) {
 		if (sonarAuth.success) {
 			return createUserSession(sonarAuth.userData, 'sonar', '/performance');
 		} else {
-			return json({ error: sonarAuth.error }, { status: 401 });
+			return { error: sonarAuth.error }, { status: 401 };
 		}
 	} catch (error) {
 		console.error('Sonar customer login error:', error);
-		return json({ errors: [{ message: 'An error occurred during sonar login' }] });
+		return { errors: [{ message: 'An error occurred during sonar login' }] };
 	}
 }
 

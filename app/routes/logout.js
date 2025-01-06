@@ -1,4 +1,4 @@
-import { destroyUserSession } from '../session.server';
+import { destroyUserSession } from '../utils/session.server';
 
 export const action = async ({ request }) => {
 	return destroyUserSession(request);

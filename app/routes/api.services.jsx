@@ -1,6 +1,5 @@
-import { json } from '@remix-run/node';
 import axios from 'axios';
-import { getCompassAccessToken } from './api.get-compass-access-token';
+import { getCompassAccessToken } from '../compass.server';
 
 export const loader = async () => {
 	const accessToken = await getCompassAccessToken();
@@ -33,7 +32,7 @@ export const loader = async () => {
 			})
 		);
 
-		return json({ services: servicesWithModemDetails });
+		return { services: servicesWithModemDetails };
 	} catch (error) {
 		console.error('Error fetching performance data:', error);
 		throw new Response('Internal Server Error 🤔', { status: 500 });

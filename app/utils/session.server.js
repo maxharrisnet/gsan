@@ -12,12 +12,9 @@ export const sessionStorage = createCookieSessionStorage({
 		secrets: [secret],
 	},
 });
-
-export async function createUserSession(userData, redirectTo) {
+export async function createUserSession(userData, userType, redirectTo) {
 	const session = await sessionStorage.getSession();
-	session.set('customerAccessToken', userData.customerAccessToken);
-	session.set('expiresAt', userData.expiresAt);
-
+	session.set('userData', { ...userData, userType });
 	return redirect(redirectTo, {
 		headers: {
 			'Set-Cookie': await sessionStorage.commitSession(session),
