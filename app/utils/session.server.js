@@ -25,6 +25,18 @@ export async function createUserSession(userData, redirectTo) {
 	});
 }
 
+export async function destroyUserSession() {
+	const session = await sessionStorage.getSession();
+	session.set('customerAccessToken', null);
+	session.set('expiresAt', null);
+
+	return {
+		headers: {
+			'Set-Cookie': await sessionStorage.commitSession(session),
+		},
+	};
+}
+
 export async function getSession(cookieHeader) {
 	return sessionStorage.getSession(cookieHeader || '');
 }

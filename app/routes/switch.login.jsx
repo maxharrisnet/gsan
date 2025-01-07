@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
-import { createUserSession } from '../session.server';
+import { createUserSession } from '../utils/session.server';
 import authenticateSonarUser from '../sonar.server';
 import Layout from '../components/layout/Layout';
 

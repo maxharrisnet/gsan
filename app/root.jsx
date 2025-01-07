@@ -1,6 +1,6 @@
 import { redirect } from '@remix-run/node';
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData, useRouteError } from '@remix-run/react';
-import { getSession } from './session.server';
+import { getSession } from './utils/session.server';
 import { UserProvider } from './context/UserContext';
 import globalStyles from './styles/global.css?url';
 
