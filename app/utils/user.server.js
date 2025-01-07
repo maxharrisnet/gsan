@@ -1,6 +1,11 @@
 import { redirect } from '@remix-run/node';
 import { getSession } from './session.server';
 
+const shop = process.env.SHOPIFY_STORE_DOMAIN;
+const storefrontAccessToken = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
+console.log('shop:', shop);
+console.log('storefrontAccessToken:', storefrontAccessToken);
+
 // Helper for Storefront API
 const fetchStorefrontApi = async ({ shop, storefrontAccessToken, query, variables }) => {
 	try {
@@ -28,24 +33,31 @@ const fetchStorefrontApi = async ({ shop, storefrontAccessToken, query, variable
 
 export async function authenticateShopifyCustomer(email, password) {
 	const customerLoginMutation = `
-    mutation customerAccessTokenCreate($input: CustomerAccessTokenCreateInput!) {
-      customerAccessTokenCreate(input: $input) {
-        customerAccessToken {
-          accessToken
-          expiresAt
-        }
-        customerUserErrors {
-          message
-        }
+  mutation customerAccessTokenCreate($input: CustomerAccessTokenCreateInput!) {
+    customerAccessTokenCreate(input: $input) {
+      customerAccessToken {
+        accessToken
+      }
+      customerUserErrors {
+        message
       }
     }
-  `;
+  }
+`;
 
 	try {
+		// log env variables used below
+		console.log('shop:', shop);
+		console.log('storefrontAccessToken:', storefrontAccessToken);
+
 		const response = await fetchStorefrontApi({
+			shop: process.env.SHOPIFY_STORE_DOMAIN,
+			storefrontAccessToken: process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN,
 			query: customerLoginMutation,
 			variables: { input: { email, password } },
 		});
+
+		console.log('🍕 Shopify customer login response:', response);
 
 		const { customerAccessTokenCreate } = response.data;
 
@@ -58,7 +70,7 @@ export async function authenticateShopifyCustomer(email, password) {
 			userData: customerAccessTokenCreate.customerAccessToken,
 		};
 	} catch (error) {
-		console.error('Error during Shopify customer login:', error);
+		console.error('🍕 Error during Shopify customer login:', error);
 		return {
 			success: false,
 			errors: [{ message: 'An unexpected error occurred. Please try again.' }],
