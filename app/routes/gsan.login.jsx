@@ -10,6 +10,8 @@ const customerLoginMutation = `
         accessToken
       }
       customerUserErrors {
+				code
+				field
         message
       }
     }
@@ -18,15 +20,23 @@ const customerLoginMutation = `
 
 // Helper for Storefront API
 const fetchStorefrontApi = async ({ shop, storefrontAccessToken, query, variables }) => {
+	console.log('🦁 Shop: ', shop);
+	console.log('🦁 Storefront Access Token: ', storefrontAccessToken);
+	console.log('🦁 Query: ', query);
+	console.log('🦁 Variables: ', variables);
+	const token = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
+
 	try {
 		const response = await fetch(`https://${shop}/api/2024-01/graphql.json`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
-				'X-Shopify-Storefront-Access-Token': storefrontAccessToken,
+				'X-Shopify-Storefront-Access-Token': token,
 			},
 			body: JSON.stringify({ query, variables }),
 		});
+
+		console.log('🦁 Response:', response);
 
 		if (!response.ok) {
 			const errorText = await response.text();
@@ -68,10 +78,9 @@ export const action = async ({ request }) => {
 	try {
 		const shop = process.env.SHOPIFY_STORE_DOMAIN;
 		const storefrontAccessToken = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
-		console.log('🦁 Storefront Access Token: ', storefrontAccessToken);
 
 		if (!shop || !storefrontAccessToken) {
-			throw new Error('Missing shop or storefront access token in environment variables');
+			throw new Error('🐸 Missing shop or storefront access token in environment variables');
 		}
 
 		const response = await fetchStorefrontApi({
@@ -81,10 +90,13 @@ export const action = async ({ request }) => {
 			variables: { input: { email, password } },
 		});
 
+		console.log('🐸 Customer Login Response:', response);
+
 		const { customerAccessTokenCreate } = response.data;
 
 		if (customerAccessTokenCreate.customerUserErrors.length) {
-			return { errors: customerAccessTokenCreate.customerUserErrors }, { status: 401 };
+			console.log('🐸 Login errors:', customerAccessTokenCreate.customerUserErrors);
+			return { errors: customerAccessTokenCreate.customerUserErrors };
 		}
 
 		const { accessToken, expiresAt } = customerAccessTokenCreate.customerAccessToken;

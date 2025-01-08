@@ -27,10 +27,11 @@ export const loader = async ({ request }) => {
 
 	// Check for user session (Shopify customer access token)
 	const customerAccessToken = session.get('customerAccessToken');
-	if (!customerAccessToken && path !== '/gsan/login') {
-		console.log('🏓 Missing user session. Redirecting to /gsan/login');
-		return redirect(`/gsan/login?shop=${shop}`);
-	}
+	// console.log('🥚 Customer Access Token:', customerAccessToken);
+	// if (!customerAccessToken && path !== '/gsan/login') {
+	// 	console.log('🏓 Missing user session. Redirecting to /gsan/login');
+	// 	return redirect(`/gsan/login?shop=${shop}`);
+	// }
 
 	// Fetch customer data using the customerAccessToken
 	let user = null;
@@ -58,6 +59,7 @@ export const loader = async ({ request }) => {
 
 			const data = await response.json();
 			if (response.ok && data?.data?.customer) {
+				console.log('🍳 Customer Data:', data.data.customer);
 				const { id, firstName, lastName, email } = data.data.customer;
 				user = { id, firstName, lastName, email };
 			} else {
@@ -68,7 +70,8 @@ export const loader = async ({ request }) => {
 		}
 	}
 
-	// Pass session data to the component
+	console.log('🍳 User:', user);
+
 	return { shop, user };
 };
 
