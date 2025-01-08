@@ -58,7 +58,7 @@ export const loader = async ({ request }) => {
 
 	// Redirect to the dashboard if the user is already logged in
 	if (customerAccessToken) {
-		return redirect('/dashboard');
+		return redirect('/performance');
 	}
 
 	// Render the login page if no customer session exists
@@ -101,8 +101,7 @@ export const action = async ({ request }) => {
 
 		const { accessToken, expiresAt } = customerAccessTokenCreate.customerAccessToken;
 
-		// Save the user session and redirect to /dashboard
-		return await createUserSession({ customerAccessToken: accessToken, expiresAt }, '/dashboard');
+		return await createUserSession({ customerAccessToken: accessToken, expiresAt }, '/performance');
 	} catch (error) {
 		console.error('🐸 Error during customer login:', error);
 		return { errors: [{ message: 'An unexpected error occurred. Please try again.' }] }, { status: 500 };
