@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "817c9fab0e11b2343b3f704a572d8a39"
-application_url = "https://seven-hats-reliance-ed.trycloudflare.com"
+application_url = "https://remote-blah-contacting-fathers.trycloudflare.com"
 embedded = false
 name = "gsan-003"
 handle = "gsan"
@@ -19,9 +19,9 @@ scopes = "read_customers,read_orders,unauthenticated_read_customers"
 
 [auth]
 redirect_urls = [
-  "https://seven-hats-reliance-ed.trycloudflare.com/auth/callback",
-  "https://seven-hats-reliance-ed.trycloudflare.com/auth/shopify/callback",
-  "https://seven-hats-reliance-ed.trycloudflare.com/api/auth/callback"
+  "https://remote-blah-contacting-fathers.trycloudflare.com/auth/callback",
+  "https://remote-blah-contacting-fathers.trycloudflare.com/auth/shopify/callback",
+  "https://remote-blah-contacting-fathers.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]
