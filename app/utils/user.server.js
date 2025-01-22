@@ -3,8 +3,6 @@ import { getSession } from './session.server';
 
 const shop = process.env.SHOPIFY_STORE_DOMAIN;
 const storefrontAccessToken = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
-console.log('shop:', shop);
-console.log('storefrontAccessToken:', storefrontAccessToken);
 
 // Helper for Storefront API
 const fetchStorefrontApi = async ({ shop, storefrontAccessToken, query, variables }) => {
@@ -47,8 +45,6 @@ export async function authenticateShopifyCustomer(email, password) {
 
 	try {
 		// log env variables used below
-		console.log('shop:', shop);
-		console.log('storefrontAccessToken:', storefrontAccessToken);
 
 		const response = await fetchStorefrontApi({
 			shop: process.env.SHOPIFY_STORE_DOMAIN,
