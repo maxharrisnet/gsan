@@ -1,24 +1,39 @@
 import { useEffect, useState } from 'react';
 import { useLoaderData } from '@remix-run/react';
+import { json } from '@remix-run/node';
 import { fetchServicesAndModemData } from '../compass.server';
 // import { useUser } from '../context/UserContext';
 import Layout from './../components/layout/Layout';
 import Sidebar from './../components/layout/Sidebar';
+import ErrorBoundary from '../components/ErrorBoundary';
+import reportStyles from '../styles/reports.css?url';
+
+export const links = () => [{ rel: 'stylesheet', href: reportStyles }];
 
 export const loader = async ({ request }) => {
-	console.log('🏈 Loading reports data...');
-	const response = await fetchServicesAndModemData();
-	const servicesJSON = await response.json();
-	const services = servicesJSON.services;
+	try {
+		console.log('🏈 Loading reports data...');
+		const response = await fetchServicesAndModemData();
+		const servicesJSON = await response.json();
+		const services = servicesJSON.services;
 
-	console.log('🏈 Finished loading reports data:', services);
-	return { services };
+		if (!services) {
+			throw new Error('No services data available');
+		}
+
+		return json({ services });
+	} catch (error) {
+		console.error('Error loading reports:', error);
+		throw new Response('Error loading reports data', { status: 500 });
+	}
 };
 
 const Reports = () => {
 	console.log('🏈 Rendering reports');
 	const { services } = useLoaderData();
 	const [WebDataRocks, setWebDataRocks] = useState(null);
+	const [isLoading, setIsLoading] = useState(true);
+	const [error, setError] = useState(null);
 
 	// Helper function to calculate averages
 	const calculateAverage = (arr) => (arr.length > 0 ? arr.reduce((sum, val) => sum + val, 0) / arr.length : 0);
@@ -26,7 +41,7 @@ const Reports = () => {
 	// Flatten and compute the necessary fields
 	const flattenedData = services.flatMap((service) =>
 		service.modems.map((modem) => {
-			// Extract data safely
+			// Extract data safely with null checks
 			const latencyData = modem.data?.latency?.data || [];
 			const throughputData = modem.data?.throughput?.data || {};
 			const signalQualityData = modem.data?.signal?.data || [];
@@ -49,7 +64,7 @@ const Reports = () => {
 				Kit: service.id,
 				PriorityData: totalPriority, // in GB
 				StandardData: totalStandard, // in GB
-				UsageLimit: modem.details.meta.usageLimit || 'N/A', // in GB, or fallback
+				UsageLimit: modem.details?.meta?.usageLimit || 'N/A', // in GB, or fallback
 				AvgLatency: avgLatency, // in ms
 				AvgDownloadThroughput: avgDownload, // in Mbps
 				AvgUploadThroughput: avgUpload, // in Mbps
@@ -63,19 +78,46 @@ const Reports = () => {
 		import('@webdatarocks/react-webdatarocks')
 			.then((module) => {
 				setWebDataRocks(() => module.default);
+				setIsLoading(false);
 			})
 			.catch((error) => {
 				console.error('Failed to load WebDataRocks:', error);
+				setError('Failed to load reporting tool');
+				setIsLoading(false);
 			});
 	}, []);
 
-	if (!WebDataRocks) {
+	if (isLoading) {
 		return (
 			<Layout>
+				<Sidebar>
+					<div className='reports-sidebar'>
+						<h2>Usage Reports</h2>
+					</div>
+				</Sidebar>
 				<main className='content'>
-					<section className='section'>
-						<div>Loading...</div>
-					</section>
+					<div className='loading-container'>
+						<div className='loading-spinner'></div>
+						<p>Loading reports...</p>
+					</div>
+				</main>
+			</Layout>
+		);
+	}
+
+	if (error) {
+		return (
+			<Layout>
+				<Sidebar>
+					<div className='reports-sidebar'>
+						<h2>Usage Reports</h2>
+					</div>
+				</Sidebar>
+				<main className='content'>
+					<div className='error-container card'>
+						<h3>Error</h3>
+						<p>{error}</p>
+					</div>
 				</main>
 			</Layout>
 		);
@@ -83,8 +125,15 @@ const Reports = () => {
 
 	return (
 		<Layout>
+			<Sidebar>
+				<div className='reports-sidebar'>
+					<h2>Usage Reports</h2>
+					<p>Data for all services</p>
+				</div>
+			</Sidebar>
 			<main className='content'>
-				<section className='section'>
+				<section className='reports-container card'>
+					<h3>Usage Reports</h3>
 					<WebDataRocks
 						toolbar={true}
 						width='100%'
@@ -97,14 +146,21 @@ const Reports = () => {
 								rows: [{ uniqueName: 'Service' }, { uniqueName: 'Kit' }],
 								columns: [{ uniqueName: 'Measures' }],
 								measures: [
-									{ uniqueName: 'PriorityData', aggregation: 'sum' },
-									{ uniqueName: 'StandardData', aggregation: 'sum' },
-									{ uniqueName: 'UsageLimit', aggregation: 'sum' },
-									{ uniqueName: 'AvgLatency', aggregation: 'average' },
-									{ uniqueName: 'AvgDownloadThroughput', aggregation: 'average' },
-									{ uniqueName: 'AvgUploadThroughput', aggregation: 'average' },
-									{ uniqueName: 'AvgSignalQuality', aggregation: 'average' },
+									{ uniqueName: 'PriorityData', aggregation: 'sum', caption: 'Priority Data (GB)' },
+									{ uniqueName: 'StandardData', aggregation: 'sum', caption: 'Standard Data (GB)' },
+									{ uniqueName: 'UsageLimit', aggregation: 'sum', caption: 'Usage Limit (GB)' },
+									{ uniqueName: 'AvgLatency', aggregation: 'average', caption: 'Avg Latency (ms)' },
+									{ uniqueName: 'AvgDownloadThroughput', aggregation: 'average', caption: 'Avg Download (Mbps)' },
+									{ uniqueName: 'AvgUploadThroughput', aggregation: 'average', caption: 'Avg Upload (Mbps)' },
+									{ uniqueName: 'AvgSignalQuality', aggregation: 'average', caption: 'Avg Signal Quality (%)' },
 								],
+							},
+							options: {
+								grid: {
+									type: 'compact',
+									showTotals: true,
+									showGrandTotals: 'on',
+								},
 							},
 						}}
 					/>
@@ -115,3 +171,5 @@ const Reports = () => {
 };
 
 export default Reports;
+
+export { ErrorBoundary };
