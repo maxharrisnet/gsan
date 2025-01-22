@@ -1,10 +1,15 @@
 // app/routes/dashboard.jsx
-import { json } from '@remix-run/node';
-import { useLoaderData } from '@remix-run/react';
+import { json, defer } from '@remix-run/node';
+import { useLoaderData, Await, useNavigation, Link } from '@remix-run/react';
+import { Suspense } from 'react';
 import { getUserData } from '../utils/user.server';
 import { fetchServicesAndModemData } from '../compass.server';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
+import CustomerDashboard from '../components/dashboard/CustomerDashboard';
+import ProviderDashboard from '../components/dashboard/ProviderDashboard';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorBoundary from '../components/ErrorBoundary';
 import dashboardStyles from '../styles/dashboard.css?url';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, BarElement, LineElement, Title, Tooltip, Legend, TimeScale } from 'chart.js';
 import 'chartjs-adapter-date-fns';
@@ -15,9 +20,12 @@ export const links = () => [{ rel: 'stylesheet', href: dashboardStyles }];
 
 export const loader = async ({ request }) => {
 	const userData = await getUserData(request);
-	const services = await fetchServicesAndModemData();
+	const servicesPromise = fetchServicesAndModemData();
 
-	return json({ userData, services });
+	return defer({
+		userData,
+		services: servicesPromise,
+	});
 };
 
 export function getLatencyClass(latency) {
@@ -66,97 +74,62 @@ function ModemList({ services }) {
 	);
 }
 
-function ProviderDashboard({ userData, services }) {
-	return (
-		<div className='dashboard provider-dashboard'>
-			<div className='dashboard-header'>
-				<h2>Service Provider Dashboard</h2>
-				<div className='quick-stats'>
-					<div className='stat-card'>
-						<h3>Total Customers</h3>
-						<p>{userData.customerCount || 0}</p>
-					</div>
-					<div className='stat-card'>
-						<h3>Active Services</h3>
-						<p>{services.length}</p>
-					</div>
-					{/* Add more stats as needed */}
-				</div>
-			</div>
-
-			<section className='service-overview'>
-				<h3>Service Overview</h3>
-				<ModemList services={services} />
-			</section>
-
-			<section className='recent-alerts'>
-				<h3>Recent Alerts</h3>
-				{/* Add alerts component here */}
-			</section>
-		</div>
-	);
-}
-
-function CustomerDashboard({ userData, services }) {
-	return (
-		<div className='dashboard customer-dashboard'>
-			<div className='dashboard-header'>
-				<h2>Customer Dashboard</h2>
-				<div className='quick-stats'>
-					<div className='stat-card'>
-						<h3>Active Services</h3>
-						<p>{services.length}</p>
-					</div>
-					{/* Add more customer-specific stats */}
-				</div>
-			</div>
-
-			<section className='service-status'>
-				<h3>Your Services</h3>
-				<ModemList services={services} />
-			</section>
-
-			<section className='account-info'>
-				<h3>Account Information</h3>
-				<div className='info-grid'>
-					<div>
-						<strong>Account ID:</strong> {userData.id}
-					</div>
-					<div>
-						<strong>Name:</strong> {userData.firstName} {userData.lastName}
-					</div>
-					<div>
-						<strong>Email:</strong> {userData.email}
-					</div>
-					{/* Add more account details */}
-				</div>
-			</section>
-		</div>
-	);
-}
-
 export default function Dashboard() {
 	const { userData, services } = useLoaderData();
+	const navigation = useNavigation();
+	const isLoading = navigation.state === 'loading';
+
+	if (isLoading) {
+		return <LoadingSpinner />;
+	}
 
 	return (
 		<Layout>
 			<Sidebar>
 				<h2>Welcome, {userData.firstName}</h2>
-				{/* Add navigation links here */}
+				<nav>
+					<ul>
+						<li>
+							<Link to='/dashboard'>Dashboard</Link>
+						</li>
+						<li>
+							<Link to='/reports'>Reports</Link>
+						</li>
+						<li>
+							<Link to='/map'>Map View</Link>
+						</li>
+						{userData.isProvider && (
+							<li>
+								<Link to='/customers'>Customers</Link>
+							</li>
+						)}
+					</ul>
+				</nav>
 			</Sidebar>
 			<main className='content'>
-				{userData.isProvider ? (
-					<ProviderDashboard
-						userData={userData}
-						services={services}
-					/>
-				) : (
-					<CustomerDashboard
-						userData={userData}
-						services={services}
-					/>
-				)}
+				<Suspense fallback={<LoadingSpinner />}>
+					<Await
+						resolve={services}
+						errorElement={<ErrorBoundary />}
+					>
+						{(resolvedServices) =>
+							userData.isProvider ? (
+								<ProviderDashboard
+									userData={userData}
+									services={resolvedServices}
+								/>
+							) : (
+								<CustomerDashboard
+									userData={userData}
+									services={resolvedServices}
+								/>
+							)
+						}
+					</Await>
+				</Suspense>
 			</main>
 		</Layout>
 	);
 }
+
+export { ErrorBoundary };
