@@ -16,7 +16,10 @@ export const loader = async ({ request }) => {
 	const userData = session.get('userData');
 	const shop = process.env.SHOPIFY_STORE_DOMAIN;
 
-	if (!userData && url.pathname !== '/auth') {
+	// Add check for auth routes to prevent redirect loop
+	const isAuthRoute = url.pathname === '/auth' || url.pathname === '/login';
+
+	if (!userData && !isAuthRoute) {
 		console.log('🚗 No user data, redirecting to /auth');
 		return redirect('/auth');
 	}

@@ -2,9 +2,9 @@ import { authenticateShopifyCustomer } from './user.server';
 import { authenticateSonarUser } from './sonar.server';
 import { createUserSession } from './session.server';
 
-export async function authenticateUser(loginType, credentials) {
+export async function authenticateUser(loginType, credentials, request) {
 	if (loginType === 'shopify') {
-		return authenticateShopifyCustomer(credentials.email, credentials.password);
+		return authenticateShopifyCustomer(credentials.email, credentials.password, request);
 	} else if (loginType === 'sonar') {
 		return authenticateSonarUser(credentials.username, credentials.password);
 	}

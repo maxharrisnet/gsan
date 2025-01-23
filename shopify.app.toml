@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "817c9fab0e11b2343b3f704a572d8a39"
-application_url = "https://express-isaac-considers-death.trycloudflare.com"
+application_url = "https://candidates-ka-defeat-bell.trycloudflare.com"
 embedded = false
 name = "gsan-003"
 handle = "gsan"
@@ -19,9 +19,9 @@ scopes = "read_customers,read_orders,unauthenticated_read_customers"
 
 [auth]
 redirect_urls = [
-  "https://express-isaac-considers-death.trycloudflare.com/auth/callback",
-  "https://express-isaac-considers-death.trycloudflare.com/auth/shopify/callback",
-  "https://express-isaac-considers-death.trycloudflare.com/api/auth/callback"
+  "https://candidates-ka-defeat-bell.trycloudflare.com/auth/callback",
+  "https://candidates-ka-defeat-bell.trycloudflare.com/auth/shopify/callback",
+  "https://candidates-ka-defeat-bell.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]

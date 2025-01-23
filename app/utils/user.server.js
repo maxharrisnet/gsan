@@ -1,5 +1,5 @@
 import { redirect } from '@remix-run/node';
-import { getSession } from './session.server';
+import { getSession, createUserSession } from './session.server';
 
 const shop = process.env.SHOPIFY_STORE_DOMAIN;
 const storefrontAccessToken = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
@@ -29,7 +29,10 @@ const fetchStorefrontApi = async ({ shop, storefrontAccessToken, query, variable
 	}
 };
 
-export async function authenticateShopifyCustomer(email, password) {
+export async function authenticateShopifyCustomer(email, password, request) {
+	console.log(' 🍕 Authenticating Shopify customer...');
+	console.log('⛄ Email:', email);
+	console.log('⛄ Password:', password);
 	const customerLoginMutation = `
   mutation customerAccessTokenCreate($input: CustomerAccessTokenCreateInput!) {
     customerAccessTokenCreate(input: $input) {
@@ -44,8 +47,7 @@ export async function authenticateShopifyCustomer(email, password) {
 `;
 
 	try {
-		// log env variables used below
-
+		const session = await getSession(request.headers.get('Cookie'));
 		const response = await fetchStorefrontApi({
 			shop: process.env.SHOPIFY_STORE_DOMAIN,
 			storefrontAccessToken: process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN,
@@ -58,13 +60,14 @@ export async function authenticateShopifyCustomer(email, password) {
 		const { customerAccessTokenCreate } = response.data;
 
 		if (customerAccessTokenCreate.customerUserErrors.length) {
+			console.log('🍕 Shopify customer login failed:', customerAccessTokenCreate.customerUserErrors);
 			return { errors: customerAccessTokenCreate.customerUserErrors };
 		}
 
-		return {
-			success: true,
-			userData: customerAccessTokenCreate.customerAccessToken,
-		};
+		const accessToken = customerAccessTokenCreate.customerAccessToken.accessToken;
+
+		// Use createUserSession instead of direct session manipulation
+		return createUserSession({ customerAccessToken: accessToken }, 'customer', '/');
 	} catch (error) {
 		console.error('🍕 Error during Shopify customer login:', error);
 		return {
@@ -76,7 +79,8 @@ export async function authenticateShopifyCustomer(email, password) {
 
 export async function getUserData(request) {
 	const session = await getSession(request.headers.get('Cookie'));
-	const customerAccessToken = session.get('customerAccessToken');
+	const userData = session.get('userData');
+	const customerAccessToken = userData?.customerAccessToken;
 	const shop = process.env.SHOPIFY_STORE_DOMAIN;
 
 	if (!customerAccessToken) {

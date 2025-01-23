@@ -5,9 +5,11 @@ import Layout from '../components/layout/Layout';
 export async function action({ request }) {
 	const formData = await request.formData();
 	const loginType = formData.get('loginType');
+	const email = formData.get('email');
+	const password = formData.get('password');
 
 	if (loginType === 'shopify') {
-		return authenticateShopifyCustomer(formData);
+		return authenticateShopifyCustomer(email, password, request);
 	} else if (loginType === 'sonar') {
 		return authenticateSonarUser(formData);
 	}
