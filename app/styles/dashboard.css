@@ -318,13 +318,14 @@ section h3 {
 	color: var(--color-text-light);
 }
 
-/* Loading Spinner */
+/* Loading States */
 .loading-container {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	height: 200px;
+	min-height: 200px;
+	padding: var(--spacing-large);
 }
 
 .loading-spinner {
@@ -345,20 +346,12 @@ section h3 {
 	}
 }
 
-/* Error Boundary */
+/* Error States */
 .error-container {
 	padding: var(--spacing-large);
-	text-align: center;
-	background: var(--color-error-light);
-	border-radius: var(--border-radius);
 	margin: var(--spacing-large);
-}
-
-.error-stack {
-	text-align: left;
-	background: white;
-	padding: var(--spacing-base);
+	background-color: var(--color-error-light);
 	border-radius: var(--border-radius);
-	overflow-x: auto;
-	margin-top: var(--spacing-base);
+	text-align: center;
+	color: var(--color-error);
 }

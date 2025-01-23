@@ -1,5 +1,6 @@
-import { json } from '@remix-run/node';
-import { useLoaderData } from '@remix-run/react';
+import { defer } from '@remix-run/node';
+import { useLoaderData, Await } from '@remix-run/react';
+import { Suspense } from 'react';
 import { fetchServicesAndModemData } from '../compass.server';
 // import { getSonarAccountData, getSonarAccountGroupData, getSonarAccoutUsageData, getSonarInventoryItems } from '../sonar.server';
 import Layout from '../components/layout/Layout';
@@ -13,20 +14,14 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, BarElement, LineEleme
 export const links = () => [{ rel: 'stylesheet', href: dashboardStyles }];
 
 export const loader = async ({ request }) => {
-	// const user = await getUserSession(request);
-	// const user = { accountId: 818 };
-	// if (!user) {
-	// 	return json({ error: 'Unauthorized' }, { status: 401 });
-	// }
-
 	try {
 		console.log('🏈 Loading dashboard Service data...');
 		const services = await fetchServicesAndModemData();
 		console.log('🏈 Finished loading dashboard Service data:', services);
-		return services;
+		return defer({ services });
 	} catch (error) {
 		console.error('Error loading dashboard data:', error);
-		return { error: 'Failed to load dashboard data' }, { status: 500 };
+		return { error: 'Failed to load dashboard data' };
 	}
 
 	// const accountResponse = await getSonarAccountData(user.accountId);
@@ -130,68 +125,75 @@ export default function Dashboard() {
 			</Sidebar>
 			<main className='content'>
 				<div className='container'>
-					{services.length > 0 ? (
-						services.map((service) => (
-							<div key={service.id}>
-								{service.modems && service.modems.length > 0 ? (
-									service.modems.map((modem) => (
-										<div
-											key={modem.id}
-											className=''
-										>
-											<a
-												href={`/modem/${encodeURI(modem.type.toLowerCase())}/${modem.id}`}
-												className='text-black text-decoration-none fw-bold'
-											>
-												<div className='section'>
-													<div className='card-body'>
-														<div className='flex-row'>
-															<div>
-																<h3 className='card-title fs-6'>{modem.name}</h3>
-																<h4 className='card-subtitle'> {service.name} </h4>
-															</div>
-															<div className='data-wrapper'>
-																{showLatency(modem) ? (
-																	<div className='latency-bar'>
-																		{modem.details.data.latency.data.map((latencyPoint, index) => {
-																			const latencyValue = latencyPoint[1];
-																			const latencyClass = getLatencyClass(latencyValue);
-																			const segmentWidth = (10 / 1440) * 100; // 10 minutes out of 1440 minutes in 24 hours
-																			return (
-																				<div
-																					key={index}
-																					className={`latency-segment ${latencyClass}`}
-																					style={{ width: `${segmentWidth}%` }}
-																				></div>
-																			);
-																		})}
+					<Suspense fallback={<div>Loading...</div>}>
+						<Await
+							resolve={services}
+							errorElement={<div>Error loading services</div>}
+						>
+							{services.length > 0 ? (
+								services.map((service) => (
+									<div key={service.id}>
+										{service.modems && service.modems.length > 0 ? (
+											service.modems.map((modem) => (
+												<div
+													key={modem.id}
+													className=''
+												>
+													<a
+														href={`/modem/${encodeURI(modem.type.toLowerCase())}/${modem.id}`}
+														className='text-black text-decoration-none fw-bold'
+													>
+														<div className='section'>
+															<div className='card-body'>
+																<div className='flex-row'>
+																	<div>
+																		<h3 className='card-title fs-6'>{modem.name}</h3>
+																		<h4 className='card-subtitle'> {service.name} </h4>
 																	</div>
-																) : (
-																	<div className='empty-data'>
-																		<span>No data available</span>
+																	<div className='data-wrapper'>
+																		{showLatency(modem) ? (
+																			<div className='latency-bar'>
+																				{modem.details.data.latency.data.map((latencyPoint, index) => {
+																					const latencyValue = latencyPoint[1];
+																					const latencyClass = getLatencyClass(latencyValue);
+																					const segmentWidth = (10 / 1440) * 100; // 10 minutes out of 1440 minutes in 24 hours
+																					return (
+																						<div
+																							key={index}
+																							className={`latency-segment ${latencyClass}`}
+																							style={{ width: `${segmentWidth}%` }}
+																						></div>
+																					);
+																				})}
+																			</div>
+																		) : (
+																			<div className='empty-data'>
+																				<span>No data available</span>
+																			</div>
+																		)}
 																	</div>
-																)}
+																</div>
 															</div>
 														</div>
-													</div>
+													</a>
 												</div>
-											</a>
+											))
+										) : (
+											<p>No modems available for service: {service.name}</p>
+										)}
+									</div>
+								))
+							) : (
+								<div className='bg-light'>
+									<div className='container-sm'>
+										<div className='text-center'>
+											<p>No services available.</p>
 										</div>
-									))
-								) : (
-									<p>No modems available for service: {service.name}</p>
-								)}
-							</div>
-						))
-					) : (
-						<div className='bg-light'>
-							<div className='container-sm'>
-								<div className='text-center'>
-									<p>No services available.</p>
+									</div>
 								</div>
-							</div>
-						</div>
-					)}
+							)}
+						</Await>
+					</Suspense>
 				</div>
 			</main>
 		</Layout>

@@ -1,7 +1,14 @@
-import { destroyUserSession } from '../utils/session.server';
+import { getSession, destroySession } from '../utils/session.server';
 
 export const action = async ({ request }) => {
-	return destroyUserSession(request);
+	const session = await getSession(request.headers.get('Cookie'));
+	return new Response(null, {
+		headers: {
+			'Set-Cookie': await destroySession(session),
+			Location: '/auth',
+		},
+		status: 302,
+	});
 };
 
 export default function Logout() {
