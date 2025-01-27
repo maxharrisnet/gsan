@@ -18,8 +18,90 @@ Generate code based on the files that I upload and any new files needed. Let me 
 
 I have spent a lot of time dealing with the log in and I now want to tie together the other pieces of the app and complete it. Let's worth through on part at a time, starting with the dashboard page where users should be directed once they are logged in. The files for that are attached here. Once we get that part working, prompt me for another section until we get this app complete.
 
+Start by reviewing the code (see file structore below). Then let me know if you understand. Give me a brief plan for what we are going to do. When I say "sounds good", you can proceed to the next step.
+
+# Resources
+
+GSAN Shopify Store: https://gsan.co/
 Compass API: https://api-compass.speedcast.com/api-docs/
-Sonar Documentation: https://legacy.sonar.software/apidoc/
+Sonar Documentation: https://legacy.sonar.software/apidoc/ (use these legacy docs, not the latest. This is for the API that we have access to)
+Sonar URL: https://switch.sonar.software/
 Shopify API Documentation: https://shopify.dev/docs/api/usage
 
-Start by letting me know if you understand. Give me a brief plan for what we are going to do. When I say "sounds good", you can proceed to the next step.
+# File Structure
+
+C:\Dev\GSAN\gsan
+├── app
+| ├── compass.server.js
+| ├── components
+| | ├── charts
+| | ├── dashboard
+| | ├── ErrorBoundary.jsx
+| | ├── layout
+| | ├── loader
+| | └── LoadingSpinner.jsx
+| ├── context
+| | └── UserContext.jsx
+| ├── db.server.js
+| ├── entry.server.jsx
+| ├── gsan.server.js
+| ├── root.jsx
+| ├── routes
+| | ├── api.gps.jsx
+| | ├── api.modem.jsx
+| | ├── api.services.jsx
+| | ├── auth.$.jsx
+|  |  ├── auth.jsx
+|  |  ├── auth.login
+|  |  ├── customers.jsx
+|  |  ├── dashboard.jsx
+|  |  ├── logout.js
+|  |  ├── modem.$provider.$modemId.jsx
+|  |  ├── performance.jsx
+|  |  ├── reports.$provider.usage.jsx
+| | ├── switch.login.jsx
+| | ├── webhooks.app.uninstalled.jsx
+| | └── \_index
+| ├── routes.js
+| ├── shopify.server.js
+| ├── sonar.server.js
+| ├── styles
+| | ├── charts.css
+| | ├── dashboard.css
+| | ├── global.css
+| | ├── modem.css
+| | └── reports.css
+| └── utils
+| ├── auth.server.js
+| ├── provider.server.js
+| ├── session.server.js
+| └── user.server.js
+├── build
+| ├── client
+| | ├── assets
+| | └── favicon.ico
+| └── server
+| ├── assets
+| └── index.js
+├── CHANGELOG.md
+├── Dockerfile
+├── env.d.ts
+├── extensions
+├── instructions.md
+├── package-lock.json
+├── package.json
+├── prisma
+| ├── dev.sqlite
+| ├── migrations
+| | └── 20240530213853_create_session_table
+| └── schema.prisma
+├── public
+| ├── assets
+| | └── images
+| └── favicon.ico
+├── README.md
+├── remix.config.js
+├── shopify.app.toml
+├── shopify.web.toml
+├── tsconfig.json
+└── vite.config.js
