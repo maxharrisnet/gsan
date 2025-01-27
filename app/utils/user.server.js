@@ -30,9 +30,6 @@ const fetchStorefrontApi = async ({ shop, storefrontAccessToken, query, variable
 };
 
 export async function authenticateShopifyCustomer(email, password, request) {
-	console.log(' 🍕 Authenticating Shopify customer...');
-	console.log('⛄ Email:', email);
-	console.log('⛄ Password:', password);
 	const customerLoginMutation = `
   mutation customerAccessTokenCreate($input: CustomerAccessTokenCreateInput!) {
     customerAccessTokenCreate(input: $input) {

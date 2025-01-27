@@ -22,6 +22,7 @@ export async function loader({ request }) {
 
 		// Validate initial services data
 		const services = await servicesPromise;
+		console.log('🚨 Services:', services);
 		if (!services || !Array.isArray(services)) {
 			throw new Error('Invalid services data received');
 		}
