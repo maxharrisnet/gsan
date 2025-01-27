@@ -17,36 +17,19 @@ export const links = () => [{ rel: 'stylesheet', href: dashboardStyles }];
 
 export async function loader({ request }) {
 	try {
-		const servicesPromise = fetchServicesAndModemData();
 		const accessToken = await getCompassAccessToken();
 
-		// Validate initial services data
-		const services = await servicesPromise;
-		console.log('🚨 Services:', services);
-		if (!services || !Array.isArray(services)) {
-			throw new Error('Invalid services data received');
-		}
-
-		// Group modems by provider
-		const modemsByProvider = services.reduce((acc, service) => {
-			service.modems?.forEach((modem) => {
-				if (modem.type) {
-					acc[modem.type] = acc[modem.type] || [];
-					acc[modem.type].push(modem.id);
-				}
-			});
-			return acc;
-		}, {});
-
-		// Only fetch GPS if we have modems
-		const gpsPromises = Object.keys(modemsByProvider).length > 0 ? Object.entries(modemsByProvider).map(([provider, ids]) => fetchGPS(provider, ids, accessToken)) : Promise.resolve([]);
-
+		// Instead of awaiting immediately, let's defer all promises
 		return defer({
-			servicesData: servicesPromise,
-			gpsData: Promise.all(gpsPromises),
+			servicesData: fetchServicesAndModemData().catch((error) => {
+				console.error('🍎 Error fetching services:', error);
+				return []; // Return empty array as fallback
+			}),
+			accessToken,
+			gpsData: Promise.resolve([]), // This will be populated after we have services
 		});
 	} catch (error) {
-		console.error('🚨 Error loading dashboard:', error);
+		console.error('🚨 Error in dashboard loader:', error);
 		throw new Response('Error loading dashboard data', { status: 500 });
 	}
 }

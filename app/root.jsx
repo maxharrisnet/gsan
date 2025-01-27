@@ -3,13 +3,13 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData, useRout
 import { getSession } from './utils/session.server';
 import { UserProvider } from './context/UserContext';
 import globalStyles from './styles/global.css?url';
-import styles from './styles/error.css';
+import errorStyles from './styles/error.css?url';
 
 export const links = () => [
 	{ rel: 'stylesheet', href: globalStyles },
 	{ rel: 'preconnect', href: 'https://cdn.shopify.com/' },
 	{ rel: 'stylesheet', href: 'https://cdn.shopify.com/static/fonts/inter/v4/styles.css' },
-	{ rel: 'stylesheet', href: styles },
+	{ rel: 'stylesheet', href: errorStyles },
 ];
 
 export const loader = async ({ request }) => {
