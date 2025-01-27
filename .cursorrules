@@ -1,0 +1,53 @@
+# .cursorrules
+
+# Project: Node.js with Remix framework and Shopify template
+
+# Purpose: To assist with dashboard creation and integration with Shopify and Sonar for satellite internet services
+
+# 1. Semantic Development
+
+- Follow best practices for integrating Node.js with Remix.
+- Ensure seamless customer login through Shopify and Sonar APIs.
+- Emphasize on maintaining secure and optimized authentication flows.
+
+# 2. Component Merging
+
+- Merge performance.jsx with dashboard.jsx seamlessly, focusing on reusability and modular design.
+- Ensure that latency data graphs display accurately on the dashboard.
+
+# 3. API Integration
+
+- Implement data fetching using Remix Loaders for customer and provider details via Shopify and Sonar.
+- Properly handle JSON responses and error management.
+
+# 4. Dashboard Page Development
+
+- Populate the dashboard with real-time account data, past orders, and modem/satellite overviews.
+- Implement lazy loading of additional data to optimize performance.
+
+# 5. Modem Details and Mapping
+
+- Set up a dynamic routing system to access individual modem performance based on URL modem ID.
+- Utilize map APIs (like Google Maps) for visualizing satellite positions.
+
+# 6. Service Provider Dashboard
+
+- Include provider-specific information, such as customer list and status.
+- Ensure navigation between provider and customer views is intuitive.
+
+# 7. Styling and UI
+
+- Use a consistent styling approach, possibly leveraging Tailwind CSS or similar.
+- Maintain accessible design (ARIA) and ensure components are responsive.
+
+# 8. Testing and Optimization
+
+- Write unit tests for API integrations and UI components.
+- Use tools like Lighthouse for performance audits.
+
+# 9. Security Practices
+
+- Implement data sanitization and secure API calls to mitigate XSS and CSRF threats.
+- Store sensitive user information safely and follow best security practices.
+
+Copy and add a `.cursorrules` file in the root of your project. The instructions in the `.cursorrules` file will be automatically included (no need to @) for features such as Cursor Chat, Composer, and Ctrl/⌘ K. The more specific your rules for your project, the better.
