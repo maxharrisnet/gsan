@@ -23,7 +23,7 @@ Start by reviewing the code (see file structore below). Then let me know if you 
 # Resources
 
 GSAN Shopify Store: https://gsan.co/
-Compass API: https://api-compass.speedcast.com/api-docs/
+Compass API: https://api-compass.speedcast.com/api-docs/ (we are using Srarlink and Oneweb only)
 Sonar Documentation: https://legacy.sonar.software/apidoc/ (use these legacy docs, not the latest. This is for the API that we have access to)
 Sonar URL: https://switch.sonar.software/
 Shopify API Documentation: https://shopify.dev/docs/api/usage
@@ -87,7 +87,16 @@ C:\Dev\GSAN\gsan
 ├── Dockerfile
 ├── env.d.ts
 ├── extensions
-├── instructions.md
+├── instructions
+| ├── instructions.md
+| └── screenshots
+| ├── Screenshot 2025-01-26 164941.png
+| ├── Screenshot 2025-01-26 164959.png
+| ├── Screenshot 2025-01-26 165024.png
+| ├── Screenshot 2025-01-26 165049.png
+| ├── Screenshot 2025-01-26 165125.png
+| ├── Screenshot 2025-01-26 165147.png
+| └── Screenshot 2025-01-26 165204.png
 ├── package-lock.json
 ├── package.json
 ├── prisma
@@ -105,3 +114,7 @@ C:\Dev\GSAN\gsan
 ├── shopify.web.toml
 ├── tsconfig.json
 └── vite.config.js
+
+
+# Data Structure
+

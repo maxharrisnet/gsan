@@ -68,6 +68,12 @@ Refer to Remix’s official documentation for best practices in Routes, Loaders,
 
 # Purpose: To assist with dashboard creation and integration with Shopify and Sonar for satellite internet services. Help me finish the project. I am not 100% sure about all of the features, it just needs to be a dashboard that works for the customer and the service provider. Check the API documentation (Sonar, Shopify) and for what kind of data we can show.
 
+I already have a lot of the code set up, but I need help finishing it. Please stick as closely as possible to the code and patterns that I have already written. Before writing new functions, please make sure it does not already exist. Use existing code as much as possible, but if it is not working, please rewrite it. Be clear about changes you make.
+
+This is based on a similar dashboard from Speedcast/Compass. I have screenshots of the dashboard, so let me know how I can share them with you to help you finish the project.
+
+# Rules
+
 - No Typescript, just JavaScript
 - Using Chart.js for the graphs
 - Using WebDataRocks for the reports page
