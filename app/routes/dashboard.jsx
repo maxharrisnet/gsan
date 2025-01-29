@@ -19,23 +19,75 @@ export async function loader({ request }) {
 	try {
 		const accessToken = await getCompassAccessToken();
 
-		// Instead of awaiting immediately, let's defer all promises
+		console.log('🎯 Starting to fetch services data');
+
+		const servicesPromise = fetchServicesAndModemData()
+			.then(async ({ services }) => {
+				console.log('📦 Raw services data:', services);
+
+				// Group modems by provider type
+				const modemsByProvider = services.reduce((acc, service) => {
+					(service.modems || []).forEach((modem) => {
+						if (modem.type) {
+							acc[modem.type.toLowerCase()] = acc[modem.type.toLowerCase()] || [];
+							acc[modem.type.toLowerCase()].push(modem.id);
+						}
+					});
+					return acc;
+				}, {});
+
+				// Fetch GPS data for each provider type
+				const gpsDataPromises = Object.entries(modemsByProvider).map(async ([provider, ids]) => {
+					try {
+						console.log(`🗺️ Fetching GPS data for ${provider}:`, ids);
+						const gpsData = await fetchGPS(provider, ids, accessToken);
+						return { provider, data: gpsData };
+					} catch (error) {
+						console.error(`🚨 GPS fetch error for ${provider}:`, error);
+						return { provider, data: {} };
+					}
+				});
+
+				const gpsResults = await Promise.all(gpsDataPromises);
+				const gpsDataMap = gpsResults.reduce((acc, { provider, data }) => {
+					console.log(`🗺️ Processing GPS data for ${provider}:`, data);
+
+					if (data && typeof data === 'object') {
+						return {
+							...acc,
+							...data,
+						};
+					}
+					return acc;
+				}, {});
+
+				console.log('🗺️ Combined GPS data map:', gpsDataMap);
+
+				return {
+					services: services,
+					gpsData: gpsDataMap,
+				};
+			})
+			.catch((error) => {
+				console.error('🍎 Error in services promise chain:', error);
+				return { services: [], gpsData: {} };
+			});
+
 		return defer({
-			servicesData: fetchServicesAndModemData().catch((error) => {
-				console.error('🍎 Error fetching services:', error);
-				return []; // Return empty array as fallback
-			}),
+			servicesData: servicesPromise,
 			accessToken,
-			gpsData: Promise.resolve([]), // This will be populated after we have services
 		});
 	} catch (error) {
-		console.error('🚨 Error in dashboard loader:', error);
+		console.error('🚨 Error in loader:', error);
 		throw new Response('Error loading dashboard data', { status: 500 });
 	}
 }
 
 export default function Dashboard() {
-	const { servicesData, gpsData } = useLoaderData();
+	const { servicesData } = useLoaderData();
+
+	// Add console log to track component rendering
+	console.log('🎨 Dashboard rendering with data:', servicesData);
 
 	return (
 		<Layout>
@@ -48,10 +100,14 @@ export default function Dashboard() {
 			<main className='content'>
 				<Suspense fallback={<LoadingSpinner />}>
 					<Await
-						resolve={Promise.all([servicesData, gpsData])}
+						resolve={servicesData}
 						errorElement={<div className='error-container'>Error loading dashboard data</div>}
 					>
-						{([services, gpsDataArray]) => {
+						{(resolvedData) => {
+							// console.log('✨ Resolved data:', resolvedData);
+							const { services, gpsData } = resolvedData;
+							console.log('🔍 GPS data:', gpsData);
+
 							if (!services || !Array.isArray(services) || services.length === 0) {
 								return (
 									<div className='empty-state card'>
@@ -60,15 +116,6 @@ export default function Dashboard() {
 									</div>
 								);
 							}
-
-							// Combine GPS data from all providers
-							const gpsDataMap = gpsDataArray.reduce(
-								(acc, providerData) => ({
-									...acc,
-									...(providerData || {}),
-								}),
-								{}
-							);
 
 							// Calculate stats
 							const stats = services.reduce(
@@ -86,15 +133,15 @@ export default function Dashboard() {
 							const modemLocations = services.flatMap((service) =>
 								(service.modems || [])
 									.map((modem) => {
-										const gpsInfo = gpsDataMap[modem.id];
+										const gpsInfo = gpsData[modem.id]?.[0]; // Get latest GPS entry
 										return gpsInfo
 											? {
 													id: modem.id,
 													name: modem.name,
 													status: modem.status,
 													position: {
-														lat: gpsInfo.latitude,
-														lng: gpsInfo.longitude,
+														lat: gpsInfo.lat,
+														lng: gpsInfo.lon, // Note: API uses 'lon' not 'lng'
 													},
 												}
 											: null;

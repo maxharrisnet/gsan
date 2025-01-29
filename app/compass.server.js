@@ -38,7 +38,7 @@ export const fetchServicesAndModemData = async () => {
 		const servicesWithModemDetails = await Promise.all(
 			allServices.map(async (service) => {
 				if (service.modems && service.modems.length > 0) {
-					console.log('🌽 Service has modems:', service.modems);
+					// console.log('🌽 Service has modems:', service.modems);
 					const modemsWithDetails = await Promise.all(
 						service.modems.map(async (modem) => {
 							const url = modemDetailsUrl(modem.type, modem.id);
@@ -48,7 +48,7 @@ export const fetchServicesAndModemData = async () => {
 							return { ...modem, details: detailsResponse.data };
 						})
 					);
-					console.log('🌽 Modems with details:', modemsWithDetails);
+					// console.log('🌽 Modems with details:', modemsWithDetails);
 					return { ...service, modems: modemsWithDetails };
 				}
 				return service;

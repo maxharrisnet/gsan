@@ -44,15 +44,15 @@ export const fetchGPS = async (provider, ids, accessToken) => {
 			console.log('💾 Caching GPS data');
 			return response.data;
 		} else {
-			return json({ error: `HTTP code ${response.status}` }, { status: response.status });
+			return { error: `HTTP code ${response.status}` }, { status: response.status };
 		}
 	} catch (error) {
 		if (error.response && error.response.status === 429) {
 			console.error('🏇 Error 429: Rate limit exceeded.');
-			return json({ error: 'Rate limit exceeded' }, { status: 429 });
+			return { error: 'Rate limit exceeded' }, { status: 429 };
 		} else {
 			console.error('Network Error:', error.message);
-			return json({ error: 'Network Error' }, { status: 500 });
+			return { error: 'Network Error' }, { status: 500 };
 		}
 	}
 };
