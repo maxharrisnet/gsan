@@ -16,7 +16,6 @@ export const loader = async ({ request }) => {
 	const session = await getSession(request.headers.get('Cookie'));
 	const url = new URL(request.url);
 	const userData = session.get('userData');
-	const shop = process.env.SHOPIFY_STORE_DOMAIN;
 
 	// Add check for auth routes to prevent redirect loop
 	const isAuthRoute = url.pathname === '/auth' || url.pathname === '/login';
@@ -26,11 +25,11 @@ export const loader = async ({ request }) => {
 		return redirect('/auth');
 	}
 
-	return { userData, shop };
+	return { userData };
 };
 
 export default function Root() {
-	const { user, shop } = useLoaderData();
+	const { user } = useLoaderData();
 	return (
 		<html lang='en'>
 			<head>
@@ -38,10 +37,7 @@ export default function Root() {
 				<Links />
 			</head>
 			<body>
-				<UserProvider
-					initialUser={user}
-					shop={shop}
-				>
+				<UserProvider initialUser={user}>
 					<Outlet />
 				</UserProvider>
 				<ScrollRestoration />

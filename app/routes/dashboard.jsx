@@ -18,6 +18,9 @@ export const links = () => [{ rel: 'stylesheet', href: dashboardStyles }];
 export async function loader({ request }) {
 	try {
 		const accessToken = await getCompassAccessToken();
+		
+		// Add Google Maps API key to loader data
+		const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
 
 		console.log('🎯 Starting to fetch services data');
 
@@ -76,6 +79,7 @@ export async function loader({ request }) {
 		return defer({
 			servicesData: servicesPromise,
 			accessToken,
+			googleMapsApiKey,
 		});
 	} catch (error) {
 		console.error('🚨 Error in loader:', error);
@@ -84,7 +88,7 @@ export async function loader({ request }) {
 }
 
 export default function Dashboard() {
-	const { servicesData } = useLoaderData();
+	const { servicesData, googleMapsApiKey } = useLoaderData();
 
 	// Add console log to track component rendering
 	console.log('🎨 Dashboard rendering with data:', servicesData);
@@ -175,7 +179,7 @@ export default function Dashboard() {
 										<section className='map-section card'>
 											<h3>Modem Locations</h3>
 											<div className='map-container'>
-												<APIProvider apiKey={process.env.GOOGLE_MAPS_API_KEY}>
+												<APIProvider apiKey={googleMapsApiKey}>
 													<Map
 														defaultCenter={{ lat: 39.8283, lng: -98.5795 }}
 														defaultZoom={4}
