@@ -1,8 +1,4 @@
-import { redirect } from '@remix-run/node';
 import { getSession, createUserSession } from './session.server';
-
-const shop = process.env.SHOPIFY_STORE_DOMAIN;
-const storefrontAccessToken = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
 
 // Helper for Storefront API
 const fetchStorefrontApi = async ({ shop, storefrontAccessToken, query, variables }) => {
@@ -44,7 +40,6 @@ export async function authenticateShopifyCustomer(email, password, request) {
 `;
 
 	try {
-		const session = await getSession(request.headers.get('Cookie'));
 		const response = await fetchStorefrontApi({
 			shop: process.env.SHOPIFY_STORE_DOMAIN,
 			storefrontAccessToken: process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN,
@@ -52,21 +47,18 @@ export async function authenticateShopifyCustomer(email, password, request) {
 			variables: { input: { email, password } },
 		});
 
-		console.log('🍕 Shopify customer login response:', response);
-
 		const { customerAccessTokenCreate } = response.data;
 
 		if (customerAccessTokenCreate.customerUserErrors.length) {
-			console.log('🍕 Shopify customer login failed:', customerAccessTokenCreate.customerUserErrors);
+			console.log('Shopify customer login failed:', customerAccessTokenCreate.customerUserErrors);
 			return { errors: customerAccessTokenCreate.customerUserErrors };
 		}
 
 		const accessToken = customerAccessTokenCreate.customerAccessToken.accessToken;
 
-		// Use createUserSession instead of direct session manipulation
-		return createUserSession({ customerAccessToken: accessToken }, 'customer', '/');
+		return createUserSession({ customerAccessToken: accessToken }, 'customer', '/dashboard');
 	} catch (error) {
-		console.error('🍕 Error during Shopify customer login:', error);
+		console.error('Error during Shopify customer login:', error);
 		return {
 			success: false,
 			errors: [{ message: 'An unexpected error occurred. Please try again.' }],

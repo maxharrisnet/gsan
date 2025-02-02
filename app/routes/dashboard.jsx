@@ -18,9 +18,10 @@ export const links = () => [{ rel: 'stylesheet', href: dashboardStyles }];
 export async function loader({ request }) {
 	try {
 		const accessToken = await getCompassAccessToken();
-		
+
 		// Add Google Maps API key to loader data
 		const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
+		console.log('🎯 Google Maps API Key:', googleMapsApiKey);
 
 		console.log('🎯 Starting to fetch services data');
 

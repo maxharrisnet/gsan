@@ -18,11 +18,16 @@ export const loader = async ({ request }) => {
 	const userData = session.get('userData');
 
 	// Add check for auth routes to prevent redirect loop
-	const isAuthRoute = url.pathname === '/auth' || url.pathname === '/login';
+	const isAuthRoute = url.pathname === '/auth' || url.pathname === '/login' || url.pathname === '/';
 
 	if (!userData && !isAuthRoute) {
 		console.log('🚗 No user data, redirecting to /auth');
 		return redirect('/auth');
+	}
+
+	if (userData && isAuthRoute) {
+		console.log('🚗 User data found, redirecting to /dashboard');
+		return redirect('/dashboard');
 	}
 
 	return { userData };
