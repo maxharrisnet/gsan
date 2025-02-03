@@ -129,7 +129,6 @@ export default function Dashboard() {
 															<div className='modem-header'>
 																<h3>{modem.name}</h3>
 																<h4>{service.name}</h4>
-																<span className={`status-badge ${modem.status}`}>{modem.status}</span>
 															</div>
 															{modem.details?.data?.latency?.data ? (
 																<LatencyChart
@@ -164,10 +163,38 @@ function LatencyChart({ latencyData, modem }) {
 		return <div className='no-latency-message'>No Data Available</div>;
 	}
 
-	// Get the latest latency value
-	const latestDataPoint = latencyData[latencyData.length - 1];
-	const latestLatency = latestDataPoint[1];
-	const timestamp = new Date(latestDataPoint[0]).toLocaleTimeString();
+	const handleMouseMove = (e) => {
+		e.preventDefault(); // Prevent any default behavior
+
+		const bar = e.currentTarget;
+		const rect = bar.getBoundingClientRect();
+		const x = e.clientX - rect.left; // Get mouse x position within the bar
+		const percentage = Math.min(Math.max(x / rect.width, 0), 1); // Clamp between 0 and 1
+
+		// Find the closest data point based on hover position
+		const index = Math.min(Math.floor(percentage * (latencyData.length - 1)), latencyData.length - 1);
+
+		// Ensure we have valid data
+		if (index >= 0 && index < latencyData.length) {
+			const dataPoint = latencyData[index];
+			if (dataPoint && Array.isArray(dataPoint) && dataPoint.length >= 2) {
+				const timestamp = new Date(dataPoint[0]).toLocaleTimeString();
+				const latency = dataPoint[1];
+
+				// Update tooltip content
+				const tooltip = bar.querySelector('.latency-tooltip');
+				if (tooltip) {
+					tooltip.textContent = `${timestamp}: ${latency} ms`;
+
+					// Optional: Update tooltip position to follow cursor
+					const tooltipWidth = tooltip.offsetWidth;
+					const leftPosition = Math.min(Math.max(x - tooltipWidth / 2, 0), rect.width - tooltipWidth);
+					tooltip.style.left = `${leftPosition}px`;
+					tooltip.style.right = 'auto';
+				}
+			}
+		}
+	};
 
 	return (
 		<div className='service-status-container'>
@@ -175,12 +202,11 @@ function LatencyChart({ latencyData, modem }) {
 				<span className='status-badge online'>Online</span>
 			</div>
 			<div className='latency-bar-container'>
-				<div className='latency-bar'>
-					{latestLatency && (
-						<div className='latency-tooltip'>
-							{timestamp}: {latestLatency} ms
-						</div>
-					)}
+				<div
+					className='latency-bar'
+					onMouseMove={handleMouseMove}
+				>
+					<div className='latency-tooltip' />
 				</div>
 			</div>
 		</div>
