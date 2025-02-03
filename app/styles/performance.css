@@ -79,6 +79,14 @@ a.text-black {
 	height: 60px;
 }
 
+.latency-bar.text-success {
+	background-color: var(--wifi-green-light);
+}
+
+.latency-bar.text-warning {
+	background-color: var(--phone-orange-light);
+}
+
 .empty-data-bar {
 	width: 100%;
 }
@@ -88,15 +96,15 @@ a.text-black {
 	border-radius: 10px;
 }
 
-.latency-green {
+.latency-success {
 	background-color: var(--wifi-green-light);
 }
 
-.latency-orange {
+.latency-warning {
 	background-color: var(--phone-orange-light);
 }
 
-.latency-red {
+.latency-error {
 	background-color: var(--phone-orange-dark);
 }
 
@@ -191,6 +199,7 @@ section h3 {
 	padding: var(--spacing-base);
 	margin-bottom: var(--spacing-base);
 	transition: all 0.2s ease;
+	display: block;
 }
 
 .modem-card:hover {

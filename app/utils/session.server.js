@@ -8,7 +8,7 @@ export const sessionStorage = createCookieSessionStorage({
 		httpOnly: true,
 		secure: process.env.NODE_ENV === 'production',
 		sameSite: 'lax',
-		path: '/dashboard',
+		path: '/preformance',
 		secrets: [secret],
 	},
 });

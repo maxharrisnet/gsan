@@ -1,0 +1,26 @@
+const modemData = {
+	name: 'Starlink Flat HP Kit - Land(Mobility)-KITP00283422',
+	type: 'Starlink',
+	id: 'KITP00283422',
+	sys_id: '36e3a2b81b80d690dfe58449d34bcbe2',
+	details: {
+		type: 'starlink',
+		meta: {
+			dishSerialNumber: 'HPUNE00000065706',
+			kitSerialNumber: 'KITP00283422',
+			serviceLineNumber: 'SL-3233995-17418-80',
+			userTerminalId: '01000000-00000000-00ba11fa',
+			usageLimit: 40,
+			kit1: 'KITP00283422',
+		},
+		id: 'KITP00283422',
+		data: {
+			latency: {}, // Actual object structure not shown
+			throughput: {}, // Actual object structure not shown
+			obstruction: {}, // Actual object structure not shown
+			signal: {}, // Actual object structure not shown
+			uptime: {}, // Actual object structure not shown
+		},
+		usage: [], // Array of usage data objects
+	},
+};

@@ -14,7 +14,7 @@ export async function authenticateUser(loginType, credentials, request) {
 export async function handleLogin(loginType, credentials) {
 	const authResult = await authenticateUser(loginType, credentials);
 	if (authResult.success) {
-		return createUserSession(authResult.userData, '/dashboard');
+		return createUserSession(authResult.userData, '/preformance');
 	}
 	return authResult;
 }

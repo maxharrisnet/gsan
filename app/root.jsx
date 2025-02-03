@@ -26,8 +26,8 @@ export const loader = async ({ request }) => {
 	}
 
 	if (userData && isAuthRoute) {
-		console.log('🚗 User data found, redirecting to /dashboard');
-		return redirect('/dashboard');
+		console.log('🚗 User data found, redirecting to /preformance');
+		return redirect('/preformance');
 	}
 
 	return { userData };

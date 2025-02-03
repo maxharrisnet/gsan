@@ -56,7 +56,7 @@ export async function authenticateShopifyCustomer(email, password, request) {
 
 		const accessToken = customerAccessTokenCreate.customerAccessToken.accessToken;
 
-		return createUserSession({ customerAccessToken: accessToken }, 'customer', '/dashboard');
+		return createUserSession({ customerAccessToken: accessToken }, 'customer', '/preformance');
 	} catch (error) {
 		console.error('Error during Shopify customer login:', error);
 		return {
