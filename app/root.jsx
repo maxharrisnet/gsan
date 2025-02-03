@@ -10,6 +10,7 @@ export const links = () => [
 	{ rel: 'preconnect', href: 'https://cdn.shopify.com/' },
 	{ rel: 'stylesheet', href: 'https://cdn.shopify.com/static/fonts/inter/v4/styles.css' },
 	{ rel: 'stylesheet', href: errorStyles },
+	{ rel: 'stylesheet', href: 'https://fonts.googleapis.com/icon?family=Material+Icons' },
 ];
 
 export const loader = async ({ request }) => {
@@ -26,8 +27,8 @@ export const loader = async ({ request }) => {
 	}
 
 	if (userData && isAuthRoute) {
-		console.log('🚗 User data found, redirecting to /preformance');
-		return redirect('/preformance');
+		console.log('🚗 User data found, redirecting to /performance');
+		return redirect('/performance');
 	}
 
 	return { userData };

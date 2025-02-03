@@ -106,11 +106,6 @@ a.text-black {
 	width: 100%;
 }
 
-.latency-segment {
-	height: 100%;
-	border-radius: 10px;
-}
-
 .latency-success {
 	background-color: var(--wifi-green-light);
 }
@@ -200,11 +195,11 @@ section {
 	margin-bottom: var(--spacing-large);
 }
 
-section h3 {
+/* section h3 {
 	margin-bottom: var(--spacing-base);
 	padding-bottom: var(--spacing-small);
 	border-bottom: 1px solid var(--color-border);
-}
+} */
 
 .modem-list {
 	display: flex;
@@ -219,11 +214,13 @@ section h3 {
 	line-height: 1.2;
 	display: flex;
 	flex-flow: row;
+	justify-content: space-between;
 	padding: var(--spacing-large) var(--spacing-base);
 	gap: var(--spacing-base);
 	border-bottom: 1px solid var(--color-border);
 	border-left: 4px solid transparent;
-	transition: all 0.2s ease;
+	transition: all 0.3s ease;
+	width: 100%;
 }
 
 .modem-list > li:last-child a {
@@ -236,32 +233,56 @@ section h3 {
 	border-left: 4px solid var(--color-primary);
 }
 
+.modem-list > li a .modem-name {
+	flex: 1;
+	display: flex;
+	justify-content: center;
+	align-content: center;
+	flex-flow: column;
+}
+
+.modem-list > li a .modem-chevron {
+	flex: 0;
+}
+
 /* Modem List Styles */
 .modem-card {
 	background: var(--background-white);
 	border: 1px solid var(--color-border);
 	border-radius: var(--border-radius);
-	padding: var(--spacing-base);
+	padding: var(--spacing-large);
 	margin-bottom: var(--spacing-base);
-	transition: all 0.2s ease;
-	display: block;
+	transition: all 0.3s ease;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
 }
 
 .modem-card:hover {
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-	transform: translateY(-2px);
+	background-color: var(--color-background);
 }
 
 .modem-header {
 	display: flex;
 	justify-content: space-between;
-	align-items: center;
+	flex-flow: column;
+}
+
+.modem-header h3 {
+	font-size: var(--font-size-sm);
+	font-weight: 700;
 	margin-bottom: var(--spacing-small);
+}
+
+.modem-header h4 {
+	font-size: var(--font-size-sm);
+	font-weight: 400;
+	margin-bottom: 0;
 }
 
 /* Latency Bar Styles */
 .latency-container {
-	margin-top: var(--spacing-base);
+	/* margin-top: var(--spacing-base); */
 }
 
 .latency-bar {
@@ -275,6 +296,14 @@ section h3 {
 .latency-segment {
 	height: 100%;
 	transition: width 0.3s ease;
+}
+
+.no-latency-message {
+	padding: 0.5rem;
+	color: #666;
+	font-size: 0.875rem;
+	text-align: center;
+	font-style: italic;
 }
 
 /* Account Info Styles */
@@ -328,19 +357,6 @@ section h3 {
 
 	.info-grid {
 		grid-template-columns: 1fr;
-	}
-}
-
-/* Provider Dashboard Specific Styles */
-.dashboard-grid {
-	display: grid;
-	grid-template-columns: 1fr;
-	gap: var(--spacing-large);
-}
-
-@media (min-width: 1024px) {
-	.dashboard-grid {
-		grid-template-columns: 2fr 1fr;
 	}
 }
 

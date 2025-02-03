@@ -1,4 +1,4 @@
-// app/routes/preformance.jsx
+// app/routes/performance.jsx
 import { defer } from '@remix-run/node';
 import { useLoaderData, Await, Link } from '@remix-run/react';
 import { Suspense } from 'react';
@@ -100,9 +100,10 @@ export default function Dashboard() {
 													key={modem.id}
 													className={`modem-item status-${modem.status?.toLowerCase()}`}
 												>
-													<Link to={`/modem/${modem.id}`}>
+													<Link to={`/modem/${modem.type.toLowerCase()}/${modem.id}`}>
 														<span className='modem-name'>{modem.name}</span>
 														<span className='modem-status'>{modem.status}</span>
+														<span className='modem-chevron material-icons'>chevron_right</span>
 													</Link>
 												</li>
 											))
@@ -165,7 +166,7 @@ export default function Dashboard() {
 												<APIProvider apiKey={googleMapsApiKey}>
 													<Map
 														defaultCenter={{ lat: 39.8283, lng: -98.5795 }}
-														defaultZoom={10}
+														defaultZoom={7}
 														gestureHandling={'greedy'}
 														disableDefaultUI={false}
 													>

@@ -4,7 +4,7 @@
 	--font-family-base: 'Inter', 'Helvetica Neue', Arial, sans-serif;
 	--font-size-base: 16px;
 	--font-size-large: 20px;
-	--font-size-small: 14px;
+	--font-size-small: 13px;
 
 	--container-width: 1200px;
 	--spacing-base: 16px;
@@ -138,6 +138,50 @@ a:hover {
 	border: 1px solid #e0e0e0;
 	border-radius: var(--border-radius);
 	padding: var(--spacing-base);
+}
+
+/* Icons */
+body .material-icons {
+	font-size: 20px;
+	vertical-align: middle;
+	display: flex;
+	flex-flow: column;
+	justify-content: center;
+}
+
+/* Size variations */
+.material-icons.icon-sm {
+	font-size: 16px;
+}
+
+.material-icons.icon-lg {
+	font-size: 24px;
+}
+
+.material-icons.icon-xl {
+	font-size: 32px;
+}
+
+/* Position utilities */
+.icon-left {
+	margin-right: 8px;
+}
+
+.icon-right {
+	margin-left: auto;
+}
+
+/* Common icon colors - can match your theme */
+.icon-primary {
+	color: var(--color-primary);
+}
+
+.icon-secondary {
+	color: var(--color-secondary);
+}
+
+.icon-muted {
+	color: var(--color-muted);
 }
 
 .button-wrapper {

@@ -1,4 +1,4 @@
-// app/routes/preformance.jsx
+// app/routes/performance.jsx
 import { defer } from '@remix-run/node';
 import { useLoaderData, Await, Link } from '@remix-run/react';
 import { Suspense } from 'react';
@@ -86,7 +86,6 @@ export default function Dashboard() {
 						errorElement={<div className='error-container'>Error loading dashboard data</div>}
 					>
 						{(resolvedData) => {
-							// console.log('✨ Resolved data:', resolvedData);
 							const { services, gpsData } = resolvedData;
 
 							if (!services || !Array.isArray(services) || services.length === 0) {
@@ -119,51 +118,47 @@ export default function Dashboard() {
 							);
 
 							return (
-								<div className='dashboard-grid'>
-									{/* Stats Overview */}
-									<section className='stats-overview card'>
-										{services.map((service) => (
-											<div
-												key={service.id}
-												className='service-card card'
-											>
-												<h3>{service.name}</h3>
-												{service.modems && service.modems.length > 0 ? (
-													<div className='modems-grid'>
-														{service.modems.map((modem) => (
-															<Link
-																key={modem.id}
-																to={`/modem/${modem.type.toLowerCase()}/${modem.id}`}
-																prefetch='intent'
-																className='modem-card'
-															>
-																<div className='modem-header'>
-																	<h4>{modem.name}</h4>
-																	<span className={`status-badge ${modem.status}`}>{modem.status}</span>
+								<section className='stats-overview card'>
+									{services.map((service) => (
+										<div key={service.id}>
+											{service.modems && service.modems.length > 0 ? (
+												<div>
+													{service.modems.map((modem) => (
+														<Link
+															key={modem.id}
+															to={`/modem/${modem.type.toLowerCase()}/${modem.id}`}
+															prefetch='intent'
+															className='modem-card'
+														>
+															<div className='modem-header'>
+																<h3>{modem.name}</h3>
+																<h4>{service.name}</h4>
+																<span className={`status-badge ${modem.status}`}>{modem.status}</span>
+															</div>
+															{modem.details?.data?.latency?.data ? (
+																<div className='latency-bar'>
+																	{modem.details.data.latency.data.map((point, index) => (
+																		<div
+																			key={index}
+																			className={`latency-segment ${getLatencyClass(point[1])}`}
+																			style={{
+																				width: `${(10 / 1440) * 100}%`,
+																			}}
+																		/>
+																	))}
 																</div>
-																{modem.details?.data?.latency?.data && (
-																	<div className='latency-bar'>
-																		{modem.details.data.latency.data.map((point, index) => (
-																			<div
-																				key={index}
-																				className={`latency-segment ${getLatencyClass(point[1])}`}
-																				style={{
-																					width: `${(10 / 1440) * 100}%`,
-																				}}
-																			/>
-																		))}
-																	</div>
-																)}
-															</Link>
-														))}
-													</div>
-												) : (
-													<p className='no-modems'>No modems available</p>
-												)}
-											</div>
-										))}
-									</section>
-								</div>
+															) : (
+																<div className='no-latency-message'>No Latency Data Available</div>
+															)}
+														</Link>
+													))}
+												</div>
+											) : (
+												<p className='no-modems'>No modems available</p>
+											)}
+										</div>
+									))}
+								</section>
 							);
 						}}
 					</Await>
