@@ -3,7 +3,6 @@ import { defer } from '@remix-run/node';
 import { useLoaderData, Await, Link } from '@remix-run/react';
 import { Suspense } from 'react';
 import { fetchServicesAndModemData, getCompassAccessToken } from '../compass.server';
-import { fetchGPS } from './api.gps';
 import Layout from '../components/layout/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
@@ -18,50 +17,13 @@ export async function loader({ request }) {
 		const accessToken = await getCompassAccessToken();
 		const servicesPromise = fetchServicesAndModemData()
 			.then(async ({ services }) => {
-				// Group modems by provider type
-				const modemsByProvider = services.reduce((acc, service) => {
-					(service.modems || []).forEach((modem) => {
-						if (modem.type) {
-							acc[modem.type.toLowerCase()] = acc[modem.type.toLowerCase()] || [];
-							acc[modem.type.toLowerCase()].push(modem.id);
-						}
-					});
-					return acc;
-				}, {});
-
-				// Fetch GPS data for each provider type
-				const gpsDataPromises = Object.entries(modemsByProvider).map(async ([provider, ids]) => {
-					try {
-						console.log(`🗺️ Fetching GPS data for ${provider}:`, ids);
-						const gpsData = await fetchGPS(provider, ids, accessToken);
-						return { provider, data: gpsData };
-					} catch (error) {
-						console.error(`🚨 GPS fetch error for ${provider}:`, error);
-						return { provider, data: {} };
-					}
-				});
-
-				const gpsResults = await Promise.all(gpsDataPromises);
-				const gpsDataMap = gpsResults.reduce((acc, { provider, data }) => {
-					if (data && typeof data === 'object') {
-						return {
-							...acc,
-							...data,
-						};
-					}
-					return acc;
-				}, {});
-
-				console.log('🗺️ Combined GPS data map:', gpsDataMap);
-
 				return {
 					services: services,
-					gpsData: gpsDataMap,
 				};
 			})
 			.catch((error) => {
 				console.error('🍎 Error in services promise chain:', error);
-				return { services: [], gpsData: {} };
+				return { services: [] };
 			});
 
 		return defer({
@@ -86,7 +48,7 @@ export default function Dashboard() {
 						errorElement={<div className='error-container'>Error loading dashboard data</div>}
 					>
 						{(resolvedData) => {
-							const { services, gpsData } = resolvedData;
+							const { services } = resolvedData;
 
 							if (!services || !Array.isArray(services) || services.length === 0) {
 								return (
@@ -96,26 +58,6 @@ export default function Dashboard() {
 									</div>
 								);
 							}
-
-							// Extract modem locations with GPS data
-							const modemLocations = services.flatMap((service) =>
-								(service.modems || [])
-									.map((modem) => {
-										const gpsInfo = gpsData[modem.id]?.[0]; // Get latest GPS entry
-										return gpsInfo
-											? {
-													id: modem.id,
-													name: modem.name,
-													status: modem.status,
-													position: {
-														lat: gpsInfo.lat,
-														lng: gpsInfo.lon, // Note: API uses 'lon' not 'lng'
-													},
-												}
-											: null;
-									})
-									.filter(Boolean)
-							);
 
 							return (
 								<section className='stats-overview card'>
