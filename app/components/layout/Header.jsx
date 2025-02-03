@@ -41,9 +41,11 @@ const Header = () => {
 				<nav className='nav'>
 					<ul className='nav-list'>
 						<li className='nav-item'>
+							<Link to={`/map`}>Map</Link>
+						</li>
+						<li className='nav-item'>
 							<Link to={`/performance`}>Performance</Link>
 						</li>
-
 						<li className='nav-item'>
 							<Link to={`/reports/starlink/usage`}>Reports</Link>
 						</li>

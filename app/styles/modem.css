@@ -44,11 +44,6 @@
 	height: 300px;
 }
 
-/* Map Section */
-.map-section {
-	height: 400px;
-}
-
 /* Status Colors */
 .text-success {
 	color: var(--color-success);

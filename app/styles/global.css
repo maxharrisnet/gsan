@@ -148,31 +148,6 @@ a:hover {
 	width: 100%;
 }
 
-.login-button-wrapper {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-}
-
-.login-button-wrapper > div {
-	display: flex;
-	flex-flow: column;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--spacing-large);
-}
-
-.login-button-wrapper img {
-	height: 50px;
-	width: auto;
-}
-
-.login-logo {
-	margin-bottom: var(--spacing-xlarge);
-	width: 280px;
-	height: auto;
-}
-
 button,
 .button {
 	font-family: var(--font-family-base);

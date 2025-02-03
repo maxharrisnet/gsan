@@ -5,7 +5,9 @@ import { Suspense } from 'react';
 import { fetchServicesAndModemData, getCompassAccessToken } from '../compass.server';
 import { fetchGPS } from './api.gps';
 import Layout from '../components/layout/Layout';
+import Sidebar from '../components/layout/Sidebar';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import dashboardStyles from '../styles/performance.css?url';
 
@@ -16,8 +18,12 @@ export const links = () => [{ rel: 'stylesheet', href: dashboardStyles }];
 export async function loader({ request }) {
 	try {
 		const accessToken = await getCompassAccessToken();
+		const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
+
 		const servicesPromise = fetchServicesAndModemData()
 			.then(async ({ services }) => {
+				console.log('📦 Raw services data received');
+
 				// Group modems by provider type
 				const modemsByProvider = services.reduce((acc, service) => {
 					(service.modems || []).forEach((modem) => {
@@ -67,6 +73,7 @@ export async function loader({ request }) {
 		return defer({
 			servicesData: servicesPromise,
 			accessToken,
+			googleMapsApiKey,
 		});
 	} catch (error) {
 		console.error('🚨 Error in loader:', error);
@@ -75,11 +82,42 @@ export async function loader({ request }) {
 }
 
 export default function Dashboard() {
-	const { servicesData } = useLoaderData();
+	const { servicesData, googleMapsApiKey } = useLoaderData();
 
 	return (
 		<Layout>
-			<main className='content'>
+			<Sidebar>
+				<div className='dashboard-sidebar'>
+					<Suspense fallback={<LoadingSpinner />}>
+						<Await resolve={servicesData}>
+							{(resolvedData) => {
+								const { services } = resolvedData;
+								return services?.length > 0 ? (
+									<ul className='modem-list'>
+										{services.flatMap((service) =>
+											service.modems?.map((modem) => (
+												<li
+													key={modem.id}
+													className={`modem-item status-${modem.status?.toLowerCase()}`}
+												>
+													<Link to={`/modem/${modem.id}`}>
+														<span className='modem-name'>{modem.name}</span>
+														<span className='modem-status'>{modem.status}</span>
+													</Link>
+												</li>
+											))
+										)}
+									</ul>
+								) : (
+									<p>No modems found</p>
+								);
+							}}
+						</Await>
+					</Suspense>
+				</div>
+			</Sidebar>
+
+			<main className='content map-page'>
 				<Suspense fallback={<LoadingSpinner />}>
 					<Await
 						resolve={servicesData}
@@ -119,50 +157,34 @@ export default function Dashboard() {
 							);
 
 							return (
-								<div className='dashboard-grid'>
-									{/* Stats Overview */}
-									<section className='stats-overview card'>
-										{services.map((service) => (
-											<div
-												key={service.id}
-												className='service-card card'
-											>
-												<h3>{service.name}</h3>
-												{service.modems && service.modems.length > 0 ? (
-													<div className='modems-grid'>
-														{service.modems.map((modem) => (
-															<Link
+								<div className=''>
+									{/* Map */}
+									{modemLocations.length > 0 && (
+										<section className='map-section '>
+											<div className='map-container'>
+												<APIProvider apiKey={googleMapsApiKey}>
+													<Map
+														defaultCenter={{ lat: 39.8283, lng: -98.5795 }}
+														defaultZoom={10}
+														gestureHandling={'greedy'}
+														disableDefaultUI={false}
+													>
+														{modemLocations.map((modem) => (
+															<Marker
 																key={modem.id}
-																to={`/modem/${modem.type.toLowerCase()}/${modem.id}`}
-																prefetch='intent'
-																className='modem-card'
-															>
-																<div className='modem-header'>
-																	<h4>{modem.name}</h4>
-																	<span className={`status-badge ${modem.status}`}>{modem.status}</span>
-																</div>
-																{modem.details?.data?.latency?.data && (
-																	<div className='latency-bar'>
-																		{modem.details.data.latency.data.map((point, index) => (
-																			<div
-																				key={index}
-																				className={`latency-segment ${getLatencyClass(point[1])}`}
-																				style={{
-																					width: `${(10 / 1440) * 100}%`,
-																				}}
-																			/>
-																		))}
-																	</div>
-																)}
-															</Link>
+																position={modem.position}
+																title={modem.name}
+																// icon={{
+																// 	url: `/assets/markers/${modem.status}.png`,
+																// 	scaledSize: { width: 30, height: 30 },
+																// }}
+															/>
 														))}
-													</div>
-												) : (
-													<p className='no-modems'>No modems available</p>
-												)}
+													</Map>
+												</APIProvider>
 											</div>
-										))}
-									</section>
+										</section>
+									)}
 								</div>
 							);
 						}}
@@ -171,12 +193,4 @@ export default function Dashboard() {
 			</main>
 		</Layout>
 	);
-}
-
-// Helper functions
-function getLatencyClass(latency) {
-	if (!latency) return 'latency-error';
-	if (latency < 50) return 'latency-success';
-	if (latency < 150) return 'latency-warning';
-	return 'latency-error';
 }
