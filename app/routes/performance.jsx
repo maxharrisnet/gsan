@@ -7,8 +7,62 @@ import Layout from '../components/layout/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import dashboardStyles from '../styles/performance.css?url';
+import { Line } from 'react-chartjs-2';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+
+// Add chart configuration
+const latencyChartOptions = {
+	responsive: true,
+	maintainAspectRatio: false,
+	height: 60,
+	plugins: {
+		tooltip: {
+			mode: 'index',
+			intersect: false,
+			callbacks: {
+				title: (context) => {
+					const timestamp = context[0]?.raw?.timestamp;
+					if (!timestamp) return '';
+					return new Date(timestamp).toLocaleTimeString();
+				},
+				label: (context) => {
+					const value = context?.raw?.y ?? 0;
+					return `Latency: ${value}ms`;
+				},
+			},
+		},
+		legend: {
+			display: false,
+		},
+	},
+	scales: {
+		x: {
+			type: 'linear',
+			display: false,
+		},
+		y: {
+			beginAtZero: true,
+			display: false,
+			min: 0,
+			max: 200,
+		},
+	},
+	elements: {
+		line: {
+			tension: 0, // Makes the line straight
+			borderWidth: 2,
+		},
+		point: {
+			radius: 0, // Hide points
+			hoverRadius: 4, // Show points on hover
+		},
+	},
+	interaction: {
+		intersect: false,
+		mode: 'index',
+	},
+};
 
 export const links = () => [{ rel: 'stylesheet', href: dashboardStyles }];
 
@@ -78,17 +132,10 @@ export default function Dashboard() {
 																<span className={`status-badge ${modem.status}`}>{modem.status}</span>
 															</div>
 															{modem.details?.data?.latency?.data ? (
-																<div className='latency-bar'>
-																	{modem.details.data.latency.data.map((point, index) => (
-																		<div
-																			key={index}
-																			className={`latency-segment ${getLatencyClass(point[1])}`}
-																			style={{
-																				width: `${(10 / 1440) * 100}%`,
-																			}}
-																		/>
-																	))}
-																</div>
+																<LatencyChart
+																	latencyData={modem.details.data.latency.data}
+																	modem={modem}
+																/>
 															) : (
 																<div className='no-latency-message'>No Latency Data Available</div>
 															)}
@@ -110,10 +157,32 @@ export default function Dashboard() {
 	);
 }
 
-// Helper functions
-function getLatencyClass(latency) {
-	if (!latency) return 'latency-error';
-	if (latency < 50) return 'latency-success';
-	if (latency < 150) return 'latency-warning';
-	return 'latency-error';
+// Replace the existing latency bar with a Line chart
+function LatencyChart({ latencyData, modem }) {
+	// If no data is available
+	if (!latencyData || latencyData.length === 0) {
+		return <div className='no-latency-message'>No Data Available</div>;
+	}
+
+	// Get the latest latency value
+	const latestDataPoint = latencyData[latencyData.length - 1];
+	const latestLatency = latestDataPoint[1];
+	const timestamp = new Date(latestDataPoint[0]).toLocaleTimeString();
+
+	return (
+		<div className='service-status-container'>
+			<div className='status-indicator'>
+				<span className='status-badge online'>Online</span>
+			</div>
+			<div className='latency-bar-container'>
+				<div className='latency-bar'>
+					{latestLatency && (
+						<div className='latency-tooltip'>
+							{timestamp}: {latestLatency} ms
+						</div>
+					)}
+				</div>
+			</div>
+		</div>
+	);
 }
