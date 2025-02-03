@@ -189,6 +189,10 @@ a > .section:hover {
 	position: relative;
 }
 
+.user-avatar:hover .logout-button {
+	display: block;
+}
+
 .user-avatar .logout-button {
 	position: absolute;
 	top: 100%;
@@ -196,19 +200,16 @@ a > .section:hover {
 	right: 0;
 	background-color: var(--background-white);
 	border: 1px solid var(--color-border);
-	border-radius: 0 0 4px 4px;
-	font-size: 0.875rem;
-	padding: 0.5rem;
+	border-radius: var(--border-radius);
+	color: var(--color-text);
+	font-size: var(--font-size-small);
+	padding: var(--spacing-small);
 	display: none;
 	width: auto;
 }
 
 .logout-button:hover {
 	text-decoration: underline;
-}
-
-.user-avatar:hover .logout-button {
-	display: block;
 }
 
 .footer {

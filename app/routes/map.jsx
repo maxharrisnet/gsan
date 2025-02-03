@@ -38,7 +38,7 @@ export async function loader({ request }) {
 				// Fetch GPS data for each provider type
 				const gpsDataPromises = Object.entries(modemsByProvider).map(async ([provider, ids]) => {
 					try {
-						console.log(`🗺️ Fetching GPS data for ${provider}:`, ids);
+						console.log(`🗺️ Fetching GPS data for ${provider}`);
 						const gpsData = await fetchGPS(provider, ids, accessToken);
 						return { provider, data: gpsData };
 					} catch (error) {
@@ -57,8 +57,6 @@ export async function loader({ request }) {
 					}
 					return acc;
 				}, {});
-
-				console.log('🗺️ Combined GPS data map:', gpsDataMap);
 
 				return {
 					services: services,

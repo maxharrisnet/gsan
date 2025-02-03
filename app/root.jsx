@@ -17,6 +17,7 @@ export const loader = async ({ request }) => {
 	const session = await getSession(request.headers.get('Cookie'));
 	const url = new URL(request.url);
 	const userData = session.get('userData');
+	const isProd = process.env.NODE_ENV === 'production';
 
 	// Add check for auth routes to prevent redirect loop
 	const isAuthRoute = url.pathname === '/auth' || url.pathname === '/login' || url.pathname === '/';
@@ -31,7 +32,7 @@ export const loader = async ({ request }) => {
 		return redirect('/performance');
 	}
 
-	return { userData };
+	return { userData, isProd };
 };
 
 export default function Root() {
@@ -55,7 +56,7 @@ export default function Root() {
 
 export function ErrorBoundary() {
 	const error = useRouteError();
-	const isProd = process.env.NODE_ENV === 'production';
+	const { isProd } = useLoaderData();
 
 	return (
 		<html lang='en'>
