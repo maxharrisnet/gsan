@@ -4,7 +4,7 @@
 	--font-family-base: 'Inter', 'Helvetica Neue', Arial, sans-serif;
 	--font-size-base: 16px;
 	--font-size-large: 20px;
-	--font-size-small: 12px;
+	--font-size-small: 13px;
 
 	--container-width: 1200px;
 	--spacing-base: 16px;
@@ -23,9 +23,13 @@
 	--color-text: #212b36;
 	--color-text-light: #637381;
 	--color-border: #dfe3e8;
+	--color-success: #4caf50;
+	--color-warning: #ff9800;
+	--color-error: #f44336;
 
 	/* Original colors */
 	--wifi-green: #4caf50; /* A more vibrant green */
+
 	--monitor-blue: #2196f3; /* A more vibrant blue */
 	--phone-orange: #ff9800; /* A more vibrant orange */
 	--text-black: #212121; /* A slightly darker black */
@@ -127,7 +131,7 @@ a {
 }
 
 a:hover {
-	text-decoration: underline;
+	text-decoration: none;
 }
 
 .capitalize {
@@ -149,7 +153,6 @@ body .material-icons {
 	justify-content: center;
 }
 
-/* Size variations */
 .material-icons.icon-sm {
 	font-size: 16px;
 }
@@ -162,7 +165,6 @@ body .material-icons {
 	font-size: 32px;
 }
 
-/* Position utilities */
 .icon-left {
 	margin-right: 8px;
 }
@@ -171,7 +173,6 @@ body .material-icons {
 	margin-left: auto;
 }
 
-/* Common icon colors - can match your theme */
 .icon-primary {
 	color: var(--color-primary);
 }
@@ -183,6 +184,8 @@ body .material-icons {
 .icon-muted {
 	color: var(--color-muted);
 }
+
+/* Buttons */
 
 .button-wrapper {
 	display: flex;
@@ -211,20 +214,36 @@ button:hover,
 	text-decoration: none;
 }
 
-.bar-button {
-	border-bottom: 1px solid var(--color-border);
-	cursor: pointer;
-	display: flex;
+.list-button {
+	font-size: var(--font-size-small);
 	font-weight: 500;
-	align-items: center;
-	justify-content: flex-start;
+	color: var(--color-text);
+	line-height: 1.2;
+	display: flex;
+	padding: var(--spacing-large) var(--spacing-base);
 	gap: var(--spacing-base);
-	padding: var(--spacing-base);
-	/* transition: background-color 0.3s; */
+	border-bottom: 1px solid var(--color-border);
+	border-left: 4px solid transparent;
+	border-radius: 0;
+	transition: all 0.3s ease;
 }
 
-.bar-button:hover {
-	background-color: var(--color-background-light);
+.list-button:hover {
+	background-color: var(--color-background);
+	text-decoration: none;
+	border-left: 4px solid var(--color-primary);
+}
+
+.list-button > span {
+	flex: 1;
+	display: flex;
+	justify-content: center;
+	align-content: center;
+	flex-flow: column;
+}
+
+.list-button > span.material-icons {
+	flex: 0;
 }
 
 .form-group {

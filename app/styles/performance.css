@@ -20,10 +20,6 @@ section.map-section {
 	height: 900px;
 }
 
-.content.map-page {
-	padding: 0;
-}
-
 .map-container {
 	width: 100%;
 	height: 100%;
@@ -208,38 +204,10 @@ section {
 	margin: 0;
 }
 
-.modem-list > li a {
-	font-size: var(--font-size-small);
-	font-weight: 500;
-	line-height: 1.2;
-	display: flex;
-	flex-flow: row;
-	justify-content: space-between;
-	padding: var(--spacing-large) var(--spacing-base);
-	gap: var(--spacing-base);
-	border-bottom: 1px solid var(--color-border);
-	border-left: 4px solid transparent;
-	transition: all 0.3s ease;
-	width: 100%;
-}
-
 .modem-list > li:last-child a {
 	border-bottom: none;
 }
 
-.modem-list > li a:hover {
-	background-color: var(--color-background);
-	text-decoration: none;
-	border-left: 4px solid var(--color-primary);
-}
-
-.modem-list > li a .modem-name {
-	flex: 1;
-	display: flex;
-	justify-content: center;
-	align-content: center;
-	flex-flow: column;
-}
 
 .modem-list > li a .modem-chevron {
 	flex: 0;

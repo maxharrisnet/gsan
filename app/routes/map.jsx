@@ -87,38 +87,38 @@ export default function Dashboard() {
 	return (
 		<Layout>
 			<Sidebar>
-				<div className='dashboard-sidebar'>
-					<Suspense fallback={<LoadingSpinner />}>
-						<Await resolve={servicesData}>
-							{(resolvedData) => {
-								const { services } = resolvedData;
-								return services?.length > 0 ? (
-									<ul className='modem-list'>
-										{services.flatMap((service) =>
-											service.modems?.map((modem) => (
-												<li
-													key={modem.id}
-													className={`modem-item status-${modem.status?.toLowerCase()}`}
+				<Suspense fallback={<LoadingSpinner />}>
+					<Await resolve={servicesData}>
+						{(resolvedData) => {
+							const { services } = resolvedData;
+							return services?.length > 0 ? (
+								<ul className='modem-list'>
+									{services.flatMap((service) =>
+										service.modems?.map((modem) => (
+											<li
+												key={modem.id}
+												className={`modem-item status-${modem.status?.toLowerCase()}`}
+											>
+												<Link
+													className='list-button'
+													to={`/modem/${modem.type.toLowerCase()}/${modem.id}`}
 												>
-													<Link to={`/modem/${modem.type.toLowerCase()}/${modem.id}`}>
-														<span className='modem-name'>{modem.name}</span>
-														<span className='modem-status'>{modem.status}</span>
-														<span className='modem-chevron material-icons'>chevron_right</span>
-													</Link>
-												</li>
-											))
-										)}
-									</ul>
-								) : (
-									<p>No modems found</p>
-								);
-							}}
-						</Await>
-					</Suspense>
-				</div>
+													<span className='modem-name'>{modem.name}</span>
+													<span className='modem-chevron material-icons'>chevron_right</span>
+												</Link>
+											</li>
+										))
+									)}
+								</ul>
+							) : (
+								<p>No modems found</p>
+							);
+						}}
+					</Await>
+				</Suspense>
 			</Sidebar>
 
-			<main className='content map-page'>
+			<main className='content content-full-width'>
 				<Suspense fallback={<LoadingSpinner />}>
 					<Await
 						resolve={servicesData}

@@ -47,7 +47,12 @@
 	height: 100%;
 }
 
+.sidebar-content {
+	padding: var(--spacing-large);
+}
+
 /* Main content styles */
+
 .content {
 	flex: 1;
 	flex-flow: column;
@@ -57,8 +62,13 @@
 	gap: var(--spacing-large);
 }
 
+.content.content-full-width {
+	padding: 0;
+}
+
 .content-centered {
 	display: grid;
+
 	place-items: center;
 	max-width: 600px;
 	width: 100%;
@@ -87,6 +97,13 @@
 a > .section:hover {
 	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 	background-color: var(--color-background-light);
+}
+
+.chart-container {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-large);
+	padding: var(--spacing-large);
 }
 
 /* Header styles */

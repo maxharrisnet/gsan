@@ -1,22 +1,31 @@
 import { useEffect, useRef } from 'react';
-import { useLoaderData } from '@remix-run/react';
+import { useLoaderData, Link } from '@remix-run/react';
 import { loader } from './api.modem';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
-// import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, BarElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import chartStyles from '../styles/charts.css?url';
+import modemStyles from '../styles/modem.css?url';
 
-export const links = () => [{ rel: 'stylesheet', href: chartStyles }];
+export const links = () => [
+	{ rel: 'stylesheet', href: chartStyles },
+	{ rel: 'stylesheet', href: modemStyles },
+	{
+		rel: 'stylesheet',
+		href: 'https://fonts.googleapis.com/icon?family=Material+Icons',
+	},
+];
 
 export { loader };
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, BarElement, LineElement, Title, Tooltip, Legend);
 
 export default function ModemDetails() {
-	const { modem, gpsData, latencyData, throughputData, signalQualityData, obstructionData, usageData, uptimeData } = useLoaderData();
+	const { modem, mapsAPIKey, gpsData, latencyData, throughputData, signalQualityData, obstructionData, usageData, uptimeData } = useLoaderData();
 
+	console.log('🐵 Modem:', modem);
 	const latencyTimestamps = latencyData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
 	const latencyValues = latencyData.map((entry) => entry[1]);
 
@@ -150,173 +159,185 @@ export default function ModemDetails() {
 	return (
 		<Layout>
 			<Sidebar>
-				<div>
-					<h2>{modem.name}</h2>
+				<div className='sidebar-header'>
+					<h1 className='provider-name'>Switch Canada</h1>
 				</div>
-				<p className='capitalize'>{modem.type}</p>
-				<a
-					className='bar-button'
-					href='/dashboard'
+				<div className='search-container'>
+					<input
+						type='search'
+						placeholder='Search'
+						className='search-input'
+					/>
+				</div>
+
+				<h2 className='select-device-heading'>Select a Device</h2>
+				<Link
+					to={`/modem/${modem.provider}`}
+					className='list-button back-link'
 				>
-					<svg
-						xmlns='http://www.w3.org/2000/svg'
-						viewBox='0 0 24 24'
-						fill='none'
-						stroke='currentColor'
-						strokeWidth='2'
-						strokeLinecap='round'
-						strokeLinejoin='round'
-						className='feather feather-arrow-left'
-					>
-						<line
-							x1='19'
-							y1='12'
-							x2='5'
-							y2='12'
-						></line>
-						<polyline points='12 19 5 12 12 5'></polyline>
-					</svg>
-					<span>{modem.id}</span>
-					<span className='sr-only'>Back</span>
-				</a>
+					<span className='material-icons'>arrow_back</span>
+					<span>Switch Canada-{modem.id}</span>
+				</Link>
+
+				<div className='devices-section'>
+					<button className='list-button section-toggle'>
+						<span>Modems</span>
+						<span className='material-icons'>expand_more</span>
+					</button>
+
+					<div className='modem-list'>
+						<div className='modem-item active'>
+							<div className='modem-info'>
+								<span className='status-badge online'>Online</span>
+								<h3 className='modem-name'>{modem.name}</h3>
+								<p className='modem-id'>{modem.id}</p>
+							</div>
+							<div className='provider-brand'>
+								<span>STARLINK</span>
+							</div>
+						</div>
+					</div>
+				</div>
 			</Sidebar>
-			<main className='content'>
+
+			<main className='content content-full-width'>
 				{gpsData && gpsData.length > 0 && (
-					<></>
-					// <section className='map-wrapper'>
-					// 	<APIProvider apiKey={mapsAPIKey}>
-					// 		<Map
-					// 			style={{ width: '100%', height: '400px' }}
-					// 			defaultCenter={{ lat: gpsData[0].lat, lng: gpsData[0].lon }}
-					// 			defaultZoom={8}
-					// 			gestureHandling={'greedy'}
-					// 			disableDefaultUI={true}
-					// 		>
-					// 			<Marker position={{ lat: gpsData[0].lat, lng: gpsData[0].lon }} />
-					// 		</Map>
-					// 	</APIProvider>
-					// </section>
+					<section className='map-wrapper'>
+						<APIProvider apiKey={mapsAPIKey}>
+							<Map
+								style={{ width: '100%', height: '60vh' }}
+								defaultCenter={{ lat: gpsData[0].lat, lng: gpsData[0].lon }}
+								defaultZoom={8}
+								gestureHandling={'greedy'}
+								disableDefaultUI={true}
+							>
+								<Marker position={{ lat: gpsData[0].lat, lng: gpsData[0].lon }} />
+							</Map>
+						</APIProvider>
+					</section>
 				)}
-				<section className='section chart-wrapper'>
-					<h2>Usage</h2>
-					<Bar
-						height='100'
-						width='300'
-						data={{
-							labels: usageLabels,
-							datasets: [
-								{ label: 'Download (GB)', data: usagePriority },
-								{ label: 'Upload (GB)', data: usageUnlimited },
-							],
-						}}
-						options={{
-							scales: {
-								y: {
-									ticks: { callback: (value) => `${value}GB`, stepSize: 1 },
-									beginAtZero: true,
+				<div className='chart-container'>
+					<section className='section chart-wrapper'>
+						<h2>Usage</h2>
+						<Bar
+							height='100'
+							width='300'
+							data={{
+								labels: usageLabels,
+								datasets: [
+									{ label: 'Download (GB)', data: usagePriority },
+									{ label: 'Upload (GB)', data: usageUnlimited },
+								],
+							}}
+							options={{
+								scales: {
+									y: {
+										ticks: { callback: (value) => `${value}GB`, stepSize: 1 },
+										beginAtZero: true,
+									},
 								},
-							},
-						}}
-					/>
-				</section>
-				<section className='section chart-wrapper'>
-					<h2>Signal Quality</h2>
-					<Line
-						height='100'
-						width='300'
-						data={{
-							labels: signalQualityLabels,
-							datasets: [{ label: 'Signal Quality (%)', data: signalQualityValues }],
-						}}
-						options={{
-							scales: {
-								y: {
-									ticks: { callback: (value) => `${value}%`, stepSize: 20 },
-									beginAtZero: true,
+							}}
+						/>
+					</section>
+					<section className='section chart-wrapper'>
+						<h2>Signal Quality</h2>
+						<Line
+							height='100'
+							width='300'
+							data={{
+								labels: signalQualityLabels,
+								datasets: [{ label: 'Signal Quality (%)', data: signalQualityValues }],
+							}}
+							options={{
+								scales: {
+									y: {
+										ticks: { callback: (value) => `${value}%`, stepSize: 20 },
+										beginAtZero: true,
+									},
 								},
-							},
-						}}
-					/>
-				</section>
-				<section className='section chart-wrapper'>
-					<h2>Throughput</h2>
-					<Line
-						height='100'
-						width='300'
-						data={{
-							labels: throughputTimestamps,
-							datasets: [
-								{ label: 'Download (Mbps)', data: throughputDownload },
-								{ label: 'Upload (Mbps)', data: throughputUpload },
-							],
-						}}
-						options={{
-							scales: {
-								y: {
-									ticks: { callback: (value) => `${value}Mbps`, stepSize: 20 },
-									beginAtZero: true,
+							}}
+						/>
+					</section>
+					<section className='section chart-wrapper'>
+						<h2>Throughput</h2>
+						<Line
+							height='100'
+							width='300'
+							data={{
+								labels: throughputTimestamps,
+								datasets: [
+									{ label: 'Download (Mbps)', data: throughputDownload },
+									{ label: 'Upload (Mbps)', data: throughputUpload },
+								],
+							}}
+							options={{
+								scales: {
+									y: {
+										ticks: { callback: (value) => `${value}Mbps`, stepSize: 20 },
+										beginAtZero: true,
+									},
 								},
-							},
-						}}
-					/>
-				</section>
-				<section className='section chart-wrapper'>
-					<h2>Latency</h2>
-					<Line
-						height='100'
-						width='300'
-						data={{
-							labels: latencyTimestamps,
-							datasets: [{ label: 'Latency (ms)', data: latencyValues }],
-						}}
-						options={{
-							scales: {
-								y: {
-									ticks: { callback: (value) => `${value}ms`, stepSize: 20 },
-									beginAtZero: true,
+							}}
+						/>
+					</section>
+					<section className='section chart-wrapper'>
+						<h2>Latency</h2>
+						<Line
+							height='100'
+							width='300'
+							data={{
+								labels: latencyTimestamps,
+								datasets: [{ label: 'Latency (ms)', data: latencyValues }],
+							}}
+							options={{
+								scales: {
+									y: {
+										ticks: { callback: (value) => `${value}ms`, stepSize: 20 },
+										beginAtZero: true,
+									},
 								},
-							},
-						}}
-					/>
-				</section>
-				<section className='section chart-wrapper'>
-					<h2>Obstruction</h2>
-					<Line
-						height='100'
-						width='300'
-						data={{
-							labels: obstructionLabels,
-							datasets: [{ label: 'Obstruction (%)', data: obstructionValues }],
-						}}
-						options={{
-							scales: {
-								y: {
-									ticks: { callback: (value) => `${value}%`, stepSize: 20 },
-									beginAtZero: true,
+							}}
+						/>
+					</section>
+					<section className='section chart-wrapper'>
+						<h2>Obstruction</h2>
+						<Line
+							height='100'
+							width='300'
+							data={{
+								labels: obstructionLabels,
+								datasets: [{ label: 'Obstruction (%)', data: obstructionValues }],
+							}}
+							options={{
+								scales: {
+									y: {
+										ticks: { callback: (value) => `${value}%`, stepSize: 20 },
+										beginAtZero: true,
+									},
 								},
-							},
-						}}
-					/>
-				</section>
-				<section className='section chart-wrapper'>
-					<h2>Uptime</h2>
-					<Line
-						height='100'
-						width='300'
-						data={{
-							labels: uptimeLabels,
-							datasets: [{ label: 'Uptime (%)', data: uptimeValues }],
-						}}
-						options={{
-							scales: {
-								y: {
-									ticks: { callback: (value) => `${value}%`, stepSize: 20 },
-									beginAtZero: true,
+							}}
+						/>
+					</section>
+					<section className='section chart-wrapper'>
+						<h2>Uptime</h2>
+						<Line
+							height='100'
+							width='300'
+							data={{
+								labels: uptimeLabels,
+								datasets: [{ label: 'Uptime (%)', data: uptimeValues }],
+							}}
+							options={{
+								scales: {
+									y: {
+										ticks: { callback: (value) => `${value}%`, stepSize: 20 },
+										beginAtZero: true,
+									},
 								},
-							},
-						}}
-					/>
-				</section>
+							}}
+						/>
+					</section>
+				</div>
 			</main>
 		</Layout>
 	);
