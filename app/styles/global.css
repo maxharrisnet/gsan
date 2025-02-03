@@ -239,7 +239,6 @@ button:hover,
 	display: flex;
 	justify-content: center;
 	align-content: center;
-	flex-flow: column;
 }
 
 .list-button > span.material-icons {

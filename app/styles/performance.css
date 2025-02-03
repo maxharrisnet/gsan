@@ -208,7 +208,6 @@ section {
 	border-bottom: none;
 }
 
-
 .modem-list > li a .modem-chevron {
 	flex: 0;
 }
@@ -226,10 +225,16 @@ section {
 	margin-bottom: var(--spacing-base);
 	text-decoration: none;
 	color: inherit;
+	transition: all 0.3s ease;
+}
+
+.modem-card:hover {
+	background-color: var(--color-background);
 }
 
 .modem-header h3 {
 	margin: 0;
+
 	font-size: var(--font-size-md);
 	font-weight: 600;
 	color: var(--color-text);

@@ -175,7 +175,7 @@ export default function ModemDetails() {
 					to={`/modem/${modem.provider}`}
 					className='list-button back-link'
 				>
-					<span className='material-icons'>arrow_back</span>
+					<span className='material-icons'>chevron_left</span>
 					<span>Switch Canada-{modem.id}</span>
 				</Link>
 
