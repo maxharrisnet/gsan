@@ -58,29 +58,14 @@
 	font-family: var(--font-family-base);
 }
 
-#wdr-toolbar {
-	background: var(--color-background-secondary);
-	border-bottom: 1px solid var(--color-border);
-	padding: 8px !important;
-}
-
-.wdr-cell {
-	border-color: var(--color-border);
-}
-
-.wdr-header-cell {
-	background: var(--color-background-secondary);
-	font-weight: 600;
-}
-
 /* WebDataRocks toolbar customization */
-#wdr-toolbar {
+#wdr-toolbar-wrapper #wdr-toolbar {
 	padding: 8px !important;
 }
 
 /* Make icons smaller and black */
-.wdr-toolbar-btn > svg,
-#wdr-toolbar .wdr-toolbar-btn::before {
+#wdr-toolbar-wrapper #wdr-toolbar .wdr-toolbar-btn > svg,
+#wdr-toolbar-wrapper #wdr-toolbar .wdr-toolbar-btn::before {
 	width: 16px !important;
 	height: 16px !important;
 	fill: #333 !important;
@@ -88,18 +73,18 @@
 }
 
 /* Hover state for icons */
-.wdr-toolbar-btn:hover > svg,
-#wdr-toolbar .wdr-toolbar-btn:hover::before {
+#wdr-toolbar-wrapper #wdr-toolbar .wdr-toolbar-btn:hover > svg,
+#wdr-toolbar-wrapper #wdr-toolbar .wdr-toolbar-btn:hover::before {
 	fill: #000 !important;
 	color: #000 !important;
 }
 
 /* Hide specific toolbar buttons we don't need */
-#wdr-toolbar [data-btn='grid'],
-#wdr-toolbar [data-btn='charts'],
-#wdr-toolbar [data-btn='format'],
-#wdr-toolbar [data-btn='options'],
-#wdr-toolbar [data-btn='fields'] {
+#wdr-toolbar-wrapper #wdr-toolbar [data-btn='grid'],
+#wdr-toolbar-wrapper #wdr-toolbar [data-btn='charts'],
+#wdr-toolbar-wrapper #wdr-toolbar [data-btn='format'],
+#wdr-toolbar-wrapper #wdr-toolbar [data-btn='options'],
+#wdr-toolbar-wrapper #wdr-toolbar [data-btn='fields'] {
 	display: none !important;
 }
 
@@ -116,50 +101,81 @@
 }
 
 /* WebDataRocks Export Button Styling */
-#wdr-toolbar #wdr-tab-export {
-	margin: 0 var(--spacing-small);
-}
 
-#wdr-toolbar #wdr-tab-export > a {
+body #wdr-toolbar-wrapper #wdr-toolbar {
 	display: flex;
+	flex-direction: row;
 	align-items: center;
-	gap: var(--spacing-small);
-	background-color: var(--color-primary);
-	color: white;
-	padding: var(--spacing-small) var(--spacing-base);
-	border-radius: var(--border-radius);
+	gap: var(--spacing-large);
+}
+
+body #wdr-toolbar-wrapper #wdr-toolbar li {
+	margin: 0 var(--spacing-small);
+	width: auto !important;
+}
+
+body #wdr-toolbar-wrapper #wdr-toolbar li > a {
+	display: flex;
+	flex-direction: row;
+	height: auto;
+	gap: var(--spacing-base);
+	background-color: var(--color-white);
+	color: var(--color-text);
+	border: 3px solid var(--color-primary);
+	border-radius: var(--border-radius-full);
 	transition: background-color 0.3s ease;
+	padding: var(--spacing-small) var(--spacing-large);
 }
 
-#wdr-toolbar #wdr-tab-export > a:hover {
-	background-color: var(--color-secondary);
+#wdr-toolbar-wrapper #wdr-toolbar li > a:hover {
+	background-color: var(--color-background);
 }
 
-/* Style the icon */
-#wdr-toolbar #wdr-tab-export .wdr-svg-icon svg {
-	width: 16px;
-	height: 16px;
+body #wdr-toolbar-wrapper #wdr-toolbar li > a > div.wdr-svg-icon {
+	position: static !important;
 }
 
-#wdr-toolbar #wdr-tab-export .wdr-svg-icon svg g,
-#wdr-toolbar #wdr-tab-export .wdr-svg-icon svg path {
-	fill: white !important;
+#wdr-toolbar-wrapper #wdr-toolbar li .wdr-svg-icon svg {
+	width: 20px;
+	height: 20px;
 }
 
-/* Style the dropdown */
-#wdr-toolbar #wdr-tab-export .wdr-dropdown {
+#wdr-toolbar-wrapper #wdr-toolbar li .wdr-svg-icon svg g,
+#wdr-toolbar-wrapper #wdr-toolbar li .wdr-svg-icon svg path {
+	fill: var(--color-text) !important;
+}
+
+body #wdr-toolbar-wrapper #wdr-toolbar li > a span,
+#wdr-toolbar-wrapper #wdr-toolbar .wdr-dropdown-content span {
+	position: static !important;
+	display: flex !important;
+	align-items: center;
+	height: auto;
+	overflow: visible;
+	width: auto;
+	color: var(--color-text);
+	font-weight: 600;
+}
+
+#wdr-toolbar-wrapper #wdr-toolbar li .wdr-dropdown {
 	margin-top: var(--spacing-small);
 	border-radius: var(--border-radius);
 	border: 1px solid var(--color-border);
 	box-shadow: var(--shadow-sm);
+	top: 40px;
 }
 
-#wdr-toolbar #wdr-tab-export .wdr-dropdown-content li a {
+#wdr-toolbar-wrapper #wdr-toolbar li .wdr-dropdown-content li {
+	margin: var(--spacing-base) var(--spacing-small);
+}
+
+#wdr-toolbar-wrapper #wdr-toolbar li .wdr-dropdown-content li a {
 	padding: var(--spacing-small) var(--spacing-base);
 	color: var(--color-text);
 	transition: background-color 0.3s ease;
+	height: auto;
 }
 
-#wdr-toolbar #wdr-tab-export .wdr-dropdown-content li a:hover {
+#wdr-toolbar-wrapper #wdr-toolbar li .wdr-dropdown-content li a:hover {
 	background-color: var(--color-background);
 }

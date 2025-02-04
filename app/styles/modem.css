@@ -40,9 +40,9 @@
 	grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
 }
 
-.chart-container {
+/* .chart-container {
 	height: 300px;
-}
+} */
 
 /* Status Colors */
 .text-success {
@@ -95,9 +95,9 @@
 		grid-template-columns: 1fr;
 	}
 
-	.chart-container {
+	/* .chart-container {
 		height: 250px;
-	}
+	} */
 }
 
 .sidebar-header {
