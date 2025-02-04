@@ -11,10 +11,9 @@ const Header = () => {
 		console.error('Header rendered without UserContext');
 		return null;
 	}
-	const { currentUser, shop } = userContext;
+	const { currentUser } = userContext;
 	const isGsanPage = path.includes('/gsan') || currentUser?.authType === 'shopify';
 	const isSwitchPage = path.includes('/switch') || currentUser?.authType === 'sonar';
-
 	const userType = isGsanPage ? 'gsan' : 'switch';
 
 	return (
@@ -22,20 +21,21 @@ const Header = () => {
 			<div className='header-container'>
 				<div className='logo'>
 					{/* {isGsanPage && ( */}
-					<a href='/'>
+					<Link to='/'>
 						<img
 							src='/assets/images/GSAN-logo.png'
 							alt='GSAN Logo'
 						/>
-					</a>
+					</Link>
+
 					{/* )} */}
 					{/* {!isGsanPage && (
-						<a href='/'>
+						<Link to='/'>
 							<img
 								src='/assets/images/switch-logo.png'
 								alt='Switch Logo'
 							/>
-						</a>
+						</Link>
 					)} */}
 				</div>
 				<nav className='nav'>

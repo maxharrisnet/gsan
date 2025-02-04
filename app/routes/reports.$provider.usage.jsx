@@ -1,39 +1,34 @@
-import { useEffect, useState, Suspense } from 'react';
-import { useLoaderData, Await } from '@remix-run/react';
-import { defer } from '@remix-run/node';
+import { useEffect, useState, useRef } from 'react';
+import { useLoaderData } from '@remix-run/react';
 import { fetchServicesAndModemData } from '../compass.server';
-// import { useUser } from '../context/UserContext';
 import Layout from './../components/layout/Layout';
-import Sidebar from './../components/layout/Sidebar';
 import reportStyles from '../styles/reports.css?url';
 
-export const links = () => [
-	{ rel: 'stylesheet', href: reportStyles },
-	{
-		rel: 'stylesheet',
-		href: 'https://cdn.webdatarocks.com/latest/webdatarocks.min.css',
-	},
-];
-
-export const loader = async ({ params }) => {
+export const loader = async ({ request }) => {
 	try {
-		console.log('🏈 Loading reports data for provider:', params.provider);
+		console.log('🏈 Loading reports data...');
 		const servicesData = await fetchServicesAndModemData();
 
-		// Return immediate data instead of deferring
-		return { servicesData };
+		return { services: servicesData.services };
 	} catch (error) {
 		console.error('🚨 Error loading reports:', error);
 		throw new Response('Error loading reports data', { status: 500 });
 	}
 };
 
-function ReportsContent({ data, WebDataRocks }) {
-	if (!data || !WebDataRocks) return null;
+const Reports = () => {
+	console.log('🏈 Rendering reports');
+	const { services } = useLoaderData();
+	const [isLoading, setIsLoading] = useState(true);
+	const webdatarocksRef = useRef(null);
 
-	const flattenedData = data.services.flatMap((service) =>
+	// Helper function to calculate averages
+	const calculateAverage = (arr) => (arr.length > 0 ? arr.reduce((sum, val) => sum + val, 0) / arr.length : 0);
+
+	// Flatten and compute the necessary fields
+	const flattenedData = services.flatMap((service) =>
 		service.modems.map((modem) => {
-			// Extract data safely with null checks
+			// Extract data safely
 			const latencyData = modem.data?.latency?.data || [];
 			const throughputData = modem.data?.throughput?.data || {};
 			const signalQualityData = modem.data?.signal?.data || [];
@@ -54,104 +49,81 @@ function ReportsContent({ data, WebDataRocks }) {
 				Service: service.name,
 				Status: modem.status === 'online' ? 'Online' : 'Offline',
 				Kit: service.id,
-				PriorityData: totalPriority,
-				StandardData: totalStandard,
-				UsageLimit: modem.details?.meta?.usageLimit || 'N/A',
-				AvgLatency: avgLatency,
-				AvgDownloadThroughput: avgDownload,
-				AvgUploadThroughput: avgUpload,
-				AvgSignalQuality: avgSignal,
-				AvgUptime: avgUptime,
+				PriorityData: totalPriority, // in GB
+				StandardData: totalStandard, // in GB
+				UsageLimit: modem.details.meta.usageLimit || 'N/A', // in GB, or fallback
+				AvgLatency: avgLatency, // in ms
+				AvgDownloadThroughput: avgDownload, // in Mbps
+				AvgUploadThroughput: avgUpload, // in Mbps
+				AvgSignalQuality: avgSignal, // in %
+				AvgUptime: avgUptime, // in %
 			};
 		})
 	);
 
-	return (
-		<section className='reports-container card'>
-			<h3>Usage Reports</h3>
-			<WebDataRocks
-				toolbar={true}
-				width='100%'
-				height='600px'
-				report={{
-					dataSource: {
-						data: flattenedData,
-					},
-					slice: {
-						rows: [{ uniqueName: 'Service' }, { uniqueName: 'Kit' }],
-						columns: [{ uniqueName: 'Measures' }],
-						measures: [
-							{ uniqueName: 'PriorityData', aggregation: 'sum', caption: 'Priority Data (GB)' },
-							{ uniqueName: 'StandardData', aggregation: 'sum', caption: 'Standard Data (GB)' },
-							{ uniqueName: 'UsageLimit', aggregation: 'sum', caption: 'Usage Limit (GB)' },
-							{ uniqueName: 'AvgLatency', aggregation: 'average', caption: 'Avg Latency (ms)' },
-							{ uniqueName: 'AvgDownloadThroughput', aggregation: 'average', caption: 'Avg Download (Mbps)' },
-							{ uniqueName: 'AvgUploadThroughput', aggregation: 'average', caption: 'Avg Upload (Mbps)' },
-							{ uniqueName: 'AvgSignalQuality', aggregation: 'average', caption: 'Avg Signal Quality (%)' },
-						],
-					},
-					options: {
-						grid: {
-							type: 'compact',
-							showTotals: true,
-							showGrandTotals: 'on',
-						},
-					},
-				}}
-			/>
-		</section>
-	);
-}
-
-export default function Reports() {
-	const { servicesData } = useLoaderData();
-	const [WebDataRocks, setWebDataRocks] = useState(null);
-
 	useEffect(() => {
 		let mounted = true;
 
-		const loadWebDataRocks = async () => {
+		const initializeWebDataRocks = async () => {
 			try {
-				const module = await import('@webdatarocks/react-webdatarocks');
-				if (mounted) {
-					setWebDataRocks(() => module.default);
+				// Import the WebDataRocks script directly
+				await import('@webdatarocks/webdatarocks/webdatarocks.js');
+				
+				if (mounted && webdatarocksRef.current) {
+					// Access WebDataRocks from window object
+					new window.WebDataRocks({
+						container: webdatarocksRef.current,
+						toolbar: true,
+						height: 600,
+						width: '100%',
+						report: {
+							dataSource: {
+								data: flattenedData,
+							},
+							slice: {
+								rows: [{ uniqueName: 'Service' }, { uniqueName: 'Kit' }],
+								columns: [{ uniqueName: 'Measures' }],
+								measures: [
+									{ uniqueName: 'PriorityData', aggregation: 'sum', caption: 'Priority Data (GB)' },
+									{ uniqueName: 'StandardData', aggregation: 'sum', caption: 'Standard Data (GB)' },
+									{ uniqueName: 'UsageLimit', aggregation: 'sum', caption: 'Usage Limit (GB)' },
+									{ uniqueName: 'AvgLatency', aggregation: 'average', caption: 'Avg Latency (ms)' },
+									{ uniqueName: 'AvgDownloadThroughput', aggregation: 'average', caption: 'Avg Download (Mbps)' },
+									{ uniqueName: 'AvgUploadThroughput', aggregation: 'average', caption: 'Avg Upload (Mbps)' },
+									{ uniqueName: 'AvgSignalQuality', aggregation: 'average', caption: 'Avg Signal Quality (%)' },
+								],
+							},
+						},
+					});
 				}
+				setIsLoading(false);
 			} catch (error) {
-				console.error('🚨 Failed to load WebDataRocks:', error);
+				console.error('Failed to load WebDataRocks:', error);
+				setIsLoading(false);
 			}
 		};
 
-		loadWebDataRocks();
-
+		initializeWebDataRocks();
 		return () => {
 			mounted = false;
 		};
-	}, []);
+	}, [flattenedData]);
 
 	return (
 		<Layout>
-			<Sidebar>
-				<div className='reports-sidebar'>
-					<h2>Usage Reports</h2>
-					<p>Data for all services</p>
-				</div>
-			</Sidebar>
 			<main className='content'>
-				{!WebDataRocks ? (
-					<div className='loading-container'>
-						<div className='loading-spinner'></div>
-						<p>Loading reporting tool...</p>
-					</div>
-				) : (
-					<ReportsContent
-						data={servicesData}
-						WebDataRocks={WebDataRocks}
-					/>
-				)}
+				<section className='section'>{isLoading ? <div>Loading...</div> : <div ref={webdatarocksRef} />}</section>
 			</main>
 		</Layout>
 	);
-}
+};
 
-// Helper function to calculate averages
-const calculateAverage = (arr) => (arr.length > 0 ? arr.reduce((sum, val) => sum + val, 0) / arr.length : 0);
+export default Reports;
+
+export const links = () => [
+	{ rel: 'stylesheet', href: reportStyles },
+	{
+		rel: 'stylesheet',
+		href: 'https://cdn.webdatarocks.com/latest/webdatarocks.min.css',
+	},
+];

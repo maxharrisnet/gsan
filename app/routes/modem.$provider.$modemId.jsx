@@ -25,7 +25,6 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, BarElement, LineEleme
 export default function ModemDetails() {
 	const { modem, mapsAPIKey, gpsData, latencyData, throughputData, signalQualityData, obstructionData, usageData, uptimeData } = useLoaderData();
 
-	console.log('🐵 Modem:', modem);
 	const latencyTimestamps = latencyData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
 	const latencyValues = latencyData.map((entry) => entry[1]);
 

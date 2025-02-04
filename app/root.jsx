@@ -56,7 +56,15 @@ export default function Root() {
 
 export function ErrorBoundary() {
 	const error = useRouteError();
-	const { isProd } = useLoaderData();
+	let isProd = false;
+
+	try {
+		const data = useLoaderData();
+		isProd = data?.isProd;
+	} catch {
+		// If loader data isn't available during error, default to development mode
+		isProd = process.env.NODE_ENV === 'production';
+	}
 
 	return (
 		<html lang='en'>
