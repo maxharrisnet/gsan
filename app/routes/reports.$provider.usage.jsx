@@ -28,35 +28,31 @@ const Reports = () => {
 	// Flatten and compute the necessary fields
 	const flattenedData = services.flatMap((service) =>
 		service.modems.map((modem) => {
-			// Extract data safely
 			const latencyData = modem.data?.latency?.data || [];
 			const throughputData = modem.data?.throughput?.data || {};
 			const signalQualityData = modem.data?.signal?.data || [];
-			const uptimeData = modem.data?.uptime?.data || [];
 			const usageData = modem.usage || [];
-
-			// Calculate averages and totals
-			const avgLatency = calculateAverage(latencyData).toFixed(2);
-			const avgDownload = calculateAverage(throughputData.download || []).toFixed(2);
-			const avgUpload = calculateAverage(throughputData.upload || []).toFixed(2);
-			const avgSignal = calculateAverage(signalQualityData).toFixed(2);
-			const avgUptime = calculateAverage(uptimeData).toFixed(2);
 
 			const totalPriority = usageData.reduce((sum, u) => sum + (u.priority || 0), 0).toFixed(2);
 			const totalStandard = usageData.reduce((sum, u) => sum + (u.standard || 0), 0).toFixed(2);
+			const usageLimit = modem.details?.meta?.usageLimit || 0;
+			const dataOverage = Math.max(0, parseFloat(totalPriority) + parseFloat(totalStandard) - usageLimit).toFixed(2);
 
 			return {
 				Service: service.name,
 				Status: modem.status === 'online' ? 'Online' : 'Offline',
-				Kit: service.id,
-				PriorityData: totalPriority, // in GB
-				StandardData: totalStandard, // in GB
-				UsageLimit: modem.details.meta.usageLimit || 'N/A', // in GB, or fallback
-				AvgLatency: avgLatency, // in ms
-				AvgDownloadThroughput: avgDownload, // in Mbps
-				AvgUploadThroughput: avgUpload, // in Mbps
-				AvgSignalQuality: avgSignal, // in %
-				AvgUptime: avgUptime, // in %
+				Kit: modem.id,
+				PriorityData: totalPriority,
+				StandardData: totalStandard,
+				UsageLimit: usageLimit,
+				DataOverage: dataOverage,
+
+				AvgLatency: calculateAverage(latencyData.map((d) => d[1])).toFixed(3),
+				AvgDownloadThroughput: calculateAverage(throughputData.download || []).toFixed(3),
+				AvgUploadThroughput: calculateAverage(throughputData.upload || []).toFixed(3),
+				AvgSignalQuality: `${calculateAverage(signalQualityData).toFixed(0)}%`,
+				OptIn: 'No',
+				MobilePlan: 'No',
 			};
 		})
 	);
@@ -68,30 +64,100 @@ const Reports = () => {
 			try {
 				// Import the WebDataRocks script directly
 				await import('@webdatarocks/webdatarocks/webdatarocks.js');
-				
+
 				if (mounted && webdatarocksRef.current) {
 					// Access WebDataRocks from window object
 					new window.WebDataRocks({
 						container: webdatarocksRef.current,
-						toolbar: true,
+						toolbar: {
+							visible: true,
+						},
+						beforetoolbarcreated: function (toolbar) {
+							// Get all tabs from the Toolbar
+							let tabs = toolbar.getTabs();
+							toolbar.getTabs = function () {
+								// Keep only specific tabs
+								tabs = tabs.filter((tab) => {
+									return ['wdr-tab-export', 'wdr-tab-fullscreen'].includes(tab.id);
+								});
+
+								// Customize the export tab
+								const exportTab = tabs.find((tab) => tab.id === 'wdr-tab-export');
+								if (exportTab) {
+									exportTab.title = 'Download';
+									exportTab.icon = toolbar.icons.export;
+								}
+
+								return tabs;
+							};
+						},
 						height: 600,
 						width: '100%',
 						report: {
 							dataSource: {
 								data: flattenedData,
 							},
+							options: {
+								grid: {
+									type: 'flat',
+									showHierarchies: false,
+									showTotals: false,
+									showGrandTotals: 'off',
+								},
+								configuratorActive: false,
+								configuratorButton: false,
+								showAggregations: false,
+								showFilter: false,
+								sorting: 'off',
+							},
 							slice: {
-								rows: [{ uniqueName: 'Service' }, { uniqueName: 'Kit' }],
-								columns: [{ uniqueName: 'Measures' }],
-								measures: [
-									{ uniqueName: 'PriorityData', aggregation: 'sum', caption: 'Priority Data (GB)' },
-									{ uniqueName: 'StandardData', aggregation: 'sum', caption: 'Standard Data (GB)' },
-									{ uniqueName: 'UsageLimit', aggregation: 'sum', caption: 'Usage Limit (GB)' },
-									{ uniqueName: 'AvgLatency', aggregation: 'average', caption: 'Avg Latency (ms)' },
-									{ uniqueName: 'AvgDownloadThroughput', aggregation: 'average', caption: 'Avg Download (Mbps)' },
-									{ uniqueName: 'AvgUploadThroughput', aggregation: 'average', caption: 'Avg Upload (Mbps)' },
-									{ uniqueName: 'AvgSignalQuality', aggregation: 'average', caption: 'Avg Signal Quality (%)' },
-								],
+								rows: [{ uniqueName: 'Service' }],
+								columns: [{ uniqueName: 'Status' }, { uniqueName: 'Kit' }, { uniqueName: 'PriorityData', caption: 'Priority Data (GB)' }, { uniqueName: 'StandardData', caption: 'Standard Data (GB)' }, { uniqueName: 'UsageLimit', caption: 'Usage Limit (GB)' }, { uniqueName: 'DataOverage', caption: 'Data Overage (GB)' }, { uniqueName: 'AvgLatency', caption: 'Avg Latency (ms)' }, { uniqueName: 'AvgDownloadThroughput', caption: 'Avg Downlink Throughput (Mbps)' }, { uniqueName: 'AvgUploadThroughput', caption: 'Avg Uplink Throughput (Mbps)' }, { uniqueName: 'AvgSignalQuality', caption: 'Avg Signal Quality' }, { uniqueName: 'OptIn', caption: 'Opt In' }, { uniqueName: 'MobilePlan', caption: 'Mobile Plan' }],
+							},
+							formats: [
+								{
+									name: 'Status',
+									textAlign: 'left',
+								},
+								{
+									name: 'dataFormat',
+									decimalPlaces: 2,
+									textAlign: 'right',
+								},
+							],
+							conditions: [
+								{
+									formula: "#value = 'Online'",
+									format: {
+										backgroundColor: '#4CAF50',
+										color: 'white',
+										fontFamily: 'Arial',
+										fontSize: '12px',
+									},
+								},
+							],
+							styles: {
+								table: {
+									backgroundColor: '#ffffff',
+									borderColor: '#e0e0e0',
+									fontFamily: 'Arial',
+									fontSize: '12px',
+									color: '#333333',
+								},
+								toolbar: {
+									backgroundColor: '#f5f5f5',
+									borderColor: '#e0e0e0',
+									fontFamily: 'Arial',
+									fontSize: '12px',
+								},
+								header: {
+									backgroundColor: '#f5f5f5',
+									borderColor: '#e0e0e0',
+									fontFamily: 'Arial',
+									fontSize: '12px',
+									color: '#333333',
+									fontWeight: 'bold',
+								},
 							},
 						},
 					});
