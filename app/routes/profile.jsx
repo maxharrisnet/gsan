@@ -13,44 +13,24 @@ export function links() {
 
 export async function loader({ request }) {
 	const cookieHeader = request.headers.get('Cookie');
-	if (!cookieHeader) {
-		throw json({ message: 'No session found' }, { status: 401 });
-	}
-
 	const session = await getSession(cookieHeader);
-	if (!session) {
-		throw json({ message: 'Invalid session' }, { status: 401 });
-	}
 
-	// Debug the actual session data
 	console.log('🔍 Session debug:', {
 		sessionExists: Boolean(session),
 		cookieExists: Boolean(cookieHeader),
-		sessionData: session.data, // Access the data property directly
-		userData: session.get('userData'), // Try to get the user data specifically
+		allSessionData: session.data,
 	});
 
-	// Get tokens from userData if that's where they're stored
 	const userData = session.get('userData');
-	const customerAccessToken = userData?.customerAccessToken || session.get('customerAccessToken');
-	const sonarAccountId = userData?.sonarAccountId || session.get('sonarAccountId');
-	const shop = userData?.shop || session.get('shop');
 
-	console.log('🔑 Auth tokens:', {
-		customerAccessToken,
-		sonarAccountId,
-		shop,
-		userData, // Log the entire userData object to see its structure
-	});
+	if (!userData) {
+		throw json({ message: 'Not authenticated' }, { status: 401 });
+	}
 
-	if (!customerAccessToken) {
-		throw json({ message: 'Shopify authentication required' }, { status: 401 });
-	}
-	if (!sonarAccountId) {
-		throw json({ message: 'Sonar authentication required' }, { status: 401 });
-	}
-	if (!shop) {
-		throw json({ message: 'Shop information missing' }, { status: 401 });
+	const { customerAccessToken, shop } = userData;
+
+	if (!customerAccessToken || !shop) {
+		throw json({ message: 'Invalid session data' }, { status: 401 });
 	}
 
 	try {
@@ -61,19 +41,19 @@ export async function loader({ request }) {
 				console.error('❌ Shopify API Error:', error);
 				return null;
 			}),
-			getSonarAccountData(sonarAccountId).catch((error) => {
+			getSonarAccountData(userData.sonarAccountId).catch((error) => {
 				console.error('❌ Sonar Account Error:', error);
 				return { success: false };
 			}),
-			getSonarAccoutUsageData(sonarAccountId).catch((error) => {
+			getSonarAccoutUsageData(userData.sonarAccountId).catch((error) => {
 				console.error('❌ Sonar Usage Error:', error);
 				return { success: false };
 			}),
-			getSonarInventoryItems(sonarAccountId).catch((error) => {
+			getSonarInventoryItems(userData.sonarAccountId).catch((error) => {
 				console.error('❌ Sonar Inventory Error:', error);
 				return { success: false };
 			}),
-			getSonarServicePlan(sonarAccountId).catch((error) => {
+			getSonarServicePlan(userData.sonarAccountId).catch((error) => {
 				console.error('❌ Sonar Service Plan Error:', error);
 				return null;
 			}),

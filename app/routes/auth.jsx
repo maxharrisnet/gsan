@@ -1,6 +1,7 @@
 import { Form, useActionData } from '@remix-run/react';
 import { authenticateShopifyCustomer, authenticateSonarUser } from '../utils/user.server';
 import Layout from '../components/layout/Layout';
+import { json } from '@remix-run/node';
 
 export async function action({ request }) {
 	const formData = await request.formData();
@@ -8,13 +9,24 @@ export async function action({ request }) {
 	const email = formData.get('email');
 	const password = formData.get('password');
 
-	if (loginType === 'shopify') {
-		return authenticateShopifyCustomer(email, password, request);
-	} else if (loginType === 'sonar') {
-		return authenticateSonarUser(formData);
-	}
+	console.log('🔐 Processing login:', { loginType, email });
 
-	return { error: 'Invalid login type' };
+	try {
+		if (loginType === 'shopify') {
+			const result = await authenticateShopifyCustomer(email, password, request);
+			if (result.error) {
+				return json({ error: result.error });
+			}
+			return result;
+		} else if (loginType === 'sonar') {
+			return authenticateSonarUser(formData);
+		}
+
+		return json({ error: 'Invalid login type' });
+	} catch (error) {
+		console.error('❌ Login error:', error);
+		return json({ error: 'An unexpected error occurred during login' });
+	}
 }
 
 export default function Auth() {

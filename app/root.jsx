@@ -17,22 +17,31 @@ export const loader = async ({ request }) => {
 	const session = await getSession(request.headers.get('Cookie'));
 	const url = new URL(request.url);
 	const userData = session.get('userData');
-	const isProd = process.env.NODE_ENV === 'production';
 
-	// Add check for auth routes to prevent redirect loop
-	const isAuthRoute = url.pathname === '/auth' || url.pathname === '/login' || url.pathname === '/';
+	console.log('🌳 Root loader:', {
+		hasSession: Boolean(session),
+		hasUserData: Boolean(userData),
+		userData: userData, // Log the actual userData to see what we have
+		path: url.pathname,
+	});
 
-	if (!userData && !isAuthRoute) {
-		console.log('🚗 No user data, redirecting to /auth');
+	// Public routes that don't require authentication
+	const publicRoutes = ['/auth', '/login', '/'];
+	const isPublicRoute = publicRoutes.includes(url.pathname);
+
+	// If we have userData and we're on a public route, redirect to dashboard
+	if (userData && isPublicRoute) {
+		console.log('👉 Authenticated user on public route, redirecting to dashboard');
+		return redirect('/dashboard');
+	}
+
+	// If we don't have userData and we're not on a public route, redirect to auth
+	if (!userData && !isPublicRoute) {
+		console.log('👉 Unauthenticated user on protected route, redirecting to auth');
 		return redirect('/auth');
 	}
 
-	if (userData && isAuthRoute) {
-		console.log('🚗 User data found, redirecting to /performance');
-		return redirect('/performance');
-	}
-
-	return { userData, isProd };
+	return { userData };
 };
 
 export default function Root() {
@@ -70,10 +79,10 @@ export function ErrorBoundary() {
 						<h1 className='error-heading'>{isRouteErrorResponse(error) ? `${error.status} ${error.statusText}` : 'Oops! Something went wrong'}</h1>
 						<div className='error-message'>{!isProd && <pre className='error-details'>{error.message || JSON.stringify(error, null, 2)}</pre>}</div>
 						<Link
-							to='/'
+							to='/auth'
 							className='error-button'
 						>
-							Return to Dashboard
+							Return to Login
 						</Link>
 					</div>
 				</div>

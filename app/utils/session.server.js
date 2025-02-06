@@ -8,16 +8,22 @@ export const sessionStorage = createCookieSessionStorage({
 		httpOnly: true,
 		secure: process.env.NODE_ENV === 'production',
 		sameSite: 'lax',
-		path: '/performance',
+		path: '/',
 		secrets: [secret],
 	},
 });
-export async function createUserSession(userData, userType, redirectTo) {
-	const session = await sessionStorage.getSession();
-	session.set('userData', { ...userData, userType });
+
+export async function createUserSession(data, redirectTo) {
+	const session = await getSession();
+
+	console.log('📝 Creating session with data:', data);
+
+	// Store the entire data object as userData
+	session.set('userData', data);
+
 	return redirect(redirectTo, {
 		headers: {
-			'Set-Cookie': await sessionStorage.commitSession(session),
+			'Set-Cookie': await commitSession(session),
 		},
 	});
 }

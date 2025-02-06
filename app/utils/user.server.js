@@ -50,19 +50,27 @@ export async function authenticateShopifyCustomer(email, password, request) {
 		const { customerAccessTokenCreate } = response.data;
 
 		if (customerAccessTokenCreate.customerUserErrors.length) {
-			console.log('Shopify customer login failed:', customerAccessTokenCreate.customerUserErrors);
-			return { errors: customerAccessTokenCreate.customerUserErrors };
+			console.log('🚫 Login failed:', customerAccessTokenCreate.customerUserErrors);
+			return { error: customerAccessTokenCreate.customerUserErrors[0].message };
 		}
 
 		const accessToken = customerAccessTokenCreate.customerAccessToken.accessToken;
 
-		return createUserSession({ customerAccessToken: accessToken }, 'customer', '/performance');
-	} catch (error) {
-		console.error('Error during Shopify customer login:', error);
-		return {
-			success: false,
-			errors: [{ message: 'An unexpected error occurred. Please try again.' }],
+		// Create the userData object
+		const userData = {
+			customerAccessToken: accessToken,
+			shop: process.env.SHOPIFY_STORE_DOMAIN,
+			email,
+			type: 'shopify',
 		};
+
+		console.log('✅ Authentication successful, creating session');
+
+		// Redirect to dashboard instead of performance
+		return createUserSession(userData, '/dashboard');
+	} catch (error) {
+		console.error('❌ Authentication error:', error);
+		return { error: 'An unexpected error occurred' };
 	}
 }
 
