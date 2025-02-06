@@ -16,6 +16,15 @@ export async function getCustomerData(customerAccessToken, shop) {
               firstName
               lastName
               email
+              phone
+              defaultAddress {
+                address1
+                address2
+                city
+                province
+                zip
+                country
+              }
               orders(first: 10) {
                 edges {
                   node {
@@ -30,9 +39,18 @@ export async function getCustomerData(customerAccessToken, shop) {
                       edges {
                         node {
                           title
+                          variant {
+                            title
+                            price {
+                              amount
+                              currencyCode
+                            }
+                          }
                         }
                       }
                     }
+                    fulfillmentStatus
+                    financialStatus
                   }
                 }
               }

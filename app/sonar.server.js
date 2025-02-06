@@ -133,3 +133,29 @@ export const getSonarInventoryItems = async function (accountId) {
 		return { success: false, error: 'Sonar inventory items not found' };
 	}
 };
+
+export const getSonarServicePlan = async function (accountId) {
+	try {
+		const response = await axios.get(`${SONAR_API_URL}/accounts/${accountId}/service_plan`, {
+			headers: {
+				Authorization: `Basic ${sonarAuth}`,
+			},
+		});
+		return { success: true, data: response.data.data };
+	} catch (error) {
+		return { success: false, error: 'Failed to fetch service plan' };
+	}
+};
+
+export const getSonarBillingHistory = async function (accountId) {
+	try {
+		const response = await axios.get(`${SONAR_API_URL}/accounts/${accountId}/transactions`, {
+			headers: {
+				Authorization: `Basic ${sonarAuth}`,
+			},
+		});
+		return { success: true, data: response.data.data };
+	} catch (error) {
+		return { success: false, error: 'Failed to fetch billing history' };
+	}
+};

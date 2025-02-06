@@ -1,23 +1,22 @@
-/* Layout styles */
+/* Base Layout */
 .layout {
 	display: flex;
 	flex-direction: column;
 	min-height: 100vh;
-	background-color: #f0f0f0; /* Light grey background */
-	font-family: 'Inter', sans-serif; /* Inter font */
+	background-color: #f0f0f0;
+	font-family: 'Inter', sans-serif;
 	color: #000;
 }
 
-/* Wrapper styles */
+/* Wrapper Components */
 .wrapper {
 	display: flex;
 	flex: 1;
 	max-width: 100vw;
-	overflow: hidden;
 	justify-content: center;
 	align-items: flex-start;
 	background-color: var(--color-background);
-	min-height: 80vh; /* TODO: Hack for login page - fix */
+	min-height: 80vh;
 }
 
 .wrapper-column {
@@ -26,33 +25,26 @@
 	flex-direction: column;
 }
 
-/* Container styles */
 .container {
 	display: flex;
 	flex: 1;
 	flex-flow: column;
-	/* width: 960px; */
 	max-width: 100%;
 	margin: 0 auto;
 }
 
-/* Sidebar styles */
+/* Sidebar */
 .sidebar {
 	flex: 0 0 400px;
-	position: sticky;
-	top: 0;
-	flex-shrink: 0;
 	background-color: #fff;
 	border-right: 1px solid var(--color-border);
-	height: 100%;
 }
 
 .sidebar-content {
 	padding: var(--spacing-large);
 }
 
-/* Main content styles */
-
+/* Main Content */
 .content {
 	flex: 1;
 	flex-flow: column;
@@ -68,7 +60,6 @@
 
 .content-centered {
 	display: grid;
-
 	place-items: center;
 	max-width: 600px;
 	width: 100%;
@@ -81,13 +72,14 @@
 	border-radius: var(--border-radius);
 }
 
+/* Sections */
 .section {
 	padding: var(--spacing-large);
 	margin-bottom: var(--spacing-large);
-	background-color: #fff; /* White background */
-	border-radius: 8px; /* Rounded corners */
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Drop shadow */
-	border: 1px solid #e0e0e0; /* Light grey border */
+	background-color: #fff;
+	border-radius: 8px;
+	box-shadow: var(--box-shadow);
+	border: 1px solid var(--color-border);
 	width: 100%;
 	transition:
 		background-color 0.3s,
@@ -106,7 +98,7 @@ a > .section:hover {
 	padding: var(--spacing-large);
 }
 
-/* Header styles */
+/* Header */
 .header {
 	background-color: var(--background-white);
 	padding: 1rem;
@@ -126,6 +118,7 @@ a > .section:hover {
 	justify-content: center;
 }
 
+/* Logo and Login */
 .logo {
 	width: 100px;
 }
@@ -155,6 +148,7 @@ a > .section:hover {
 	height: auto;
 }
 
+/* Navigation */
 .nav {
 	display: flex;
 }
@@ -182,6 +176,7 @@ a > .section:hover {
 	background-color: #e0e0e0;
 }
 
+/* User Avatar and Dropdown */
 .user-avatar {
 	display: flex;
 	align-items: center;
@@ -189,29 +184,58 @@ a > .section:hover {
 	position: relative;
 }
 
-.user-avatar:hover .logout-button {
-	display: block;
+.avatar-button {
+	background: none;
+	border: none;
+	padding: 0;
+	cursor: pointer;
 }
 
-.user-avatar .logout-button {
+/* Remove default button styles and hover effects */
+.avatar-button:hover {
+	background: none;
+	border: none;
+}
+
+.avatar-dropdown {
 	position: absolute;
 	top: 100%;
-	left: 0;
 	right: 0;
-	background-color: var(--background-white);
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius);
-	color: var(--color-text);
-	font-size: var(--font-size-small);
-	padding: var(--spacing-small);
-	display: none;
-	width: auto;
+	background: white;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	min-width: 150px;
+	z-index: 1000;
+	display: flex;
+	flex-direction: column;
 }
 
-.logout-button:hover {
-	text-decoration: underline;
+.avatar-dropdown a,
+.avatar-dropdown button {
+	display: block;
+	padding: 0.75rem 1rem;
+	text-decoration: none;
+	color: #333;
+	width: 100%;
+	text-align: left;
+	border: none;
+	background: none;
+	cursor: pointer;
 }
 
+.avatar-dropdown a:hover,
+.avatar-dropdown button:hover {
+	background: #f5f5f5;
+}
+
+/* Remove the separate logout button styles and merge with dropdown */
+.logout-button {
+	border-top: 1px solid var(--color-border);
+	margin-top: -1px; /* Compensate for double border */
+}
+
+/* Footer */
 .footer {
 	background-color: var(--background-white);
 	padding: 1rem;

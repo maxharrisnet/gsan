@@ -154,7 +154,7 @@
 
 .modem-item.active {
 	background-color: var(--color-primary-light);
-	border-left: 3px solid var(--color-primary);
+	/* border-left: 3px solid var(--color-primary); */
 }
 
 .modem-info {

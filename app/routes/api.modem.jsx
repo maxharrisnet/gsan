@@ -6,6 +6,7 @@ import fetchGPS from './api.gps';
 export const loader = async ({ params }) => {
 	const { provider, modemId } = params;
 	const accessToken = await getCompassAccessToken();
+	console.log('🐵 Access token: ', accessToken);
 	const modemDetailsURL = `https://api-compass.speedcast.com/v2.0/${encodeURIComponent(provider.toLowerCase())}/${modemId}`;
 
 	try {

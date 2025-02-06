@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useUser } from '../../context/UserContext';
 import { Link, Form } from '@remix-run/react';
@@ -6,7 +6,21 @@ import { Link, Form } from '@remix-run/react';
 const Header = () => {
 	const location = useLocation();
 	const path = location.pathname;
-	const userContext = useUser(); // Retrieve the context
+	const userContext = useUser();
+	const [showDropdown, setShowDropdown] = useState(false);
+	const dropdownRef = useRef(null);
+
+	useEffect(() => {
+		const handleClickOutside = (event) => {
+			if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+				setShowDropdown(false);
+			}
+		};
+
+		document.addEventListener('mousedown', handleClickOutside);
+		return () => document.removeEventListener('mousedown', handleClickOutside);
+	}, []);
+
 	if (!userContext) {
 		console.error('Header rendered without UserContext');
 		return null;
@@ -53,24 +67,43 @@ const Header = () => {
 							<Link to={`/customers`}>Customers</Link>
 						</li>{' '}
 					</ul>
-					<div className='user-avatar'>
-						<img
-							src='/assets/images/avatar.svg'
-							alt='User Avatar'
-							height='30'
-							width='30'
-						/>
-						<Form
-							method='post'
-							action='/auth/logout'
+					<div
+						className='user-avatar'
+						ref={dropdownRef}
+					>
+						<button
+							className='avatar-button'
+							onClick={() => setShowDropdown(!showDropdown)}
 						>
-							<button
-								className='logout-button'
-								type='submit'
-							>
-								Logout
-							</button>
-						</Form>
+							<img
+								src='/assets/images/avatar.svg'
+								alt='User Avatar'
+								height='30'
+								width='30'
+							/>
+						</button>
+
+						{showDropdown && (
+							<div className='avatar-dropdown'>
+								<Link
+									to='/profile'
+									onClick={() => setShowDropdown(false)}
+								>
+									Profile
+								</Link>
+								<Form
+									method='post'
+									action='/auth/logout'
+								>
+									<button
+										type='submit'
+										className='logout-button'
+									>
+										Logout
+									</button>
+								</Form>
+							</div>
+						)}
 					</div>
 				</nav>
 			</div>

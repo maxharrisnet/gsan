@@ -1,5 +1,5 @@
 import { redirect } from '@remix-run/node';
-import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData, useRouteError, Link, isRouteErrorResponse } from '@remix-run/react';
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteError, useLoaderData, Link, isRouteErrorResponse } from '@remix-run/react';
 import { getSession } from './utils/session.server';
 import { UserProvider } from './context/UserContext';
 import globalStyles from './styles/global.css?url';
@@ -36,7 +36,7 @@ export const loader = async ({ request }) => {
 };
 
 export default function Root() {
-	const { user } = useLoaderData();
+	const { userData } = useLoaderData();
 	return (
 		<html lang='en'>
 			<head>
@@ -44,7 +44,7 @@ export default function Root() {
 				<Links />
 			</head>
 			<body>
-				<UserProvider initialUser={user}>
+				<UserProvider initialUser={userData}>
 					<Outlet />
 				</UserProvider>
 				<ScrollRestoration />
@@ -56,15 +56,7 @@ export default function Root() {
 
 export function ErrorBoundary() {
 	const error = useRouteError();
-	let isProd = false;
-
-	try {
-		const data = useLoaderData();
-		isProd = data?.isProd;
-	} catch {
-		// If loader data isn't available during error, default to development mode
-		isProd = process.env.NODE_ENV === 'production';
-	}
+	const isProd = process.env.NODE_ENV === 'production';
 
 	return (
 		<html lang='en'>
