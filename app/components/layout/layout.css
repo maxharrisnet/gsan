@@ -176,6 +176,20 @@ a > .section:hover {
 	background-color: #e0e0e0;
 }
 
+.nav-link {
+	color: var(--color-text);
+	text-decoration: none;
+	padding: var(--spacing-small) var(--spacing-medium);
+	border-radius: 4px;
+	transition: background-color 0.3s;
+}
+
+.nav-link:hover,
+.nav-link.active {
+	background-color: var(--color-background-hover);
+	color: var(--color-primary);
+}
+
 /* User Avatar and Dropdown */
 .user-avatar {
 	display: flex;

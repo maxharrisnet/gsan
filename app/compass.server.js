@@ -61,3 +61,44 @@ export const fetchServicesAndModemData = async () => {
 		throw new Response('Internal Server Error', { status: 500 });
 	}
 };
+
+export async function fetchShopifyOrderData(modemId) {
+	try {
+		console.log('🛍️ Fetching Shopify order data for modem:', modemId);
+
+		const response = await fetch(`https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/2024-01/orders.json`, {
+			headers: {
+				'X-Shopify-Access-Token': process.env.SHOPIFY_API_KEY,
+				'Content-Type': 'application/json',
+			},
+		});
+
+		if (!response.ok) {
+			throw new Error(`Shopify API error: ${response.status}`);
+		}
+
+		const orders = await response.json();
+		console.log('🛍️ Shopify orders received:', orders);
+
+		// Find orders for this modem
+		const modemOrders = orders.filter((order) => order.line_items.some((item) => item.properties?.modem_id === modemId));
+
+		// Get the latest order
+		const latestOrder = modemOrders[0];
+
+		return {
+			total_orders: modemOrders.length,
+			active_services: modemOrders.filter((o) => o.financial_status === 'paid').length,
+			last_order_date: latestOrder?.created_at,
+			order_status: latestOrder?.fulfillment_status || 'unfulfilled',
+			next_billing_date: latestOrder?.next_billing_date,
+			monthly_cost: latestOrder?.current_total_price,
+			last_payment_amount: latestOrder?.total_price,
+			last_payment_date: latestOrder?.processed_at,
+			payment_status: latestOrder?.financial_status,
+		};
+	} catch (error) {
+		console.error('🚨 Error fetching Shopify order data:', error);
+		return {};
+	}
+}

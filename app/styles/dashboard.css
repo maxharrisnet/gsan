@@ -163,3 +163,43 @@
 	background-color: #f3f4f6;
 	color: #6b7280;
 }
+
+.account-info .two-column-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 2rem;
+	margin-top: 1rem;
+}
+
+.account-info .column {
+	min-width: 0;
+}
+
+.account-info .info-group {
+	background: var(--surface-alt);
+	padding: 1.5rem;
+	border-radius: var(--border-radius);
+}
+
+.account-info .info-group h3 {
+	margin-bottom: 1rem;
+	color: var(--text-primary);
+	font-size: 1.1rem;
+}
+
+.account-info .info-group p {
+	margin-bottom: 0.5rem;
+	color: var(--text-secondary);
+}
+
+.account-info .info-group strong {
+	color: var(--text-primary);
+}
+
+/* Responsive adjustment */
+@media (max-width: 768px) {
+	.account-info .two-column-grid {
+		grid-template-columns: 1fr;
+		gap: 1rem;
+	}
+}

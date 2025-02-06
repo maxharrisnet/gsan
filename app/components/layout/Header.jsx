@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useUser } from '../../context/UserContext';
-import { Link, Form } from '@remix-run/react';
+import { Link, Form, NavLink } from '@remix-run/react';
 
 const Header = () => {
 	const location = useLocation();
@@ -55,16 +55,44 @@ const Header = () => {
 				<nav className='nav'>
 					<ul className='nav-list'>
 						<li className='nav-item'>
-							<Link to={`/map`}>Map</Link>
+							<NavLink 
+								to={`/dashboard`} 
+								className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+							>
+								Dashboard
+							</NavLink>
 						</li>
 						<li className='nav-item'>
-							<Link to={`/performance`}>Performance</Link>
+							<NavLink 
+								to={`/map`} 
+								className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+							>
+								Map
+							</NavLink>
 						</li>
 						<li className='nav-item'>
-							<Link to={`/reports/starlink/usage`}>Reports</Link>
+							<NavLink 
+								to={`/performance`} 
+								className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+							>
+								Performance
+							</NavLink>
 						</li>
 						<li className='nav-item'>
-							<Link to={`/customers`}>Customers</Link>
+							<NavLink 
+								to={`/reports/starlink/usage`} 
+								className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+							>
+								Reports
+							</NavLink>
+						</li>
+						<li className='nav-item'>
+							<NavLink 
+								to={`/customers`} 
+								className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+							>
+								Customers
+							</NavLink>
 						</li>{' '}
 					</ul>
 					<div

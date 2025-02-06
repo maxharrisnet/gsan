@@ -2,6 +2,7 @@ import { json } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { getSession } from '../utils/session.server';
 import { fetchServicesAndModemData } from '../compass.server';
+import { fetchShopifyOrderData } from '../gsan.server';
 import Layout from '../components/layout/Layout';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import { Line } from 'react-chartjs-2';
@@ -26,6 +27,17 @@ export async function loader({ request }) {
 		const { services } = await fetchServicesAndModemData();
 		const firstService = services?.[0];
 		const firstModem = firstService?.modems?.[0];
+
+		// Add Shopify order data fetch
+		const orderData = await fetchShopifyOrderData(firstModem?.id);
+
+		// Merge order data with modem details
+		if (firstModem) {
+			firstModem.details = {
+				...firstModem.details,
+				...orderData,
+			};
+		}
 
 		console.log('🌽 First Modem Details:', firstModem?.details);
 
@@ -74,23 +86,22 @@ export default function Dashboard() {
 
 	// Update the timestamp formatting
 	const formatTime = (timestamp) => {
-		return new Date(timestamp * 1000).toLocaleTimeString('en-US', {
-			hour: 'numeric',
-			minute: '2-digit',
-			hour12: true
-		}).replace(/\s?(AM|PM)/, ' $1').toUpperCase();
+		return new Date(timestamp * 1000)
+			.toLocaleTimeString('en-US', {
+				hour: 'numeric',
+				minute: '2-digit',
+				hour12: true,
+			})
+			.replace(/\s?(AM|PM)/, ' $1')
+			.toUpperCase();
 	};
 
 	// Update the data processing
-	const latencyTimestamps = Array.isArray(data.latencyData) 
-		? data.latencyData.map(entry => entry?.[0] ? formatTime(entry[0]) : '') 
-		: [];
+	const latencyTimestamps = Array.isArray(data.latencyData) ? data.latencyData.map((entry) => (entry?.[0] ? formatTime(entry[0]) : '')) : [];
 
 	const latencyValues = Array.isArray(data.latencyData) ? data.latencyData.map((entry) => entry?.[1] || 0) : [];
 
-	const throughputTimestamps = Array.isArray(data.throughputData)
-		? data.throughputData.map(entry => entry?.[0] ? formatTime(entry[0]) : '')
-		: [];
+	const throughputTimestamps = Array.isArray(data.throughputData) ? data.throughputData.map((entry) => (entry?.[0] ? formatTime(entry[0]) : '')) : [];
 
 	const throughputDownload = Array.isArray(data.throughputData) ? data.throughputData.map((entry) => entry?.[1] || 0) : [];
 
@@ -116,9 +127,9 @@ export default function Dashboard() {
 					color: '#374151',
 					font: {
 						family: 'Inter',
-						size: 12
-					}
-				}
+						size: 12,
+					},
+				},
 			},
 			tooltip: {
 				mode: 'index',
@@ -127,51 +138,51 @@ export default function Dashboard() {
 				titleColor: '#fff',
 				bodyColor: '#fff',
 				borderColor: '#374151',
-				borderWidth: 1
-			}
+				borderWidth: 1,
+			},
 		},
 		scales: {
 			x: {
 				grid: {
 					color: '#e5e7eb',
-					drawBorder: false
+					drawBorder: false,
 				},
 				ticks: {
 					color: '#6b7280',
 					font: {
 						family: 'Inter',
-						size: 11
+						size: 11,
 					},
-					callback: (value) => throughputTimestamps[value]
-				}
+					callback: (value) => throughputTimestamps[value],
+				},
 			},
 			y: {
 				beginAtZero: true,
 				grid: {
 					color: '#e5e7eb',
-					drawBorder: false
+					drawBorder: false,
 				},
 				ticks: {
 					color: '#6b7280',
 					font: {
 						family: 'Inter',
-						size: 11
-					}
-				}
-			}
+						size: 11,
+					},
+				},
+			},
 		},
 		elements: {
 			line: {
 				tension: 0.1,
 				borderWidth: 2,
 				fill: true,
-				backgroundColor: 'rgba(203, 213, 225, 0.2)'
+				backgroundColor: 'rgba(203, 213, 225, 0.2)',
 			},
 			point: {
 				radius: 0,
-				hoverRadius: 4
-			}
-		}
+				hoverRadius: 4,
+			},
+		},
 	};
 
 	// Add a loading state or fallback for when data isn't available
@@ -209,41 +220,59 @@ export default function Dashboard() {
 						{/* Account Information Card */}
 						<div className='dashboard-card'>
 							<h2>Account Information</h2>
-							<div className='info-grid'>
-								<div className='info-item'>
-									<label>Account Status</label>
-									<p className={`status ${data.modem?.details?.status || 'unknown'}`}>{data.modem?.details?.status || 'Unknown'}</p>
-								</div>
-								<div className='info-item'>
-									<label>Service Plan</label>
-									<p>{data.modem?.details?.plan || 'Standard Plan'}</p>
-								</div>
-								<div className='info-item'>
-									<label>Current Billing Period</label>
-									<p>
-										{new Date().toLocaleDateString('en-US', {
-											month: 'long',
-											year: 'numeric',
-										})}
-									</p>
-								</div>
-								<div className='info-item'>
-									<label>Data Usage</label>
-									<div className='usage-meter'>
-										<div
-											className='usage-bar'
-											style={{
-												width: `${Math.min(data.modem?.details?.usage_percentage || 0, 100)}%`,
-											}}
-										/>
+							<div className='two-column-grid'>
+								{/* Left Column - Customer Info */}
+								<div className='column'>
+									<div className='info-group'>
+										<h3>Customer Details</h3>
+										<p>
+											<strong>Name:</strong> {data.modem?.details?.firstName} {data.modem?.details?.lastName}
+										</p>
+										<p>
+											<strong>Email:</strong> {data.modem?.details?.email}
+										</p>
+										<p>
+											<strong>Phone:</strong> {data.modem?.details?.phone}
+										</p>
+										{data.modem?.details?.defaultAddress && (
+											<>
+												<p>
+													<strong>Address:</strong> {data.modem?.details?.defaultAddress.address1}
+												</p>
+												<p>
+													<strong>City:</strong> {data.modem?.details?.defaultAddress.city}
+												</p>
+												<p>
+													<strong>State:</strong> {data.modem?.details?.defaultAddress.province}
+												</p>
+											</>
+										)}
 									</div>
-									<p>
-										{data.modem?.details?.usage_total || '0'} GB / {data.modem?.details?.usage_limit || 'Unlimited'}
-									</p>
 								</div>
-								<div className='info-item'>
-									<label>Connection Type</label>
-									<p>{data.modem?.type || 'Satellite'}</p>
+
+								{/* Right Column - Order/Billing Info */}
+								<div className='column'>
+									<div className='info-group'>
+										<h3>Service & Billing</h3>
+										<p>
+											<strong>Active Services:</strong> {data.modem?.details?.active_services || '1'}
+										</p>
+										<p>
+											<strong>Monthly Cost:</strong> ${data.modem?.details?.monthly_cost || '0.00'}
+										</p>
+										<p>
+											<strong>Next Billing Date:</strong> {new Date(data.modem?.details?.next_billing_date || Date.now()).toLocaleDateString()}
+										</p>
+										<p>
+											<strong>Last Payment:</strong> ${data.modem?.details?.last_payment_amount || '0.00'}
+										</p>
+										<p>
+											<strong>Last Payment Date:</strong> {new Date(data.modem?.details?.last_payment_date || Date.now()).toLocaleDateString()}
+										</p>
+										<p>
+											<strong>Payment Status:</strong> {data.modem?.details?.payment_status || 'Unknown'}
+										</p>
+									</div>
 								</div>
 							</div>
 						</div>
@@ -289,16 +318,16 @@ export default function Dashboard() {
 												data: throughputDownload,
 												borderColor: '#2563eb', // blue-600
 												backgroundColor: 'rgba(37, 99, 235, 0.1)',
-												tension: 0.1
+												tension: 0.1,
 											},
 											{
 												label: 'Upload (Mbps)',
 												data: throughputUpload,
 												borderColor: '#16a34a', // green-600
 												backgroundColor: 'rgba(22, 163, 74, 0.1)',
-												tension: 0.1
-											}
-										]
+												tension: 0.1,
+											},
+										],
 									}}
 									options={chartOptions}
 								/>
@@ -319,9 +348,9 @@ export default function Dashboard() {
 												data: latencyValues,
 												borderColor: '#2563eb', // blue-600 (same as download)
 												backgroundColor: 'rgba(37, 99, 235, 0.1)',
-												tension: 0.1
-											}
-										]
+												tension: 0.1,
+											},
+										],
 									}}
 									options={chartOptions}
 								/>
