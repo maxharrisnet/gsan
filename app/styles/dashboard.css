@@ -27,11 +27,22 @@
 
 .dashboard-grid {
 	display: grid;
-	grid-template-columns: repeat(3, 1fr);
-	gap: 1.5rem;
+	gap: var(--spacing-base);
+	grid-template-columns: 1fr;
+	margin-top: var(--spacing-base);
 }
 
+/* Tablet and up */
+@media (min-width: 768px) {
+	.dashboard-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+/* Ensure cards take full width in their grid cell */
 .dashboard-card {
+	width: 100%;
+	height: 100%;
 	background: white;
 	border-radius: 8px;
 	padding: 1.5rem;
@@ -75,7 +86,9 @@
 	grid-column: 1 / -1;
 }
 
+/* Make charts responsive within their containers */
 .chart-container {
+	width: 100%;
 	height: 300px;
 	margin-top: 1rem;
 }
@@ -88,4 +101,65 @@
 	.dashboard-grid {
 		grid-template-columns: 1fr;
 	}
+}
+
+.info-grid {
+	display: grid;
+	gap: 1.25rem;
+}
+
+.info-item {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.info-item label {
+	font-size: 0.875rem;
+	color: #6b7280;
+}
+
+.info-item p {
+	font-size: 1rem;
+	font-weight: 500;
+	color: #111827;
+}
+
+.usage-meter {
+	width: 100%;
+	height: 8px;
+	background: #e5e7eb;
+	border-radius: 4px;
+	overflow: hidden;
+	margin: 0.5rem 0;
+}
+
+.usage-bar {
+	height: 100%;
+	background: #3b82f6;
+	transition: width 0.3s ease;
+}
+
+.status {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.25rem 0.75rem;
+	border-radius: 9999px;
+	font-size: 0.875rem;
+	font-weight: 500;
+}
+
+.status.active {
+	background-color: #ecfdf5;
+	color: #059669;
+}
+
+.status.inactive {
+	background-color: #fef2f2;
+	color: #dc2626;
+}
+
+.status.unknown {
+	background-color: #f3f4f6;
+	color: #6b7280;
 }
