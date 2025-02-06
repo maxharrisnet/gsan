@@ -72,12 +72,25 @@ export default function Dashboard() {
 		throughputData: data.throughputData,
 	});
 
-	// Add default empty arrays and null checks
-	const latencyTimestamps = Array.isArray(data.latencyData) ? data.latencyData.map((entry) => (entry?.[0] ? new Date(entry[0] * 1000).toLocaleTimeString() : '')) : [];
+	// Update the timestamp formatting
+	const formatTime = (timestamp) => {
+		return new Date(timestamp * 1000).toLocaleTimeString('en-US', {
+			hour: 'numeric',
+			minute: '2-digit',
+			hour12: true
+		}).replace(/\s?(AM|PM)/, ' $1').toUpperCase();
+	};
+
+	// Update the data processing
+	const latencyTimestamps = Array.isArray(data.latencyData) 
+		? data.latencyData.map(entry => entry?.[0] ? formatTime(entry[0]) : '') 
+		: [];
 
 	const latencyValues = Array.isArray(data.latencyData) ? data.latencyData.map((entry) => entry?.[1] || 0) : [];
 
-	const throughputTimestamps = Array.isArray(data.throughputData) ? data.throughputData.map((entry) => (entry?.[0] ? new Date(entry[0] * 1000).toLocaleTimeString() : '')) : [];
+	const throughputTimestamps = Array.isArray(data.throughputData)
+		? data.throughputData.map(entry => entry?.[0] ? formatTime(entry[0]) : '')
+		: [];
 
 	const throughputDownload = Array.isArray(data.throughputData) ? data.throughputData.map((entry) => entry?.[1] || 0) : [];
 
@@ -92,19 +105,73 @@ export default function Dashboard() {
 		throughputUpload: throughputUpload.slice(0, 5),
 	});
 
+	// Update chart colors and options
 	const chartOptions = {
 		responsive: true,
 		maintainAspectRatio: false,
 		plugins: {
 			legend: {
 				position: 'bottom',
+				labels: {
+					color: '#374151',
+					font: {
+						family: 'Inter',
+						size: 12
+					}
+				}
 			},
+			tooltip: {
+				mode: 'index',
+				intersect: false,
+				backgroundColor: 'rgba(17, 24, 39, 0.9)',
+				titleColor: '#fff',
+				bodyColor: '#fff',
+				borderColor: '#374151',
+				borderWidth: 1
+			}
 		},
 		scales: {
+			x: {
+				grid: {
+					color: '#e5e7eb',
+					drawBorder: false
+				},
+				ticks: {
+					color: '#6b7280',
+					font: {
+						family: 'Inter',
+						size: 11
+					},
+					callback: (value) => throughputTimestamps[value]
+				}
+			},
 			y: {
 				beginAtZero: true,
-			},
+				grid: {
+					color: '#e5e7eb',
+					drawBorder: false
+				},
+				ticks: {
+					color: '#6b7280',
+					font: {
+						family: 'Inter',
+						size: 11
+					}
+				}
+			}
 		},
+		elements: {
+			line: {
+				tension: 0.1,
+				borderWidth: 2,
+				fill: true,
+				backgroundColor: 'rgba(203, 213, 225, 0.2)'
+			},
+			point: {
+				radius: 0,
+				hoverRadius: 4
+			}
+		}
 	};
 
 	// Add a loading state or fallback for when data isn't available
@@ -220,16 +287,18 @@ export default function Dashboard() {
 											{
 												label: 'Download (Mbps)',
 												data: throughputDownload,
-												borderColor: '#4ade80',
-												tension: 0.1,
+												borderColor: '#2563eb', // blue-600
+												backgroundColor: 'rgba(37, 99, 235, 0.1)',
+												tension: 0.1
 											},
 											{
 												label: 'Upload (Mbps)',
 												data: throughputUpload,
-												borderColor: '#3b82f6',
-												tension: 0.1,
-											},
-										],
+												borderColor: '#16a34a', // green-600
+												backgroundColor: 'rgba(22, 163, 74, 0.1)',
+												tension: 0.1
+											}
+										]
 									}}
 									options={chartOptions}
 								/>
@@ -248,10 +317,11 @@ export default function Dashboard() {
 											{
 												label: 'Latency (ms)',
 												data: latencyValues,
-												borderColor: '#f59e0b',
-												tension: 0.1,
-											},
-										],
+												borderColor: '#2563eb', // blue-600 (same as download)
+												backgroundColor: 'rgba(37, 99, 235, 0.1)',
+												tension: 0.1
+											}
+										]
 									}}
 									options={chartOptions}
 								/>
