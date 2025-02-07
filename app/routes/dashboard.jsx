@@ -8,7 +8,6 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement
 import { Line } from 'react-chartjs-2';
 import styles from '../styles/dashboard.css?url';
 
-// Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 export function links() {
@@ -31,7 +30,7 @@ export async function loader({ request }) {
 
 		// Get Shopify customer data using the same method as profile page
 		const shopifyCustomer = await getCustomerData(customerAccessToken, shop);
-		console.log('🛍️ Dashboard Customer Data:', shopifyCustomer);
+		// console.log('🛍️ Dashboard Customer Data:', shopifyCustomer);
 
 		// Add customer data to modem details
 		if (firstModem) {
@@ -45,7 +44,6 @@ export async function loader({ request }) {
 			};
 		}
 
-		// Add Shopify order data fetch
 		const orderData = await fetchShopifyOrderData(firstModem?.id);
 
 		// Merge order data with modem details

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useLoaderData } from '@remix-run/react';
+import { useLoaderData, useNavigation } from '@remix-run/react';
 import { fetchServicesAndModemData } from '../compass.server';
 import Layout from './../components/layout/Layout';
 import reportStyles from '../styles/reports.css?url';
@@ -8,7 +8,6 @@ export const loader = async ({ request }) => {
 	try {
 		console.log('🏈 Loading reports data...');
 		const servicesData = await fetchServicesAndModemData();
-
 		return { services: servicesData.services };
 	} catch (error) {
 		console.error('🚨 Error loading reports:', error);
@@ -16,23 +15,18 @@ export const loader = async ({ request }) => {
 	}
 };
 
-const Reports = () => {
-	console.log('🏈 Rendering reports');
-	const { services } = useLoaderData();
+const ReportsContent = ({ services }) => {
 	const [isLoading, setIsLoading] = useState(true);
 	const webdatarocksRef = useRef(null);
 
-	// Helper function to calculate averages
 	const calculateAverage = (arr) => (arr.length > 0 ? arr.reduce((sum, val) => sum + val, 0) / arr.length : 0);
 
-	// Flatten and compute the necessary fields
 	const flattenedData = services.flatMap((service) =>
 		service.modems.map((modem) => {
 			const latencyData = modem.data?.latency?.data || [];
 			const throughputData = modem.data?.throughput?.data || {};
 			const signalQualityData = modem.data?.signal?.data || [];
 			const usageData = modem.usage || [];
-
 			const totalPriority = usageData.reduce((sum, u) => sum + (u.priority || 0), 0).toFixed(2);
 			const totalStandard = usageData.reduce((sum, u) => sum + (u.standard || 0), 0).toFixed(2);
 			const usageLimit = modem.details?.meta?.usageLimit || 0;
@@ -46,7 +40,6 @@ const Reports = () => {
 				StandardData: totalStandard,
 				UsageLimit: usageLimit,
 				DataOverage: dataOverage,
-
 				AvgLatency: calculateAverage(latencyData.map((d) => d[1])).toFixed(3),
 				AvgDownloadThroughput: calculateAverage(throughputData.download || []).toFixed(3),
 				AvgUploadThroughput: calculateAverage(throughputData.upload || []).toFixed(3),
@@ -62,32 +55,37 @@ const Reports = () => {
 
 		const initializeWebDataRocks = async () => {
 			try {
-				// Import the WebDataRocks script directly
-				await import('@webdatarocks/webdatarocks/webdatarocks.js');
+				// Wait for the WebDataRocks global to be available
+				if (typeof WebDataRocks === 'undefined') {
+					const script = document.createElement('script');
+					script.src = 'https://cdn.webdatarocks.com/latest/webdatarocks.js';
+					script.async = true;
+
+					// Create a promise to wait for script load
+					await new Promise((resolve, reject) => {
+						script.onload = resolve;
+						script.onerror = reject;
+						document.head.appendChild(script);
+					});
+				}
 
 				if (mounted && webdatarocksRef.current) {
-					// Access WebDataRocks from window object
-					new window.WebDataRocks({
+					new WebDataRocks({
 						container: webdatarocksRef.current,
 						toolbar: {
 							visible: true,
 						},
 						beforetoolbarcreated: function (toolbar) {
-							// Get all tabs from the Toolbar
 							let tabs = toolbar.getTabs();
 							toolbar.getTabs = function () {
-								// Keep only specific tabs
 								tabs = tabs.filter((tab) => {
 									return ['wdr-tab-export', 'wdr-tab-fullscreen'].includes(tab.id);
 								});
-
-								// Customize the export tab
 								const exportTab = tabs.find((tab) => tab.id === 'wdr-tab-export');
 								if (exportTab) {
 									exportTab.title = 'Download';
 									exportTab.icon = toolbar.icons.export;
 								}
-
 								return tabs;
 							};
 						},
@@ -162,10 +160,12 @@ const Reports = () => {
 						},
 					});
 				}
-				setIsLoading(false);
 			} catch (error) {
-				console.error('Failed to load WebDataRocks:', error);
-				setIsLoading(false);
+				console.error('🚨 Failed to load WebDataRocks:', error);
+			} finally {
+				if (mounted) {
+					setIsLoading(false);
+				}
 			}
 		};
 
@@ -175,11 +175,28 @@ const Reports = () => {
 		};
 	}, [flattenedData]);
 
+	if (isLoading) {
+		return <div>Initializing reports...</div>;
+	}
+
+	return <div ref={webdatarocksRef} />;
+};
+
+const Reports = () => {
+	const { services } = useLoaderData();
+	const navigation = useNavigation();
+
+	if (navigation.state === 'loading' && navigation.formData) {
+		return (
+			<Layout>
+				<div>Loading...</div>
+			</Layout>
+		);
+	}
+
 	return (
 		<Layout>
-			<main className='content'>
-				<section className='section'>{isLoading ? <div>Loading...</div> : <div ref={webdatarocksRef} />}</section>
-			</main>
+			<ReportsContent services={services} />
 		</Layout>
 	);
 };

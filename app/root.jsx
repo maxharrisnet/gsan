@@ -23,13 +23,6 @@ export const loader = async ({ request }) => {
 	const url = new URL(request.url);
 	const userData = session.get('userData');
 
-	console.log('🌳 Root loader:', {
-		hasSession: Boolean(session),
-		hasUserData: Boolean(userData),
-		userData: userData, // Log the actual userData to see what we have
-		path: url.pathname,
-	});
-
 	// Public routes that don't require authentication
 	const publicRoutes = ['/auth', '/login', '/'];
 	const isPublicRoute = publicRoutes.includes(url.pathname);

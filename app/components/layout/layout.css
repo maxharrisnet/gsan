@@ -270,3 +270,39 @@ a > .section:hover {
 	width: 100%;
 	height: 100vh;
 }
+
+/* Add to your existing nav styles */
+.nav-dropdown {
+	position: relative;
+}
+
+.nav-dropdown:hover .nav-dropdown-content {
+	display: block;
+}
+
+.nav-dropdown-content {
+	display: none;
+	position: absolute;
+	top: 100%;
+	left: 0;
+	background: var(--background-white);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius);
+	box-shadow: var(--shadow-sm);
+	min-width: 150px;
+	z-index: 1000;
+}
+
+.nav-dropdown-content li {
+	margin: 0;
+}
+
+.nav-dropdown-content .nav-link {
+	display: block;
+	padding: var(--spacing-base);
+	white-space: nowrap;
+}
+
+.nav-dropdown-content .nav-link:hover {
+	background-color: var(--color-background);
+}

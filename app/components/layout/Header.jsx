@@ -26,8 +26,10 @@ const Header = () => {
 		return null;
 	}
 	const { currentUser } = userContext;
+	const isProvider = currentUser?.role === 'provider';
 	const isGsanPage = path.includes('/gsan') || currentUser?.authType === 'shopify';
 	const isSwitchPage = path.includes('/switch') || currentUser?.authType === 'sonar';
+	const providerType = isGsanPage ? 'gsan' : 'sonar';
 	const userType = isGsanPage ? 'gsan' : 'switch';
 
 	return (
@@ -55,45 +57,58 @@ const Header = () => {
 				<nav className='nav'>
 					<ul className='nav-list'>
 						<li className='nav-item'>
-							<NavLink 
-								to={`/dashboard`} 
+							<NavLink
+								to={`/dashboard`}
 								className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
 							>
 								Dashboard
 							</NavLink>
 						</li>
 						<li className='nav-item'>
-							<NavLink 
-								to={`/map`} 
+							<NavLink
+								to={`/map`}
 								className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
 							>
 								Map
 							</NavLink>
 						</li>
 						<li className='nav-item'>
-							<NavLink 
-								to={`/performance`} 
+							<NavLink
+								to={`/performance`}
 								className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
 							>
 								Performance
 							</NavLink>
 						</li>
 						<li className='nav-item'>
-							<NavLink 
-								to={`/reports/starlink/usage`} 
+							<NavLink
+								to={`/reports/starlink/usage`}
 								className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
 							>
 								Reports
 							</NavLink>
 						</li>
-						<li className='nav-item'>
-							<NavLink 
-								to={`/customers`} 
-								className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-							>
-								Customers
-							</NavLink>
-						</li>{' '}
+						{/* Only show Customers section to providers */}
+						{isProvider && (
+							<li className='nav-item nav-dropdown'>
+								<NavLink
+									to={`/${providerType}/customers`}
+									className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+								>
+									Customers
+								</NavLink>
+								<ul className='nav-dropdown-content'>
+									<li>
+										<NavLink
+											to={`/${providerType}/users/manage`}
+											className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+										>
+											Add New User
+										</NavLink>
+									</li>
+								</ul>
+							</li>
+						)}
 					</ul>
 					<div
 						className='user-avatar'
