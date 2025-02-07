@@ -2,25 +2,26 @@ import { redirect } from '@remix-run/node';
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteError, useLoaderData, Link, isRouteErrorResponse, LiveReload } from '@remix-run/react';
 import { getSession } from './utils/session.server';
 import { UserProvider } from './context/UserContext';
+import Layout from './components/layout/Layout';
 import globalStyles from './styles/global.css?url';
 import errorStyles from './styles/error.css?url';
-import Layout from './components/layout/Layout';
 
 export function links() {
-	return [...Layout.links(), { rel: 'stylesheet', href: globalStyles }, { rel: 'stylesheet', href: errorStyles }];
+	return [
+		...Layout.links(),
+		{ rel: 'stylesheet', href: globalStyles },
+		{ rel: 'stylesheet', href: errorStyles },
+		{
+			rel: 'stylesheet',
+			href: 'https://fonts.googleapis.com/icon?family=Material+Icons',
+		},
+	];
 }
 
 export const loader = async ({ request }) => {
 	const session = await getSession(request.headers.get('Cookie'));
 	const url = new URL(request.url);
 	const userData = session.get('userData');
-
-	console.log('🌳 Root loader:', {
-		hasSession: Boolean(session),
-		hasUserData: Boolean(userData),
-		userData: userData, // Log the actual userData to see what we have
-		path: url.pathname,
-	});
 
 	// Public routes that don't require authentication
 	const publicRoutes = ['/auth', '/login', '/'];

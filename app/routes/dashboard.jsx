@@ -2,13 +2,12 @@ import { json } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { getSession } from '../utils/session.server';
 import { fetchServicesAndModemData } from '../compass.server';
-import { fetchShopifyOrderData } from '../gsan.server';
+import { fetchShopifyOrderData, getCustomerData } from '../gsan.server';
 import Layout from '../components/layout/Layout';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import styles from '../styles/dashboard.css?url';
 
-// Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 export function links() {
@@ -24,11 +23,27 @@ export async function loader({ request }) {
 	}
 
 	try {
+		const { customerAccessToken, shop } = userData;
 		const { services } = await fetchServicesAndModemData();
 		const firstService = services?.[0];
 		const firstModem = firstService?.modems?.[0];
 
-		// Add Shopify order data fetch
+		// Get Shopify customer data using the same method as profile page
+		const shopifyCustomer = await getCustomerData(customerAccessToken, shop);
+		// console.log('🛍️ Dashboard Customer Data:', shopifyCustomer);
+
+		// Add customer data to modem details
+		if (firstModem) {
+			firstModem.details = {
+				...firstModem.details,
+				firstName: shopifyCustomer?.firstName,
+				lastName: shopifyCustomer?.lastName,
+				email: shopifyCustomer?.email,
+				phone: shopifyCustomer?.phone,
+				defaultAddress: shopifyCustomer?.defaultAddress,
+			};
+		}
+
 		const orderData = await fetchShopifyOrderData(firstModem?.id);
 
 		// Merge order data with modem details
@@ -38,8 +53,6 @@ export async function loader({ request }) {
 				...orderData,
 			};
 		}
-
-		console.log('🌽 First Modem Details:', firstModem?.details);
 
 		if (!firstModem) {
 			return json({

@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "prisma generate && remix build",
-    "vercel-build": "prisma generate && prisma migrate deploy && remix build",
+    "vercel-build": "prisma generate && remix vite:build && cp -r ./public ./build/client",
     "dev": "shopify app dev",
     "config:link": "shopify app config link",
     "generate": "shopify app generate",
@@ -46,6 +46,7 @@
     "react": "^18.2.0",
     "react-chartjs-2": "^5.3.0",
     "react-dom": "^18.2.0",
+    "remix-utils": "^7.5.0",
     "vite-tsconfig-paths": "^5.0.1"
   },
   "devDependencies": {

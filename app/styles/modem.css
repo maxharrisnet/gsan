@@ -40,9 +40,17 @@
 	grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
 }
 
-/* .chart-container {
-	height: 300px;
-} */
+.chart-wrapper {
+	height: 400px; /* Set a fixed container height */
+	margin-bottom: var(--spacing-large);
+}
+
+.chart-container {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	gap: var(--spacing-large);
+	padding: var(--spacing-large);
+}
 
 /* Status Colors */
 .text-success {
@@ -95,9 +103,9 @@
 		grid-template-columns: 1fr;
 	}
 
-	/* .chart-container {
+	.chart-container {
 		height: 250px;
-	} */
+	}
 }
 
 .sidebar-header {
@@ -193,4 +201,10 @@
 	font-size: var(--font-size-sm);
 	font-weight: 600;
 	color: var(--color-text-light);
+}
+
+/* Add will-change to optimize rendering */
+.chart-wrapper canvas {
+	will-change: transform;
+	transform: translateZ(0);
 }

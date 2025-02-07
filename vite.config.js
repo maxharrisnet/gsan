@@ -55,6 +55,14 @@ export default defineConfig({
 		}),
 		tsconfigPaths(),
 	],
+	resolve: {
+		alias: {
+			'@webdatarocks/webdatarocks': 'node_modules/@webdatarocks/webdatarocks',
+		},
+	},
+	optimizeDeps: {
+		include: ['@webdatarocks/webdatarocks'],
+	},
 	build: {
 		rollupOptions: {
 			external: ['@webdatarocks/react-webdatarocks', '@webdatarocks/webdatarocks/webdatarocks.js'],

@@ -11,12 +11,11 @@
 /* Wrapper Components */
 .wrapper {
 	display: flex;
+	align-items: center;
 	flex: 1;
 	max-width: 100vw;
-	justify-content: center;
-	align-items: flex-start;
+	min-height: 0;
 	background-color: var(--color-background);
-	min-height: 100vh;
 }
 
 .wrapper-column {
@@ -37,12 +36,14 @@
 /* Sidebar */
 .sidebar {
 	flex: 0 0 400px;
-	background-color: #fff;
+	background-color: var(--background-white);
 	border-right: 1px solid var(--color-border);
-	height: 100%;
-	overflow-y: auto;
 	display: flex;
 	flex-direction: column;
+	height: 100vh;
+	position: sticky;
+	top: 0;
+	overflow-y: auto;
 }
 
 .sidebar-content {
@@ -55,12 +56,15 @@
 	flex-flow: column;
 	padding: var(--spacing-xlarge);
 	background-color: var(--color-background);
-	overflow: hidden;
+	overflow: auto;
 	gap: var(--spacing-large);
 }
 
 .content.content-full-width {
+	flex: 1;
 	padding: 0;
+	height: 100vh;
+	overflow: scroll;
 }
 
 .content-centered {
@@ -128,10 +132,15 @@ a > .section:hover {
 	width: 100px;
 }
 
+.logo-wrapper .logo {
+	width: 300px;
+}
+
 .login-button-wrapper {
 	display: flex;
 	justify-content: center;
 	align-items: center;
+	gap: var(--spacing-large);
 }
 
 .login-button-wrapper > div {
@@ -260,4 +269,46 @@ a > .section:hover {
 	padding: 1rem;
 	border-top: 1px solid var(--color-border);
 	text-align: center;
+}
+
+/* Map Container */
+.map-container {
+	width: 100%;
+	height: 100vh;
+}
+
+/* Add to your existing nav styles */
+.nav-dropdown {
+	position: relative;
+}
+
+.nav-dropdown:hover .nav-dropdown-content {
+	display: block;
+}
+
+.nav-dropdown-content {
+	display: none;
+	position: absolute;
+	top: 100%;
+	left: 0;
+	background: var(--background-white);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius);
+	box-shadow: var(--shadow-sm);
+	min-width: 150px;
+	z-index: 1000;
+}
+
+.nav-dropdown-content li {
+	margin: 0;
+}
+
+.nav-dropdown-content .nav-link {
+	display: block;
+	padding: var(--spacing-base);
+	white-space: nowrap;
+}
+
+.nav-dropdown-content .nav-link:hover {
+	background-color: var(--color-background);
 }
