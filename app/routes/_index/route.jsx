@@ -1,7 +1,6 @@
 import { Link } from '@remix-run/react';
 import Layout from '../../components/layout/Layout';
 import styles from './styles.module.css';
-import logo from '../../assets/images/GSAN-logo.png';
 
 export default function App() {
 	return (
@@ -9,7 +8,7 @@ export default function App() {
 			<main className='content content-centered'>
 				<div className='logo-wrapper'>
 					<img
-						src={logo}
+						src='/assets/images/GSAN-logo.png'
 						alt='GSAN Logo'
 						className='logo'
 					/>
