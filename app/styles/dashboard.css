@@ -47,6 +47,7 @@
 	border-radius: 8px;
 	padding: 1.5rem;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	margin-bottom: var(--spacing-large);
 }
 
 .dashboard-card h2 {
@@ -201,5 +202,71 @@
 	.account-info .two-column-grid {
 		grid-template-columns: 1fr;
 		gap: 1rem;
+	}
+}
+
+/* Two column layout for larger screens */
+.dashboard-two-columns {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: var(--spacing-large);
+	margin-bottom: var(--spacing-large);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+	.dashboard-two-columns {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* Update section styling to match profile */
+.section {
+	background: var(--background-white);
+	border-radius: var(--border-radius);
+	border: 1px solid var(--color-border);
+	padding: var(--spacing-xlarge);
+	margin-bottom: var(--spacing-large);
+}
+
+.section h1 {
+	margin-bottom: 0;
+	font-size: 1.5rem;
+	color: var(--color-text-primary);
+}
+
+.section h2 {
+	color: var(--color-text-primary);
+	font-size: 1.25rem;
+	margin-bottom: var(--spacing-large);
+}
+
+/* Header section specific styling */
+header.section {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+/* Update info grid to match profile */
+.info-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: var(--spacing-base);
+}
+
+.info-item {
+	background: var(--color-background);
+	padding: var(--spacing-base);
+	border-radius: var(--border-radius);
+}
+
+@media (max-width: 768px) {
+	.info-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.section {
+		padding: var(--spacing-large);
 	}
 }

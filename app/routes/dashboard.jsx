@@ -175,15 +175,34 @@ export default function Dashboard() {
 			line: {
 				tension: 0.1,
 				borderWidth: 2,
-				fill: true,
-				backgroundColor: 'rgba(203, 213, 225, 0.2)',
 			},
 			point: {
 				radius: 0,
 				hoverRadius: 4,
 			},
 		},
+		fill: true,
 	};
+
+	// Update datasets with higher opacity and explicit fill settings
+	const datasets = [
+		{
+			label: 'Download (Mbps)',
+			data: throughputDownload,
+			borderColor: '#2563eb',
+			backgroundColor: 'rgba(37, 99, 235, 0.3)',
+			fill: true,
+			tension: 0.1,
+		},
+		{
+			label: 'Upload (Mbps)',
+			data: throughputUpload,
+			borderColor: '#16a34a',
+			backgroundColor: 'rgba(22, 163, 74, 0.3)',
+			fill: true,
+			tension: 0.1,
+		},
+	];
 
 	// Add a loading state or fallback for when data isn't available
 	if (!data.modem) {
@@ -207,158 +226,148 @@ export default function Dashboard() {
 
 	return (
 		<Layout>
-			<div className='container'>
-				<div className='dashboard'>
-					<header className='dashboard-header'>
+			<main className='content'>
+				<div className='container'>
+					{/* Dashboard Header */}
+					<header className='section'>
 						<h1>Dashboard</h1>
 						<div className='status-indicator'>
 							<span className={`status ${data.modem?.details?.status || 'unknown'}`}>{data.modem?.details?.status || 'Unknown'}</span>
 						</div>
 					</header>
 
-					<div className='dashboard-grid'>
-						{/* Account Information Card */}
-						<div className='dashboard-card'>
-							<h2>Account Information</h2>
-							<div className='two-column-grid'>
-								{/* Left Column - Customer Info */}
-								<div className='column'>
-									<div className='info-group'>
-										<h3>Customer Details</h3>
-										<p>
-											<strong>Name:</strong> {data.modem?.details?.firstName} {data.modem?.details?.lastName}
-										</p>
-										<p>
-											<strong>Email:</strong> {data.modem?.details?.email}
-										</p>
-										<p>
-											<strong>Phone:</strong> {data.modem?.details?.phone}
-										</p>
-										{data.modem?.details?.defaultAddress && (
-											<>
-												<p>
-													<strong>Address:</strong> {data.modem?.details?.defaultAddress.address1}
-												</p>
-												<p>
-													<strong>City:</strong> {data.modem?.details?.defaultAddress.city}
-												</p>
-												<p>
-													<strong>State:</strong> {data.modem?.details?.defaultAddress.province}
-												</p>
-											</>
-										)}
-									</div>
-								</div>
-
-								{/* Right Column - Order/Billing Info */}
-								<div className='column'>
-									<div className='info-group'>
-										<h3>Service & Billing</h3>
-										<p>
-											<strong>Active Services:</strong> {data.modem?.details?.active_services || '1'}
-										</p>
-										<p>
-											<strong>Monthly Cost:</strong> ${data.modem?.details?.monthly_cost || '0.00'}
-										</p>
-										<p>
-											<strong>Next Billing Date:</strong> {new Date(data.modem?.details?.next_billing_date || Date.now()).toLocaleDateString()}
-										</p>
-										<p>
-											<strong>Last Payment:</strong> ${data.modem?.details?.last_payment_amount || '0.00'}
-										</p>
-										<p>
-											<strong>Last Payment Date:</strong> {new Date(data.modem?.details?.last_payment_date || Date.now()).toLocaleDateString()}
-										</p>
-										<p>
-											<strong>Payment Status:</strong> {data.modem?.details?.payment_status || 'Unknown'}
-										</p>
-									</div>
-								</div>
-							</div>
-						</div>
-
-						{/* System Information Card */}
-						<div className='dashboard-card'>
-							<h2>System Information</h2>
+					{/* Two Column Layout for Customer and Billing */}
+					<div className='dashboard-two-columns'>
+						{/* Customer Info Card */}
+						<div className='section'>
+							<h2>Customer Details</h2>
 							<div className='info-grid'>
 								<div className='info-item'>
-									<label>Hardware Version</label>
-									<p>{data.modem?.details?.hardware_version || 'Unknown'}</p>
+									<label>Name</label>
+									<p>
+										{data.modem?.details?.firstName} {data.modem?.details?.lastName}
+									</p>
 								</div>
 								<div className='info-item'>
-									<label>Software Version</label>
-									<p>{data.modem?.details?.software_version || 'Unknown'}</p>
+									<label>Email</label>
+									<p>{data.modem?.details?.email}</p>
 								</div>
 								<div className='info-item'>
-									<label>Uptime</label>
-									<p>{data.modem?.details?.uptime || '0'} hours</p>
+									<label>Phone</label>
+									<p>{data.modem?.details?.phone}</p>
 								</div>
-								<div className='info-item'>
-									<label>Last Updated</label>
-									<p>{new Date(data.modem?.details?.last_update || Date.now()).toLocaleString()}</p>
-								</div>
-								<div className='info-item'>
-									<label>Signal Quality</label>
-									<p>{data.modem?.details?.signal_quality || '0'}%</p>
-								</div>
+								{data.modem?.details?.defaultAddress && (
+									<>
+										<div className='info-item'>
+											<label>Address</label>
+											<p>{data.modem?.details?.defaultAddress.address1}</p>
+										</div>
+										<div className='info-item'>
+											<label>Location</label>
+											<p>
+												{data.modem?.details?.defaultAddress.city}, {data.modem?.details?.defaultAddress.province}
+											</p>
+										</div>
+									</>
+								)}
 							</div>
 						</div>
 
-						{/* Throughput Chart */}
-						<div className='dashboard-card'>
-							<h2>Current Throughput</h2>
-							<div className='chart-container'>
-								<Line
-									id='throughput-chart'
-									data={{
-										labels: throughputTimestamps,
-										datasets: [
-											{
-												label: 'Download (Mbps)',
-												data: throughputDownload,
-												borderColor: '#2563eb', // blue-600
-												backgroundColor: 'rgba(37, 99, 235, 0.1)',
-												tension: 0.1,
-											},
-											{
-												label: 'Upload (Mbps)',
-												data: throughputUpload,
-												borderColor: '#16a34a', // green-600
-												backgroundColor: 'rgba(22, 163, 74, 0.1)',
-												tension: 0.1,
-											},
-										],
-									}}
-									options={chartOptions}
-								/>
-							</div>
-						</div>
-
-						{/* Latency Chart */}
-						<div className='dashboard-card'>
-							<h2>Current Latency</h2>
-							<div className='chart-container'>
-								<Line
-									id='latency-chart'
-									data={{
-										labels: latencyTimestamps,
-										datasets: [
-											{
-												label: 'Latency (ms)',
-												data: latencyValues,
-												borderColor: '#2563eb', // blue-600 (same as download)
-												backgroundColor: 'rgba(37, 99, 235, 0.1)',
-												tension: 0.1,
-											},
-										],
-									}}
-									options={chartOptions}
-								/>
+						{/* Billing Info Card */}
+						<div className='section'>
+							<h2>Service & Billing</h2>
+							<div className='info-grid'>
+								<div className='info-item'>
+									<label>Active Services</label>
+									<p>{data.modem?.details?.active_services || '1'}</p>
+								</div>
+								<div className='info-item'>
+									<label>Monthly Cost</label>
+									<p>${data.modem?.details?.monthly_cost || '0.00'}</p>
+								</div>
+								<div className='info-item'>
+									<label>Next Billing Date</label>
+									<p>{new Date(data.modem?.details?.next_billing_date || Date.now()).toLocaleDateString()}</p>
+								</div>
+								<div className='info-item'>
+									<label>Last Payment</label>
+									<p>${data.modem?.details?.last_payment_amount || '0.00'}</p>
+								</div>
+								<div className='info-item'>
+									<label>Payment Status</label>
+									<p className={`status ${data.modem?.details?.payment_status || 'unknown'}`}>{data.modem?.details?.payment_status || 'Unknown'}</p>
+								</div>
 							</div>
 						</div>
 					</div>
+
+					{/* System Info Card */}
+					<div className='section'>
+						<h2>System Information</h2>
+						<div className='info-grid'>
+							<div className='info-item'>
+								<label>Hardware Version</label>
+								<p>{data.modem?.details?.hardware_version || 'Unknown'}</p>
+							</div>
+							<div className='info-item'>
+								<label>Software Version</label>
+								<p>{data.modem?.details?.software_version || 'Unknown'}</p>
+							</div>
+							<div className='info-item'>
+								<label>Uptime</label>
+								<p>{data.modem?.details?.uptime || '0'} hours</p>
+							</div>
+							<div className='info-item'>
+								<label>Last Updated</label>
+								<p>{new Date(data.modem?.details?.last_update || Date.now()).toLocaleString()}</p>
+							</div>
+							<div className='info-item'>
+								<label>Signal Quality</label>
+								<p>{data.modem?.details?.signal_quality || '0'}%</p>
+							</div>
+						</div>
+					</div>
+
+					{/* Throughput Chart */}
+					<div className='section'>
+						<h2>Current Throughput</h2>
+						<div className='chart-container'>
+							<Line
+								id='throughput-chart'
+								data={{
+									labels: throughputTimestamps,
+									datasets: datasets,
+								}}
+								options={chartOptions}
+							/>
+						</div>
+					</div>
+
+					{/* Latency Chart */}
+					<div className='section'>
+						<h2>Current Latency</h2>
+						<div className='chart-container'>
+							<Line
+								id='latency-chart'
+								data={{
+									labels: latencyTimestamps,
+									datasets: [
+										{
+											label: 'Latency (ms)',
+											data: latencyValues,
+											borderColor: '#2563eb',
+											backgroundColor: 'rgba(37, 99, 235, 0.3)',
+											fill: 'origin',
+											tension: 0.1,
+										},
+									],
+								}}
+								options={chartOptions}
+							/>
+						</div>
+					</div>
 				</div>
-			</div>
+			</main>
 		</Layout>
 	);
 }

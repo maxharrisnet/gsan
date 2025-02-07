@@ -1,83 +1,48 @@
 import { json } from '@remix-run/node';
-import { useLoaderData } from '@remix-run/react';
+import { useLoaderData, useRouteLoaderData } from '@remix-run/react';
 import { getCustomerData } from '../gsan.server';
-import { getSonarAccountData, getSonarAccoutUsageData, getSonarInventoryItems, getSonarServicePlan } from '../sonar.server';
-import { getSession } from '../utils/session.server';
 import Layout from '../components/layout/Layout';
-import { useUser } from '../context/UserContext';
 import styles from '../styles/profile.css?url';
+import { getSession } from '../utils/session.server';
+import { getSonarServicePlan } from '../sonar.server';
 
 export function links() {
 	return [{ rel: 'stylesheet', href: styles }];
 }
 
 export async function loader({ request }) {
-	const cookieHeader = request.headers.get('Cookie');
-	const session = await getSession(cookieHeader);
-
-	console.log('🔍 Session debug:', {
-		sessionExists: Boolean(session),
-		cookieExists: Boolean(cookieHeader),
-		allSessionData: session.data,
-	});
-
-	const userData = session.get('userData');
-
-	if (!userData) {
-		throw json({ message: 'Not authenticated' }, { status: 401 });
-	}
-
-	const { customerAccessToken, shop } = userData;
-
-	if (!customerAccessToken || !shop) {
-		throw json({ message: 'Invalid session data' }, { status: 401 });
-	}
-
 	try {
-		const shopDomain = String(shop);
+		const session = await getSession(request.headers.get('Cookie'));
+		const userData = session.get('userData');
 
-		const [shopifyData, sonarAccount, sonarUsage, inventoryItems] = await Promise.all([
-			getCustomerData(customerAccessToken, shopDomain).catch((error) => {
-				console.error('❌ Shopify API Error:', error);
-				return null;
-			}),
-			getSonarAccountData(userData.sonarAccountId).catch((error) => {
-				console.error('❌ Sonar Account Error:', error);
-				return { success: false };
-			}),
-			getSonarAccoutUsageData(userData.sonarAccountId).catch((error) => {
-				console.error('❌ Sonar Usage Error:', error);
-				return { success: false };
-			}),
-			getSonarInventoryItems(userData.sonarAccountId).catch((error) => {
-				console.error('❌ Sonar Inventory Error:', error);
-				return { success: false };
-			}),
-			getSonarServicePlan(userData.sonarAccountId).catch((error) => {
-				console.error('❌ Sonar Service Plan Error:', error);
-				return null;
-			}),
-		]);
+		const { customerAccessToken, shop, type } = userData;
 
-		if (!shopifyData) {
-			throw json({ message: 'Failed to load Shopify data' }, { status: 500 });
-		}
+		// Get Shopify customer data
+		const shopifyCustomer = await getCustomerData(customerAccessToken, shop);
+		console.log('🛍️ Shopify Customer Data:', shopifyCustomer);
+
+		// Check if user is a Sonar user
+		const isSonarUser = type === 'sonar';
+
+		// Get Sonar service plan if user is a Sonar user
+		const sonarServicePlan = isSonarUser ? await getSonarServicePlan(userData) : null;
 
 		return json({
-			shopify: shopifyData,
-			sonar: {
-				account: sonarAccount?.success ? sonarAccount.customers : null,
-				usage: sonarUsage?.success ? sonarUsage.data : null,
-				inventory: inventoryItems?.success ? inventoryItems.data : null,
-				servicePlan: sonarServicePlan?.success ? sonarServicePlan.data : null,
-			},
+			sonarServicePlan,
+			isSonarUser,
+			shopifyCustomer,
 		});
 	} catch (error) {
-		console.error('❌ Error in profile loader:', error);
-		throw json(
+		console.error('🔴 Profile loader error:', error);
+		console.error('🔴 Error stack:', error.stack);
+
+		return json(
 			{
 				message: 'Failed to load profile data',
-				details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+				details: error.message,
+				sonarServicePlan: null,
+				isSonarUser: false,
+				shopifyCustomer: null,
 			},
 			{ status: 500 }
 		);
@@ -85,104 +50,109 @@ export async function loader({ request }) {
 }
 
 export default function Profile() {
-	const { shopify, sonar } = useLoaderData();
+	const { sonarServicePlan, isSonarUser, shopifyCustomer } = useLoaderData();
 
-	if (!shopify || !sonar) {
-		return (
-			<Layout>
-				<div className='error-message'>Unable to load profile data. Please try again later.</div>
-			</Layout>
-		);
-	}
+	// Add debug logging
+	console.log('🔍 Profile Component Data:', {
+		sonarServicePlan,
+		isSonarUser,
+		shopifyCustomer,
+	});
 
 	return (
 		<Layout>
 			<main className='content'>
-				<div className='profile-container'>
-					<h1>Account Profile</h1>
+				<div className='container'>
+					{/* Profile Header */}
+					<header className='section'>
+						<h1>Profile</h1>
+					</header>
 
-					<div className='section'>
-						<h2>Personal Information</h2>
-						<div className='info-grid'>
-							<div className='info-item'>
-								<label>Name</label>
-								<p>
-									{shopify?.firstName || ''} {shopify?.lastName || ''}
-								</p>
-							</div>
-							<div className='info-item'>
-								<label>Email</label>
-								<p>{shopify?.email || 'No email provided'}</p>
-							</div>
-							<div className='info-item'>
-								<label>Account ID</label>
-								<p>{sonar?.account?.id || 'N/A'}</p>
-							</div>
-						</div>
-					</div>
-
-					{sonar?.account && (
+					{/* Customer Info Section */}
+					{shopifyCustomer ? (
 						<div className='section'>
-							<h2>Service Details</h2>
+							<h2>Customer Information</h2>
 							<div className='info-grid'>
 								<div className='info-item'>
-									<label>Account Status</label>
-									<p className={`status status-${(sonar.account.status || '').toLowerCase()}`}>{sonar.account.status || 'Unknown'}</p>
+									<label>Name</label>
+									<p>
+										{shopifyCustomer.firstName} {shopifyCustomer.lastName}
+									</p>
 								</div>
 								<div className='info-item'>
-									<label>Service Plan</label>
-									<p>{sonar.account.service_plan || 'Not available'}</p>
+									<label>Email</label>
+									<p>{shopifyCustomer.email}</p>
 								</div>
-								{sonar?.usage && (
+								{shopifyCustomer.phone && (
 									<div className='info-item'>
-										<label>Current Usage</label>
-										<p>{sonar.usage.total_usage || '0'} GB</p>
+										<label>Phone</label>
+										<p>{shopifyCustomer.phone}</p>
 									</div>
 								)}
 							</div>
-						</div>
-					)}
 
-					{sonar?.inventory?.length > 0 && (
-						<div className='section'>
-							<h2>Equipment</h2>
-							<div className='info-grid'>
-								{sonar.inventory.map((item, index) => (
-									<div
-										key={index}
-										className='info-item'
-									>
-										<label>{item?.type || 'Device'}</label>
-										<p>{item?.model || 'Unknown model'}</p>
-										<small>{item?.serial_number || 'No serial number'}</small>
+							{/* Address Section */}
+							{shopifyCustomer.defaultAddress && (
+								<div className='address-info'>
+									<h3>Default Address</h3>
+									<div className='info-grid'>
+										<div className='info-item'>
+											<label>Street</label>
+											<p>{shopifyCustomer.defaultAddress.address1}</p>
+											{shopifyCustomer.defaultAddress.address2 && <p>{shopifyCustomer.defaultAddress.address2}</p>}
+										</div>
+										<div className='info-item'>
+											<label>Location</label>
+											<p>
+												{shopifyCustomer.defaultAddress.city}, {shopifyCustomer.defaultAddress.province} {shopifyCustomer.defaultAddress.zip}
+											</p>
+											<p>{shopifyCustomer.defaultAddress.country}</p>
+										</div>
 									</div>
-								))}
-							</div>
+								</div>
+							)}
+						</div>
+					) : (
+						<div className='section'>
+							<p>No customer information available</p>
 						</div>
 					)}
 
-					{shopify?.orders?.edges?.length > 0 && (
+					{/* Orders Section */}
+					{shopifyCustomer?.orders?.edges?.length > 0 && (
 						<div className='section'>
 							<h2>Recent Orders</h2>
 							<div className='orders-grid'>
-								{shopify.orders.edges.map(({ node: order }) => (
+								{shopifyCustomer.orders.edges.map(({ node: order }) => (
 									<div
 										key={order.id}
-										className='info-item'
+										className='order-item'
 									>
-										<label>Order #{order.orderNumber}</label>
+										<h4>Order #{order.orderNumber}</h4>
 										<p>
-											{order.lineItems.edges[0]?.node?.title || 'Unknown item'}
-											<br />
-											<small>
-												{new Date(order.processedAt).toLocaleDateString()}
-												{' - '}
-												{order.totalPrice?.amount || '0'} {order.totalPrice?.currencyCode || 'USD'}
-											</small>
+											Total: {order.totalPrice.amount} {order.totalPrice.currencyCode}
 										</p>
+										<p>Status: {order.fulfillmentStatus}</p>
 									</div>
 								))}
 							</div>
+						</div>
+					)}
+
+					{/* Service Plan Section */}
+					{isSonarUser && (
+						<div className='section'>
+							<h2>Service Plan Details</h2>
+							{sonarServicePlan ? (
+								<div className='info-grid'>
+									<div className='info-item'>
+										<label>Plan Name</label>
+										<p>{sonarServicePlan.name}</p>
+									</div>
+								</div>
+							) : (
+								<p>Unable to load service plan information</p>
+							)}
 						</div>
 					)}
 				</div>

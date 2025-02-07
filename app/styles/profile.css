@@ -12,26 +12,28 @@
 
 .info-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+	grid-template-columns: repeat(3, 1fr);
 	gap: var(--spacing-large);
-	margin-top: var(--spacing-base);
+	margin-bottom: var(--spacing-large);
 }
 
 .info-item {
-	display: flex;
-	flex-direction: column;
-	gap: var(--spacing-small);
+	background: var(--color-background);
+	padding: var(--spacing-base);
+	border-radius: var(--border-radius);
 }
 
 .info-item label {
-	font-size: var(--font-size-small);
-	color: var(--color-text-light);
+	display: block;
+	font-size: 0.875rem;
 	font-weight: 500;
+	color: var(--color-text-secondary);
+	margin-bottom: var(--spacing-small);
 }
 
 .info-item p {
-	font-size: var(--font-size-base);
-	color: var(--color-text);
+	font-size: 1rem;
+	color: var(--color-text-primary);
 	margin: 0;
 }
 
@@ -145,4 +147,69 @@ select {
 	border-radius: var(--border-radius);
 	font-size: var(--font-size-small);
 	min-width: 200px;
+}
+
+.orders-grid {
+	display: grid;
+	gap: var(--spacing-base);
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	margin-top: var(--spacing-base);
+}
+
+.order-item {
+	background: var(--background-white);
+	padding: var(--spacing-large);
+	border-radius: var(--border-radius);
+	border: 1px solid var(--color-border);
+}
+
+.order-item h4 {
+	margin-bottom: var(--spacing-small);
+	color: var(--color-text-primary);
+}
+
+.section {
+	background: var(--background-white);
+	border-radius: var(--border-radius);
+	border: 1px solid var(--color-border);
+	padding: var(--spacing-xlarge);
+	margin-bottom: var(--spacing-large);
+}
+
+.section h2 {
+	color: var(--color-text-primary);
+	font-size: 1.25rem;
+	margin-bottom: var(--spacing-large);
+}
+
+.section h3 {
+	color: var(--color-text-primary);
+	font-size: 1.1rem;
+	margin: var(--spacing-large) 0 var(--spacing-base);
+}
+
+.address-info {
+	margin-top: var(--spacing-large);
+	padding-top: var(--spacing-large);
+	border-top: 1px solid var(--color-border);
+}
+
+.address-info .info-grid {
+	grid-template-columns: repeat(2, 1fr);
+}
+
+@media (max-width: 1024px) {
+	.info-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media (max-width: 768px) {
+	.info-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.section {
+		padding: var(--spacing-large);
+	}
 }

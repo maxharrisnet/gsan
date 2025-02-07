@@ -17,34 +17,67 @@ export async function getCustomerData(customerAccessToken, shop) {
               lastName
               email
               phone
+              createdAt
+              updatedAt
+              tags
+              acceptsMarketing
+              addresses(first: 10) {
+                edges {
+                  node {
+                    id
+                    address1
+                    address2
+                    city
+                    province
+                    zip
+                    country
+                    phone
+                    name
+                    company
+                  }
+                }
+              }
               defaultAddress {
+                id
                 address1
                 address2
                 city
                 province
                 zip
                 country
+                phone
+                name
+                company
               }
-              orders(first: 10) {
+              orders(first: 10, sortKey: PROCESSED_AT, reverse: true) {
                 edges {
                   node {
                     id
+                    name
                     orderNumber
+                    processedAt
+                    statusUrl
+                    currencyCode
                     totalPrice {
                       amount
                       currencyCode
                     }
-                    processedAt
-                    lineItems(first: 1) {
+                    subtotalPrice {
+                      amount
+                      currencyCode
+                    }
+                    totalShippingPrice {
+                      amount
+                      currencyCode
+                    }
+                    lineItems(first: 5) {
                       edges {
                         node {
                           title
-                          variant {
-                            title
-                            price {
-                              amount
-                              currencyCode
-                            }
+                          quantity
+                          originalTotalPrice {
+                            amount
+                            currencyCode
                           }
                         }
                       }
