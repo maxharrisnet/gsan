@@ -40,8 +40,16 @@
 	grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
 }
 
+.chart-wrapper {
+	height: 400px; /* Set a fixed container height */
+	margin-bottom: var(--spacing-large);
+}
+
 .chart-container {
-	height: 300px;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	gap: var(--spacing-large);
+	padding: var(--spacing-large);
 }
 
 /* Status Colors */
@@ -193,4 +201,10 @@
 	font-size: var(--font-size-sm);
 	font-weight: 600;
 	color: var(--color-text-light);
+}
+
+/* Add will-change to optimize rendering */
+.chart-wrapper canvas {
+	will-change: transform;
+	transform: translateZ(0);
 }

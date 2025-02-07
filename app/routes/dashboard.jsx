@@ -54,8 +54,6 @@ export async function loader({ request }) {
 			};
 		}
 
-		console.log('🌽 First Modem Details:', firstModem?.details);
-
 		if (!firstModem) {
 			return json({
 				error: 'No modem found',

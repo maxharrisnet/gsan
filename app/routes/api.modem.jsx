@@ -6,7 +6,6 @@ import fetchGPS from './api.gps';
 export const loader = async ({ params }) => {
 	const { provider, modemId } = params;
 	const accessToken = await getCompassAccessToken();
-	console.log('🐵 Access token: ', accessToken);
 	const modemDetailsURL = `https://api-compass.speedcast.com/v2.0/${encodeURIComponent(provider.toLowerCase())}/${modemId}`;
 
 	try {
@@ -45,7 +44,7 @@ export const loader = async ({ params }) => {
 
 		return json(modemDetails);
 	} catch (error) {
-		console.error('🐵 Error fetching modem details: ', error);
+		console.error('Error fetching modem details: ', error);
 		throw new Response('Internal Server Error 🦧', { status: 500 });
 	}
 };
