@@ -1,0 +1,131 @@
+You are an expert in Remix, Supabase, TailwindCSS, and JavaScript, focusing on scalable web development.
+
+**Key Principles**
+
+- Provide clear, precise Remix and JavaScript examples.
+- Apply immutability and pure functions where applicable.
+- Favor route modules and nested layouts for composition and modularity.
+- Use meaningful variable names (e.g., `isAuthenticated`, `userRole`).
+- Always use kebab-case for file names (e.g., `user-profile.tsx`).
+- Prefer named exports for loaders, actions, and components.
+
+**Code Style**
+
+- Use single quotes for string literals.
+- Indent with 2 spaces.
+- Ensure clean code with no trailing whitespace.
+- Use `const` for immutable variables.
+- Use template strings for string interpolation.
+
+**Remix-Specific Guidelines**
+
+- Use `<Link>` for navigation, avoiding full page reloads.
+- Implement loaders and actions for server-side data loading and mutations.
+- Ensure accessibility with semantic HTML and ARIA labels.
+- Leverage route-based loading, error boundaries, and catch boundaries.
+- Use the `useFetcher` hook for non-blocking data updates.
+- Cache and optimize resource loading where applicable to improve performance.
+
+**Import Order**
+
+1. Remix core modules
+2. React and other core libraries
+3. Third-party packages
+4. Application-specific imports
+5. Environment-specific imports
+6. Relative path imports
+
+**Error Handling and Validation**
+
+- Implement error boundaries for catching unexpected errors.
+- Use custom error handling within loaders and actions.
+- Validate user input on both client and server using formData or JSON.
+
+**Performance Optimization**
+
+- Prefetch routes using `<Link prefetch="intent">` for faster navigation.
+- Defer non-essential JavaScript using `<Scripts defer />`.
+- Optimize nested layouts to minimize re-rendering.
+- Use Remix's built-in caching and data revalidation to optimize performance.
+
+**Security**
+
+- Prevent XSS by sanitizing user-generated content.
+- Use Remix's CSRF protection for form submissions.
+- Handle sensitive data on the server, never expose in client code.
+
+**Key Conventions**
+
+- Use Remix's loaders and actions to handle server-side logic.
+- Focus on reusability and modularity across routes and components.
+- Follow Remix’s best practices for file structure and data fetching.
+- Optimize for performance and accessibility.
+
+**Reference**
+Refer to Remix’s official documentation for best practices in Routes, Loaders, and Actions.
+
+# Project: Node.js with Remix framework and Shopify template
+
+# Purpose: To assist with dashboard creation and integration with Shopify and Sonar for satellite internet services. Help me finish the project. I am not 100% sure about all of the features, it just needs to be a dashboard that works for the customer and the service provider. Check the API documentation (Sonar, Shopify) and for what kind of data we can show.
+
+I already have a lot of the code set up, but I need help finishing it. Please stick as closely as possible to the code and patterns that I have already written. Before writing new functions, please make sure it does not already exist. Use existing code as much as possible, but if it is not working, please rewrite it. Be clear about changes you make.
+
+This is based on a similar dashboard from Speedcast/Compass. I have screenshots of the dashboard, so let me know how I can share them with you to help you finish the project.
+
+# Rules
+
+- No Typescript, just JavaScript
+- Using Chart.js for the graphs
+- Using WebDataRocks for the reports page
+- Using CSS for the styling (no TailwindCSS)
+
+# 1. Semantic Development
+
+- Follow best practices for integrating Node.js with Remix.
+- Ensure seamless customer login through Shopify and Sonar APIs.
+- Emphasize on maintaining secure and optimized authentication flows.
+
+# 2. Component Merging
+
+- Merge performance.jsx with dashboard.jsx seamlessly, focusing on reusability and modular design.
+- Ensure that latency data graphs display accurately on the dashboard.
+
+# 3. API Integration
+
+- Implement data fetching using Remix Loaders for customer and provider details via Shopify and Sonar.
+- Properly handle JSON responses and error management.
+- Most of this is already set up in the .server.js files, but we need to make sure that the data is being fetched correctly and that the data is being displayed on the dashboard.
+
+# 4. Dashboard Page Development
+
+- Populate the dashboard with real-time account data, and modem/satellite overviews.
+- Implement lazy loading of additional data to optimize performance.
+
+# 5. Modem Details and Mapping
+
+- Set up a dynamic routing system to access individual modem performance based on URL modem ID.
+- Utilize map APIs (like Google Maps) for visualizing satellite positions.
+
+# 6. Service Provider Dashboard
+
+- Include provider-specific information, such as customer list and status.
+- Ensure navigation between provider and customer views is intuitive.
+
+# 7. Styling and UI
+
+- Use a consistent styling approach
+- Use CSS for the styling (no TailwindCSS)
+- User variables for colors, fonts, spacing etc.
+- Maintain accessible design (ARIA) and ensure components are responsive.
+
+# 8. Testing and Optimization
+
+- Write unit tests for API integrations and UI components.
+- Use tools like Lighthouse for performance audits.
+
+# 9. Security Practices
+
+- Implement data sanitization and secure API calls to mitigate XSS and CSRF threats.
+- Store sensitive user information safely and follow best security practices.
+
+Copy and add a `.cursorrules` file in the root of your project. The instructions in the `.cursorrules` file will be automatically included (no need to @) for features such as Cursor Chat, Composer, and Ctrl/⌘ K. The more specific your rules for your project, the better.

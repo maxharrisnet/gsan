@@ -1,0 +1,196 @@
+/* Modem Details Grid */
+.modem-details-grid {
+	display: grid;
+	gap: var(--spacing-large);
+	padding: var(--spacing-large);
+}
+
+/* Status Overview */
+.stats-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: var(--spacing-base);
+}
+
+.stat-item {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	padding: var(--spacing-base);
+	background: var(--color-background);
+	border-radius: var(--border-radius);
+}
+
+.stat-item span:first-child {
+	font-size: var(--font-size-sm);
+	color: var(--color-text-light);
+	margin-bottom: var(--spacing-small);
+}
+
+.stat-item span:last-child {
+	font-size: var(--font-size-lg);
+	font-weight: 600;
+}
+
+/* Charts Grid */
+.charts-grid {
+	display: grid;
+	gap: var(--spacing-large);
+	grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+}
+
+/* .chart-container {
+	height: 300px;
+} */
+
+/* Status Colors */
+.text-success {
+	color: var(--color-success);
+}
+
+.text-warning {
+	color: var(--color-warning);
+}
+
+.text-error {
+	color: var(--color-error);
+}
+
+/* Modem Sidebar */
+.modem-sidebar {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-base);
+}
+
+.bar-button {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-small);
+	padding: var(--spacing-small) var(--spacing-base);
+	border-radius: var(--border-radius);
+	background: var(--color-background);
+	color: var(--color-text);
+	text-decoration: none;
+	transition: background-color 0.2s;
+}
+
+.bar-button:hover {
+	background: var(--color-background-hover);
+}
+
+.bar-button svg {
+	width: 16px;
+	height: 16px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+	.modem-details-grid {
+		padding: var(--spacing-base);
+	}
+
+	.charts-grid {
+		grid-template-columns: 1fr;
+	}
+
+	/* .chart-container {
+		height: 250px;
+	} */
+}
+
+.sidebar-header {
+	padding: var(--spacing-base);
+	border-bottom: 1px solid var(--color-border);
+}
+
+.compass-logo {
+	height: 40px;
+	margin-bottom: var(--spacing-small);
+}
+
+.provider-name {
+	font-size: var(--font-size-lg);
+	font-weight: 500;
+	margin-bottom: 0;
+}
+
+.search-container {
+	padding: var(--spacing-base);
+}
+
+.search-input {
+	width: 100%;
+	padding: var(--spacing-small) var(--spacing-base);
+	border: 1px solid var(--color-border);
+	border-radius: 20px;
+	background-color: var(--color-background-light);
+}
+
+.select-device-heading {
+	padding: var(--spacing-base);
+	margin-bottom: 0;
+	font-size: var(--font-size-lg);
+	font-weight: 500;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.section-toggle {
+	background: none;
+	width: 100%;
+	align-items: center;
+	font-size: var(--font-size-base);
+}
+/* 
+.modem-list {
+	margin-top: var(--spacing-small);
+} */
+
+.modem-item {
+	padding: var(--spacing-base);
+	background-color: var(--color-background-light);
+}
+
+.modem-item.active {
+	background-color: var(--color-primary-light);
+	/* border-left: 3px solid var(--color-primary); */
+}
+
+.modem-info {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-small);
+}
+
+.status-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 12px;
+	font-size: var(--font-size-sm);
+	font-weight: 500;
+	align-self: flex-start;
+}
+
+.status-badge.online {
+	background-color: var(--color-success);
+	color: white;
+}
+
+.modem-name {
+	font-size: var(--font-size-base);
+	font-weight: 500;
+	margin: 0;
+}
+
+.modem-id {
+	font-size: var(--font-size-sm);
+	margin: 0;
+}
+
+.provider-brand {
+	margin-top: var(--spacing-small);
+	font-size: var(--font-size-sm);
+	font-weight: 600;
+	color: var(--color-text-light);
+}

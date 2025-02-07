@@ -1,0 +1,215 @@
+.profile-container {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: var(--spacing-large);
+}
+
+.profile-container h1 {
+	margin-bottom: var(--spacing-xlarge);
+	font-size: var(--font-size-xxlarge);
+	color: var(--color-text);
+}
+
+.info-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: var(--spacing-large);
+	margin-bottom: var(--spacing-large);
+}
+
+.info-item {
+	background: var(--color-background);
+	padding: var(--spacing-base);
+	border-radius: var(--border-radius);
+}
+
+.info-item label {
+	display: block;
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: var(--color-text-secondary);
+	margin-bottom: var(--spacing-small);
+}
+
+.info-item p {
+	font-size: 1rem;
+	color: var(--color-text-primary);
+	margin: 0;
+}
+
+.status {
+	display: inline-flex;
+	align-items: center;
+	padding: 4px 12px;
+	border-radius: 12px;
+	font-weight: 500;
+	font-size: var(--font-size-small);
+}
+
+.status-active {
+	background-color: var(--color-success-light);
+	color: var(--color-success);
+}
+
+.status-suspended {
+	background-color: var(--color-warning-light);
+	color: var(--color-warning);
+}
+
+.status-inactive {
+	background-color: var(--color-error-light);
+	color: var(--color-error);
+}
+
+.services-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	gap: var(--spacing-large);
+	margin-top: var(--spacing-base);
+}
+
+.service-item {
+	background: var(--color-background-light);
+	border-radius: var(--border-radius);
+	padding: var(--spacing-large);
+	border: 1px solid var(--color-border);
+}
+
+.service-item h3 {
+	margin: 0 0 var(--spacing-small);
+	color: var(--color-text);
+}
+
+.service-details {
+	margin-top: var(--spacing-base);
+	font-size: var(--font-size-small);
+	color: var(--color-text-light);
+}
+
+.profile-section {
+	background: white;
+	border-radius: 8px;
+	padding: 2rem;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	margin-top: 2rem;
+}
+
+.profile-fields {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	gap: 1.5rem;
+	margin-bottom: 2rem;
+}
+
+.field-group {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.field-group label {
+	font-size: 0.875rem;
+	color: #666;
+}
+
+.field-group input {
+	padding: 0.75rem;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	font-size: 1rem;
+	background-color: #f9f9f9;
+	color: #333;
+}
+
+.profile-preferences {
+	border-top: 1px solid #eee;
+	padding-top: 2rem;
+}
+
+.preference-group {
+	margin-bottom: 1.5rem;
+}
+
+.preference-group h3 {
+	font-size: var(--font-size-medium);
+	margin-bottom: var(--spacing-small);
+}
+
+.theme-toggle {
+	display: flex;
+	gap: 1rem;
+	align-items: center;
+}
+
+select {
+	padding: 0.5rem;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius);
+	font-size: var(--font-size-small);
+	min-width: 200px;
+}
+
+.orders-grid {
+	display: grid;
+	gap: var(--spacing-base);
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	margin-top: var(--spacing-base);
+}
+
+.order-item {
+	background: var(--background-white);
+	padding: var(--spacing-large);
+	border-radius: var(--border-radius);
+	border: 1px solid var(--color-border);
+}
+
+.order-item h4 {
+	margin-bottom: var(--spacing-small);
+	color: var(--color-text-primary);
+}
+
+.section {
+	background: var(--background-white);
+	border-radius: var(--border-radius);
+	border: 1px solid var(--color-border);
+	padding: var(--spacing-xlarge);
+	margin-bottom: var(--spacing-large);
+}
+
+.section h2 {
+	color: var(--color-text-primary);
+	font-size: 1.25rem;
+	margin-bottom: var(--spacing-large);
+}
+
+.section h3 {
+	color: var(--color-text-primary);
+	font-size: 1.1rem;
+	margin: var(--spacing-large) 0 var(--spacing-base);
+}
+
+.address-info {
+	margin-top: var(--spacing-large);
+	padding-top: var(--spacing-large);
+	border-top: 1px solid var(--color-border);
+}
+
+.address-info .info-grid {
+	grid-template-columns: repeat(2, 1fr);
+}
+
+@media (max-width: 1024px) {
+	.info-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media (max-width: 768px) {
+	.info-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.section {
+		padding: var(--spacing-large);
+	}
+}

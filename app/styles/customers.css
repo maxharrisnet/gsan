@@ -1,0 +1,75 @@
+.customers-table {
+  width: 100%;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+th {
+  text-align: left;
+  padding: var(--spacing-base);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+td {
+  padding: var(--spacing-base);
+  border-bottom: 1px solid var(--color-border);
+}
+
+tr:hover {
+  background-color: var(--color-background);
+}
+
+td a {
+  color: var(--color-text-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+td a:hover {
+  color: var(--color-primary);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status.paid {
+  background-color: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.status.pending {
+  background-color: var(--color-warning-light);
+  color: var(--color-warning);
+}
+
+.status.unknown {
+  background-color: var(--color-background);
+  color: var(--color-text-secondary);
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-actions select {
+  padding: 0.5rem;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--color-border);
+  background: var(--background-white);
+  font-size: 0.875rem;
+} 

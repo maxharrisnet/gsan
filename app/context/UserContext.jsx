@@ -21,7 +21,21 @@ export const UserProvider = ({ children, initialUser, shop }) => {
 		});
 	};
 
-	return <UserContext.Provider value={{ currentUser, setCurrentUser, shop, addShopToRequest }}>{children}</UserContext.Provider>;
+	const isProvider = currentUser?.metafields?.provider === 'true';
+
+	return (
+		<UserContext.Provider
+			value={{
+				currentUser,
+				setCurrentUser,
+				shop,
+				addShopToRequest,
+				isProvider,
+			}}
+		>
+			{children}
+		</UserContext.Provider>
+	);
 };
 
 export const useUser = () => {

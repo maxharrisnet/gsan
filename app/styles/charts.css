@@ -1,4 +1,4 @@
-.chart-wrapper {
+section.chart-wrapper {
 	padding: var(--spacing-xxlarge);
 	text-align: center;
 }
@@ -12,5 +12,4 @@
 	max-width: 100%;
 	overflow: hidden;
 	margin-bottom: var(--spacing-large);
-	border-radius: var(--border-radius-large);
 }

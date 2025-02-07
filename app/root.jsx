@@ -1,117 +1,88 @@
 import { redirect } from '@remix-run/node';
-import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData, useRouteError } from '@remix-run/react';
-import { getSession } from './session.server';
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteError, useLoaderData, Link, isRouteErrorResponse, LiveReload } from '@remix-run/react';
+import { getSession } from './utils/session.server';
 import { UserProvider } from './context/UserContext';
 import globalStyles from './styles/global.css?url';
+import errorStyles from './styles/error.css?url';
+import Layout from './components/layout/Layout';
 
-export const links = () => [
-	{ rel: 'stylesheet', href: globalStyles },
-	{ rel: 'preconnect', href: 'https://cdn.shopify.com/' },
-	{ rel: 'stylesheet', href: 'https://cdn.shopify.com/static/fonts/inter/v4/styles.css' },
-];
+export function links() {
+	return [...Layout.links(), { rel: 'stylesheet', href: globalStyles }, { rel: 'stylesheet', href: errorStyles }];
+}
 
 export const loader = async ({ request }) => {
-	const url = new URL(request.url);
-	const path = url.pathname;
-	const shop = process.env.SHOPIFY_STORE_DOMAIN;
 	const session = await getSession(request.headers.get('Cookie'));
+	const url = new URL(request.url);
+	const userData = session.get('userData');
 
-	console.log('🛩️  Navigating to page: ', path);
+	console.log('🌳 Root loader:', {
+		hasSession: Boolean(session),
+		hasUserData: Boolean(userData),
+		userData: userData, // Log the actual userData to see what we have
+		path: url.pathname,
+	});
 
-	// Check for admin session (Shopify store access token)
-	// const adminAccessToken = session.get(`accessToken:${shop}`);
-	// if (!adminAccessToken) {
-	// 	console.log('🏓 Missing admin session. Redirecting to /auth');
-	// 	return redirect(`/auth?shop=${shop}`);
-	// }
+	// Public routes that don't require authentication
+	const publicRoutes = ['/auth', '/login', '/'];
+	const isPublicRoute = publicRoutes.includes(url.pathname);
 
-	// Check for user session (Shopify customer access token)
-	const customerAccessToken = session.get('customerAccessToken');
-	if (!customerAccessToken && path !== '/gsan/login') {
-		console.log('🏓 Missing user session. Redirecting to /gsan/login');
-		return redirect(`/gsan/login?shop=${shop}`);
+	// If we have userData and we're on a public route, redirect to dashboard
+	if (userData && isPublicRoute) {
+		console.log('👉 Authenticated user on public route, redirecting to dashboard');
+		return redirect('/dashboard');
 	}
 
-	// Fetch customer data using the customerAccessToken
-	let user = null;
-	if (customerAccessToken) {
-		try {
-			const response = await fetch(`https://${shop}/api/2024-01/graphql.json`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'X-Shopify-Storefront-Access-Token': process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN,
-				},
-				body: JSON.stringify({
-					query: `
-            query {
-              customer {
-                id
-                firstName
-                lastName
-                email
-              }
-            }
-          `,
-				}),
-			});
-
-			const data = await response.json();
-			if (response.ok && data?.data?.customer) {
-				const { id, firstName, lastName, email } = data.data.customer;
-				user = { id, firstName, lastName, email };
-			} else {
-				console.error('🍳 Error fetching customer data:', data.errors || response.statusText);
-			}
-		} catch (error) {
-			console.error('🍳 Error during customer data fetch:', error);
-		}
+	// If we don't have userData and we're not on a public route, redirect to auth
+	if (!userData && !isPublicRoute) {
+		console.log('👉 Unauthenticated user on protected route, redirecting to auth');
+		return redirect('/auth');
 	}
 
-	// Pass session data to the component
-	return { shop, user };
+	return { userData };
 };
 
 export default function Root() {
-	const { user, shop } = useLoaderData();
-
+	const { userData } = useLoaderData();
 	return (
 		<html lang='en'>
 			<head>
-				<meta charSet='utf-8' />
-				<meta
-					name='viewport'
-					content='width=device-width, initial-scale=1'
-				/>
 				<Meta />
 				<Links />
 			</head>
 			<body>
-				<UserProvider
-					currentUser={user}
-					shop={shop}
-				>
+				<UserProvider initialUser={userData}>
 					<Outlet />
 				</UserProvider>
 				<ScrollRestoration />
 				<Scripts />
+				<LiveReload />
 			</body>
 		</html>
 	);
 }
 
-export function ErrorBoundary({ error }) {
+export function ErrorBoundary() {
+	const error = useRouteError();
+	const isProd = process.env.NODE_ENV === 'production';
+
 	return (
-		<html>
+		<html lang='en'>
 			<head>
-				<title>Oh no!</title>
 				<Meta />
 				<Links />
 			</head>
 			<body>
-				<div style={{ display: 'block', textAlign: 'center', height: '100vh', maxWidth: '800px', margin: '0 auto', padding: '80px' }}>
-					<h1>Something went wrong</h1>
-					<p style={{ textAlign: 'left', lineHeight: '1.4rem' }}>{error?.message}</p>
+				<div className='error-container'>
+					<div className='error-content'>
+						<h1 className='error-heading'>{isRouteErrorResponse(error) ? `${error.status} ${error.statusText}` : 'Oops! Something went wrong'}</h1>
+						<div className='error-message'>{!isProd && <pre className='error-details'>{error.message || JSON.stringify(error, null, 2)}</pre>}</div>
+						<Link
+							to='/auth'
+							className='error-button'
+						>
+							Return to Login
+						</Link>
+					</div>
 				</div>
 				<Scripts />
 			</body>

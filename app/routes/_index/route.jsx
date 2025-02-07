@@ -7,7 +7,7 @@ export default function App() {
 		<Layout>
 			<main className='content content-centered'>
 				<h1 className={styles.heading}>GSAN Customer Portal</h1>
-				<Link to='/login'>Login</Link>
+				<Link to='/auth'>Login</Link>
 			</main>
 		</Layout>
 	);

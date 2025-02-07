@@ -1,71 +1,72 @@
-import { redirect } from '@remix-run/node';
-import crypto from 'crypto';
-import { createAdminSession } from '../session.server';
+import { Form, useActionData } from '@remix-run/react';
+import { authenticateShopifyCustomer } from '../utils/user.server';
+import authenticateSonarUser from '../sonar.server';
+import Layout from '../components/layout/Layout';
+import { json } from '@remix-run/node';
 
-// Validate HMAC signature from query parameters
-function validateHmac(queryParams, hmac) {
-	console.log('🤓 Query Params: ', queryParams);
-	const secret = process.env.SHOPIFY_API_SECRET;
-	const sortedParams = Object.keys(queryParams)
-		.filter((key) => key !== 'hmac') // Exclude 'hmac'
-		.sort()
-		.map((key) => `${key}=${decodeURIComponent(queryParams[key])}`)
-		.join('&');
+export async function action({ request }) {
+	const formData = await request.formData();
+	const loginType = formData.get('loginType');
+	const email = formData.get('email');
+	const password = formData.get('password');
 
-	const calculatedHmac = crypto.createHmac('sha256', secret).update(sortedParams).digest('hex');
-	return calculatedHmac === hmac;
-}
+	console.log('🔐 Processing login:', { loginType, email });
 
-export const loader = async ({ request }) => {
-	const url = new URL(request.url);
-	const queryParams = Object.fromEntries(url.searchParams.entries());
-	const { shop, code, hmac } = queryParams;
-	console.log('🍔 HMAC: ', hmac);
-
-	if (!shop) {
-		throw new Response('Missing shop parameter', { status: 400 });
-	}
-
-	// Validate HMAC
-	if (!hmac || !validateHmac(queryParams, hmac)) {
-		return new Response('🍅 Invalid HMAC', { status: 403 });
-	}
-
-	// Redirect to Shopify OAuth if no code is provided
-	if (!code) {
-		console.log('🥕 ENV Redirect URI: ', process.env.SHOPIFY_REDIRECT_URI);
-		// const redirectUri = process.env.SHOPIFY_REDIRECT_URI || `${url.origin}/auth`;
-		const redirectUri = 'https://713b-2604-3d08-4e82-a500-91cc-1bde-64a8-1527.ngrok-free.app/auth';
-		const apiKey = process.env.SHOPIFY_API_KEY;
-		const scopes = process.env.SCOPES;
-		const authUrl = `https://${shop}/admin/oauth/authorize?client_id=${apiKey}&scope=${scopes}&redirect_uri=${redirectUri}`;
-
-		return redirect(authUrl);
-	}
-
-	// Exchange the authorization code for an access token
 	try {
-		const tokenResponse = await fetch(`https://${shop}/admin/oauth/access_token`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				client_id: process.env.SHOPIFY_API_KEY,
-				client_secret: process.env.SHOPIFY_API_SECRET,
-				code,
-			}),
-		});
-
-		if (!tokenResponse.ok) {
-			console.error('🐶 Failed to fetch access token:', await tokenResponse.text());
-			throw new Response('Failed to fetch access token', { status: 500 });
+		if (loginType === 'shopify') {
+			const result = await authenticateShopifyCustomer(email, password, request);
+			if (result.error) {
+				return json({ error: result.error });
+			}
+			return result;
+		} else if (loginType === 'sonar') {
+			return authenticateSonarUser(formData);
 		}
 
-		const { access_token: accessToken } = await tokenResponse.json();
-		console.log('💠 Access Token:', accessToken);
-
-		return await createAdminSession({ accessToken, shop }, `/gsan/login?shop=${shop}`);
+		return json({ error: 'Invalid login type' });
 	} catch (error) {
-		console.error('🔴 Error during OAuth:', error);
-		return redirect('/error?message=Authentication failed');
+		console.error('❌ Login error:', error);
+		return json({ error: 'An unexpected error occurred during login' });
 	}
-};
+}
+
+export default function Auth() {
+	const actionData = useActionData();
+
+	return (
+		<Layout>
+			<div className='container'>
+				<h1>GSAN Customer Portal</h1>
+				<div className='content-centered'>
+					<img
+						src='/assets/images/GSAN-logo.png'
+						alt='GSAN Logo'
+						className='login-logo'
+					/>
+					<Form method='post'>
+						<div className='form-group'>
+							<select name='loginType'>
+								<option value='shopify'>GSAN Customer</option>
+								<option value='sonar'>Sonar User</option>
+							</select>
+							<input
+								type='text'
+								name='email'
+								placeholder='Email/Username'
+								required
+							/>
+							<input
+								type='password'
+								name='password'
+								placeholder='Password'
+								required
+							/>
+							<button type='submit'>Login</button>
+						</div>
+						{actionData?.error && <p className='error'>{actionData.error}</p>}
+					</Form>
+				</div>
+			</div>
+		</Layout>
+	);
+}

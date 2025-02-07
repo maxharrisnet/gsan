@@ -1,7 +1,7 @@
 import React from 'react';
 import Header from './Header';
 import Footer from './Footer';
-import './layout.css';
+import styles from './layout.css?url';
 
 const Layout = ({ children }) => {
 	return (
@@ -14,3 +14,9 @@ const Layout = ({ children }) => {
 };
 
 export default Layout;
+
+export function links() {
+	return [{ rel: 'stylesheet', href: styles }];
+}
+
+Layout.links = links;
