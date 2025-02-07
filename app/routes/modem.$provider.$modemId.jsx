@@ -22,20 +22,99 @@ export { loader };
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, BarElement, LineElement, Title, Tooltip, Legend);
 
+// Update the global chart defaults
+ChartJS.defaults.global = {
+	responsive: true,
+	maintainAspectRatio: false,
+	height: 100,
+	plugins: {
+		legend: {
+			position: 'bottom',
+			labels: {
+				color: '#374151',
+				font: {
+					family: 'Inter',
+					size: 12,
+				},
+			},
+		},
+		tooltip: {
+			mode: 'index',
+			intersect: false,
+			backgroundColor: 'rgba(17, 24, 39, 0.9)',
+			titleColor: '#fff',
+			bodyColor: '#fff',
+			borderColor: '#374151',
+			borderWidth: 1,
+		},
+	},
+	scales: {
+		x: {
+			grid: {
+				color: '#e5e7eb',
+				drawBorder: false,
+			},
+			ticks: {
+				color: '#6b7280',
+				font: {
+					family: 'Inter',
+					size: 11,
+				},
+			},
+		},
+		y: {
+			beginAtZero: true,
+			grid: {
+				color: '#e5e7eb',
+				drawBorder: false,
+			},
+			ticks: {
+				color: '#6b7280',
+				font: {
+					family: 'Inter',
+					size: 11,
+				},
+			},
+		},
+	},
+	elements: {
+		line: {
+			tension: 0.1,
+			borderWidth: 2,
+		},
+		point: {
+			radius: 0,
+			hoverRadius: 4,
+		},
+	},
+};
+
+// Update the time formatting
+const formatTime = (timestamp) => {
+	return new Date(timestamp * 1000)
+		.toLocaleTimeString('en-US', {
+			hour: 'numeric',
+			minute: '2-digit',
+			hour12: true,
+		})
+		.replace(/\s?(AM|PM)/, ' $1')
+		.toUpperCase();
+};
+
 export default function ModemDetails() {
 	const { modem, mapsAPIKey, gpsData, latencyData, throughputData, signalQualityData, obstructionData, usageData, uptimeData } = useLoaderData();
 
-	const latencyTimestamps = latencyData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
+	const latencyTimestamps = latencyData.map((entry) => formatTime(entry[0]));
 	const latencyValues = latencyData.map((entry) => entry[1]);
 
-	const throughputTimestamps = throughputData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
+	const throughputTimestamps = throughputData.map((entry) => formatTime(entry[0]));
 	const throughputDownload = throughputData.map((entry) => entry[1]);
 	const throughputUpload = throughputData.map((entry) => entry[2]);
 
-	const signalQualityLabels = signalQualityData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
+	const signalQualityLabels = signalQualityData.map((entry) => formatTime(entry[0]));
 	const signalQualityValues = signalQualityData.map((entry) => entry[1]);
 
-	const obstructionLabels = obstructionData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
+	const obstructionLabels = obstructionData.map((entry) => formatTime(entry[0]));
 	const obstructionValues = obstructionData.map((entry) => entry[1] * 100);
 
 	// Filter and process usage data for the last 14 days
@@ -59,7 +138,7 @@ export default function ModemDetails() {
 			usageUnlimited.push(day.unlimited ?? 0);
 		});
 	}
-	const uptimeLabels = uptimeData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
+	const uptimeLabels = uptimeData.map((entry) => formatTime(entry[0]));
 	const uptimeValues = uptimeData.map((entry) => Math.ceil((entry[1] / 86400) * 10) / 10);
 
 	const usageChartRef = useRef(null);
@@ -68,62 +147,6 @@ export default function ModemDetails() {
 	const latencyChartRef = useRef(null);
 	const obstructionChartRef = useRef(null);
 	const uptimeChartRef = useRef(null);
-
-	// Set global defaults for Chart.js
-	ChartJS.defaults.global = {
-		...ChartJS.defaults.global,
-		responsive: true,
-		maintainAspectRatio: false,
-		height: 200,
-		plugins: {
-			legend: {
-				display: false,
-				position: 'bottom',
-			},
-		},
-		elements: {
-			point: {
-				radius: 0,
-				hoverRadius: 5,
-				hoverBorderWidth: 1,
-				backgroundColor: '#3986a8',
-				borderColor: '#3986a8',
-			},
-			bar: {
-				backgroundColor: '#3986a8',
-				borderWidth: 1,
-			},
-			line: {
-				hitRadius: 15,
-				borderCapStyle: 'round',
-				borderColor: '#3986a8',
-				borderWidth: 1,
-				fill: true,
-				fillColor: '#3986a8',
-				fillTarget: 'origin',
-			},
-		},
-	};
-
-	ChartJS.defaults.global.height = 200;
-	ChartJS.defaults.plugins.legend.display = false;
-	ChartJS.defaults.plugins.legend.position = 'bottom';
-	ChartJS.defaults.elements.point.radius = 0;
-	ChartJS.defaults.elements.point.hoverRadius = 5;
-	ChartJS.defaults.elements.point.hoverBorderWidth = 1;
-	ChartJS.defaults.elements.point.backgroundColor = '#3986a8';
-	ChartJS.defaults.elements.point.borderColor = '#3986a8';
-
-	// Bar Chart Defaults
-	ChartJS.defaults.elements.bar.backgroundColor = '#3986a8';
-	ChartJS.defaults.elements.bar.borderWidth = 1;
-
-	// Line Chart Defaults
-	ChartJS.defaults.elements.line.hitRadius = 15;
-	ChartJS.defaults.elements.line.borderCapStyle = 'round';
-	ChartJS.defaults.elements.line.borderColor = '#3986a8';
-	ChartJS.defaults.elements.line.borderWidth = 1;
-	ChartJS.defaults.elements.line.fill = true;
 
 	useEffect(() => {
 		return () => {
@@ -219,16 +242,29 @@ export default function ModemDetails() {
 					<section className='section chart-wrapper'>
 						<h2>Usage</h2>
 						<Bar
-							height='100'
+							height='60'
 							width='300'
 							data={{
 								labels: usageLabels,
 								datasets: [
-									{ label: 'Download (GB)', data: usagePriority },
-									{ label: 'Upload (GB)', data: usageUnlimited },
+									{
+										label: 'Download (GB)',
+										data: usagePriority,
+										borderColor: '#2563eb',
+										backgroundColor: 'rgba(37, 99, 235, 0.3)',
+										fill: true,
+									},
+									{
+										label: 'Upload (GB)',
+										data: usageUnlimited,
+										borderColor: '#16a34a',
+										backgroundColor: 'rgba(22, 163, 74, 0.3)',
+										fill: true,
+									},
 								],
 							}}
 							options={{
+								...ChartJS.defaults.global,
 								scales: {
 									y: {
 										ticks: { callback: (value) => `${value}GB`, stepSize: 1 },
@@ -241,13 +277,22 @@ export default function ModemDetails() {
 					<section className='section chart-wrapper'>
 						<h2>Signal Quality</h2>
 						<Line
-							height='100'
+							height='60'
 							width='300'
 							data={{
 								labels: signalQualityLabels,
-								datasets: [{ label: 'Signal Quality (%)', data: signalQualityValues }],
+								datasets: [
+									{
+										label: 'Signal Quality (%)',
+										data: signalQualityValues,
+										borderColor: '#16a34a',
+										backgroundColor: 'rgba(22, 163, 74, 0.3)',
+										fill: true,
+									},
+								],
 							}}
 							options={{
+								...ChartJS.defaults.global,
 								scales: {
 									y: {
 										ticks: { callback: (value) => `${value}%`, stepSize: 20 },
@@ -260,16 +305,29 @@ export default function ModemDetails() {
 					<section className='section chart-wrapper'>
 						<h2>Throughput</h2>
 						<Line
-							height='100'
+							height='60'
 							width='300'
 							data={{
 								labels: throughputTimestamps,
 								datasets: [
-									{ label: 'Download (Mbps)', data: throughputDownload },
-									{ label: 'Upload (Mbps)', data: throughputUpload },
+									{
+										label: 'Download (Mbps)',
+										data: throughputDownload,
+										borderColor: '#2563eb',
+										backgroundColor: 'rgba(37, 99, 235, 0.3)',
+										fill: true,
+									},
+									{
+										label: 'Upload (Mbps)',
+										data: throughputUpload,
+										borderColor: '#16a34a',
+										backgroundColor: 'rgba(22, 163, 74, 0.3)',
+										fill: true,
+									},
 								],
 							}}
 							options={{
+								...ChartJS.defaults.global,
 								scales: {
 									y: {
 										ticks: { callback: (value) => `${value}Mbps`, stepSize: 20 },
@@ -282,13 +340,22 @@ export default function ModemDetails() {
 					<section className='section chart-wrapper'>
 						<h2>Latency</h2>
 						<Line
-							height='100'
+							height='60'
 							width='300'
 							data={{
 								labels: latencyTimestamps,
-								datasets: [{ label: 'Latency (ms)', data: latencyValues }],
+								datasets: [
+									{
+										label: 'Latency (ms)',
+										data: latencyValues,
+										borderColor: '#2563eb',
+										backgroundColor: 'rgba(37, 99, 235, 0.3)',
+										fill: true,
+									},
+								],
 							}}
 							options={{
+								...ChartJS.defaults.global,
 								scales: {
 									y: {
 										ticks: { callback: (value) => `${value}ms`, stepSize: 20 },
@@ -301,13 +368,22 @@ export default function ModemDetails() {
 					<section className='section chart-wrapper'>
 						<h2>Obstruction</h2>
 						<Line
-							height='100'
+							height='60'
 							width='300'
 							data={{
 								labels: obstructionLabels,
-								datasets: [{ label: 'Obstruction (%)', data: obstructionValues }],
+								datasets: [
+									{
+										label: 'Obstruction (%)',
+										data: obstructionValues,
+										borderColor: '#dc2626',
+										backgroundColor: 'rgba(220, 38, 38, 0.3)',
+										fill: true,
+									},
+								],
 							}}
 							options={{
+								...ChartJS.defaults.global,
 								scales: {
 									y: {
 										ticks: { callback: (value) => `${value}%`, stepSize: 20 },
@@ -320,13 +396,22 @@ export default function ModemDetails() {
 					<section className='section chart-wrapper'>
 						<h2>Uptime</h2>
 						<Line
-							height='100'
+							height='60'
 							width='300'
 							data={{
 								labels: uptimeLabels,
-								datasets: [{ label: 'Uptime (%)', data: uptimeValues }],
+								datasets: [
+									{
+										label: 'Uptime (%)',
+										data: uptimeValues,
+										borderColor: '#16a34a',
+										backgroundColor: 'rgba(22, 163, 74, 0.3)',
+										fill: true,
+									},
+								],
 							}}
 							options={{
+								...ChartJS.defaults.global,
 								scales: {
 									y: {
 										ticks: { callback: (value) => `${value}%`, stepSize: 20 },
