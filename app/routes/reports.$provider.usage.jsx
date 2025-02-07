@@ -196,7 +196,11 @@ const Reports = () => {
 
 	return (
 		<Layout>
-			<ReportsContent services={services} />
+			<section className='content'>
+				<div className='reports-container'>
+					<ReportsContent services={services} />
+				</div>
+			</section>
 		</Layout>
 	);
 };
