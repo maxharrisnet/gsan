@@ -16,7 +16,8 @@ export const loader = async ({ request }) => {
 };
 
 const ReportsContent = ({ services }) => {
-	const [isLoading, setIsLoading] = useState(true);
+	const isLoadingRef = useRef(true);
+	const [isClient, setIsClient] = useState(false);
 	const webdatarocksRef = useRef(null);
 
 	const calculateAverage = (arr) => (arr.length > 0 ? arr.reduce((sum, val) => sum + val, 0) / arr.length : 0);
@@ -51,17 +52,20 @@ const ReportsContent = ({ services }) => {
 	);
 
 	useEffect(() => {
-		let mounted = true;
+		setIsClient(true);
+	}, []);
 
+	useEffect(() => {
+		if (!isClient) return;
+
+		let mounted = true;
 		const initializeWebDataRocks = async () => {
 			try {
-				// Wait for the WebDataRocks global to be available
 				if (typeof WebDataRocks === 'undefined') {
 					const script = document.createElement('script');
 					script.src = 'https://cdn.webdatarocks.com/latest/webdatarocks.js';
 					script.async = true;
 
-					// Create a promise to wait for script load
 					await new Promise((resolve, reject) => {
 						script.onload = resolve;
 						script.onerror = reject;
@@ -70,6 +74,8 @@ const ReportsContent = ({ services }) => {
 				}
 
 				if (mounted && webdatarocksRef.current) {
+					webdatarocksRef.current.innerHTML = '';
+
 					new WebDataRocks({
 						container: webdatarocksRef.current,
 						toolbar: {
@@ -164,7 +170,7 @@ const ReportsContent = ({ services }) => {
 				console.error('🚨 Failed to load WebDataRocks:', error);
 			} finally {
 				if (mounted) {
-					setIsLoading(false);
+					isLoadingRef.current = false;
 				}
 			}
 		};
@@ -173,10 +179,10 @@ const ReportsContent = ({ services }) => {
 		return () => {
 			mounted = false;
 		};
-	}, [flattenedData]);
+	}, [isClient, flattenedData]);
 
-	if (isLoading) {
-		return <div>Initializing reports...</div>;
+	if (!isClient) {
+		return <div>Loading reports...</div>;
 	}
 
 	return <div ref={webdatarocksRef} />;
@@ -185,6 +191,11 @@ const ReportsContent = ({ services }) => {
 const Reports = () => {
 	const { services } = useLoaderData();
 	const navigation = useNavigation();
+	const [isClient, setIsClient] = useState(false);
+
+	useEffect(() => {
+		setIsClient(true);
+	}, []);
 
 	if (navigation.state === 'loading' && navigation.formData) {
 		return (
@@ -197,9 +208,7 @@ const Reports = () => {
 	return (
 		<Layout>
 			<section className='content'>
-				<div className='reports-container'>
-					<ReportsContent services={services} />
-				</div>
+				<div className='reports-container'>{isClient && <ReportsContent services={services} />}</div>
 			</section>
 		</Layout>
 	);
