@@ -1,5 +1,5 @@
 import { redirect } from '@remix-run/node';
-import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteError, useLoaderData, Link, isRouteErrorResponse } from '@remix-run/react';
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteError, useLoaderData, Link, isRouteErrorResponse, LiveReload } from '@remix-run/react';
 import { getSession } from './utils/session.server';
 import { UserProvider } from './context/UserContext';
 import globalStyles from './styles/global.css?url';
@@ -7,7 +7,7 @@ import errorStyles from './styles/error.css?url';
 import Layout from './components/layout/Layout';
 
 export function links() {
-	return [...Layout.links()];
+	return [...Layout.links(), { rel: 'stylesheet', href: globalStyles }, { rel: 'stylesheet', href: errorStyles }];
 }
 
 export const loader = async ({ request }) => {
@@ -55,6 +55,7 @@ export default function Root() {
 				</UserProvider>
 				<ScrollRestoration />
 				<Scripts />
+				<LiveReload />
 			</body>
 		</html>
 	);

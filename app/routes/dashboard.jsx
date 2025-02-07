@@ -78,12 +78,6 @@ export async function loader({ request }) {
 export default function Dashboard() {
 	const data = useLoaderData();
 
-	console.log('🎯 Dashboard Component Data:', {
-		modem: data.modem,
-		latencyData: data.latencyData,
-		throughputData: data.throughputData,
-	});
-
 	// Update the timestamp formatting
 	const formatTime = (timestamp) => {
 		return new Date(timestamp * 1000)
@@ -106,15 +100,6 @@ export default function Dashboard() {
 	const throughputDownload = Array.isArray(data.throughputData) ? data.throughputData.map((entry) => entry?.[1] || 0) : [];
 
 	const throughputUpload = Array.isArray(data.throughputData) ? data.throughputData.map((entry) => entry?.[2] || 0) : [];
-
-	// Let's also log the processed data
-	console.log('🔍 Processed Data:', {
-		latencyTimestamps: latencyTimestamps.slice(0, 5),
-		latencyValues: latencyValues.slice(0, 5),
-		throughputTimestamps: throughputTimestamps.slice(0, 5),
-		throughputDownload: throughputDownload.slice(0, 5),
-		throughputUpload: throughputUpload.slice(0, 5),
-	});
 
 	// Update chart colors and options
 	const chartOptions = {
