@@ -2,12 +2,16 @@ import { redirect } from '@remix-run/node';
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteError, useLoaderData, Link, isRouteErrorResponse, LiveReload } from '@remix-run/react';
 import { getSession } from './utils/session.server';
 import { UserProvider } from './context/UserContext';
+import Layout from './components/layout/Layout';
 import globalStyles from './styles/global.css?url';
 import errorStyles from './styles/error.css?url';
-import Layout from './components/layout/Layout';
 
 export function links() {
-	return [...Layout.links(), { rel: 'stylesheet', href: globalStyles }, { rel: 'stylesheet', href: errorStyles }];
+	return [
+		...Layout.links(),
+		{ rel: 'stylesheet', href: globalStyles },
+		{ rel: 'stylesheet', href: errorStyles }
+	];
 }
 
 export const loader = async ({ request }) => {
