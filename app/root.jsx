@@ -4,14 +4,11 @@ import { getSession } from './utils/session.server';
 import { UserProvider } from './context/UserContext';
 import globalStyles from './styles/global.css?url';
 import errorStyles from './styles/error.css?url';
+import Layout from './components/layout/Layout';
 
-export const links = () => [
-	{ rel: 'stylesheet', href: globalStyles },
-	{ rel: 'preconnect', href: 'https://cdn.shopify.com/' },
-	{ rel: 'stylesheet', href: 'https://cdn.shopify.com/static/fonts/inter/v4/styles.css' },
-	{ rel: 'stylesheet', href: errorStyles },
-	{ rel: 'stylesheet', href: 'https://fonts.googleapis.com/icon?family=Material+Icons' },
-];
+export function links() {
+	return [...Layout.links()];
+}
 
 export const loader = async ({ request }) => {
 	const session = await getSession(request.headers.get('Cookie'));

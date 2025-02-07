@@ -2,9 +2,11 @@ import { json } from '@remix-run/node';
 import { useLoaderData, useParams } from '@remix-run/react';
 import { getSession } from '../utils/session.server';
 import Layout from '../components/layout/Layout';
+// Only import customer-specific styles
 import styles from '../styles/customers.css?url';
 
 export function links() {
+	// Only include customer-specific styles
 	return [{ rel: 'stylesheet', href: styles }];
 }
 
