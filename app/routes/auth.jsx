@@ -1,5 +1,6 @@
 import { Form, useActionData } from '@remix-run/react';
-import { authenticateShopifyCustomer, authenticateSonarUser } from '../utils/user.server';
+import { authenticateShopifyCustomer } from '../utils/user.server';
+import authenticateSonarUser from '../sonar.server';
 import Layout from '../components/layout/Layout';
 import { json } from '@remix-run/node';
 

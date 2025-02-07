@@ -7,62 +7,8 @@ import Layout from '../components/layout/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import dashboardStyles from '../styles/performance.css?url';
-import { Line } from 'react-chartjs-2';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
-
-// Add chart configuration
-const latencyChartOptions = {
-	responsive: true,
-	maintainAspectRatio: false,
-	height: 60,
-	plugins: {
-		tooltip: {
-			mode: 'index',
-			intersect: false,
-			callbacks: {
-				title: (context) => {
-					const timestamp = context[0]?.raw?.timestamp;
-					if (!timestamp) return '';
-					return new Date(timestamp).toLocaleTimeString();
-				},
-				label: (context) => {
-					const value = context?.raw?.y ?? 0;
-					return `Latency: ${value}ms`;
-				},
-			},
-		},
-		legend: {
-			display: false,
-		},
-	},
-	scales: {
-		x: {
-			type: 'linear',
-			display: false,
-		},
-		y: {
-			beginAtZero: true,
-			display: false,
-			min: 0,
-			max: 200,
-		},
-	},
-	elements: {
-		line: {
-			tension: 0, // Makes the line straight
-			borderWidth: 2,
-		},
-		point: {
-			radius: 0, // Hide points
-			hoverRadius: 4, // Show points on hover
-		},
-	},
-	interaction: {
-		intersect: false,
-		mode: 'index',
-	},
-};
 
 export const links = () => [{ rel: 'stylesheet', href: dashboardStyles }];
 
@@ -156,9 +102,7 @@ export default function Dashboard() {
 	);
 }
 
-// Replace the existing latency bar with a Line chart
 function LatencyChart({ latencyData, modem }) {
-	// If no data is available
 	if (!latencyData || latencyData.length === 0) {
 		return <div className='no-latency-message'>No Data Available</div>;
 	}
