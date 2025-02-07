@@ -12,6 +12,10 @@ import modemStyles from '../styles/modem.css?url';
 export const links = () => [
 	{ rel: 'stylesheet', href: chartStyles },
 	{ rel: 'stylesheet', href: modemStyles },
+	{
+		rel: 'stylesheet',
+		href: 'https://fonts.googleapis.com/icon?family=Material+Icons',
+	},
 ];
 
 export { loader };
