@@ -10,7 +10,11 @@ export function links() {
 	return [
 		...Layout.links(),
 		{ rel: 'stylesheet', href: globalStyles },
-		{ rel: 'stylesheet', href: errorStyles }
+		{ rel: 'stylesheet', href: errorStyles },
+		{
+			rel: 'stylesheet',
+			href: 'https://fonts.googleapis.com/icon?family=Material+Icons',
+		},
 	];
 }
 

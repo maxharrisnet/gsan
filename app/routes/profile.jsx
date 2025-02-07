@@ -52,7 +52,6 @@ export async function loader({ request }) {
 export default function Profile() {
 	const { sonarServicePlan, isSonarUser, shopifyCustomer } = useLoaderData();
 
-	// Add debug logging
 	console.log('🔍 Profile Component Data:', {
 		sonarServicePlan,
 		isSonarUser,
