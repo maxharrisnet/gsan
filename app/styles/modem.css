@@ -45,13 +45,6 @@
 	margin-bottom: var(--spacing-large);
 }
 
-.chart-container {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-	gap: var(--spacing-large);
-	padding: var(--spacing-large);
-}
-
 /* Status Colors */
 .text-success {
 	color: var(--color-success);
