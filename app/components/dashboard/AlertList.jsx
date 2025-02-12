@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function AlertList({ alerts = [] }) {
 	if (!alerts.length) {
 		return <p>No active alerts</p>;

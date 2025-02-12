@@ -15,7 +15,7 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 
 export const links = () => [{ rel: 'stylesheet', href: dashboardStyles }];
 
-export async function loader({ request }) {
+export async function loader() {
 	try {
 		const accessToken = await getCompassAccessToken();
 		const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
@@ -123,7 +123,6 @@ export default function Dashboard() {
 						errorElement={<div className='error-container'>Error loading dashboard data</div>}
 					>
 						{(resolvedData) => {
-							// console.log('✨ Resolved data:', resolvedData);
 							const { services, gpsData } = resolvedData;
 
 							if (!services || !Array.isArray(services) || services.length === 0) {
