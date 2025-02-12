@@ -1,5 +1,4 @@
 // app/routes/performance.jsx
-import { defer } from '@remix-run/node';
 import { useLoaderData, Await, Link } from '@remix-run/react';
 import { Suspense } from 'react';
 import { fetchServicesAndModemData, getCompassAccessToken } from '../compass.server';
@@ -7,18 +6,18 @@ import { fetchGPS } from './api.gps';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import dashboardStyles from '../styles/performance.css?url';
+import SatelliteMap from '../components/maps/SatelliteMap';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 export const links = () => [{ rel: 'stylesheet', href: dashboardStyles }];
 
+// Server loader for initial data
 export async function loader() {
 	try {
 		const accessToken = await getCompassAccessToken();
-		const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
 
 		const servicesPromise = fetchServicesAndModemData()
 			.then(async ({ services }) => {
@@ -68,19 +67,26 @@ export async function loader() {
 				return { services: [], gpsData: {} };
 			});
 
-		return defer({
+		return {
 			servicesData: servicesPromise,
 			accessToken,
-			googleMapsApiKey,
-		});
+		};
 	} catch (error) {
 		console.error('🚨 Error in loader:', error);
 		throw new Response('Error loading dashboard data', { status: 500 });
 	}
 }
 
+// Client loader for map-specific data
+export function clientLoader({ data }) {
+	return {
+		...data,
+		mapReady: true,
+	};
+}
+
 export default function Dashboard() {
-	const { servicesData, googleMapsApiKey } = useLoaderData();
+	const { servicesData } = useLoaderData();
 
 	return (
 		<Layout>
@@ -134,20 +140,18 @@ export default function Dashboard() {
 								);
 							}
 
-							// Extract modem locations with GPS data
-							const modemLocations = services.flatMap((service) =>
+							// Transform the data for the map
+							const markers = services.flatMap((service) =>
 								(service.modems || [])
 									.map((modem) => {
-										const gpsInfo = gpsData[modem.id]?.[0]; // Get latest GPS entry
+										const gpsInfo = gpsData[modem.id]?.[0];
 										return gpsInfo
 											? {
 													id: modem.id,
 													name: modem.name,
 													status: modem.status,
-													position: {
-														lat: gpsInfo.lat,
-														lng: gpsInfo.lon, // Note: API uses 'lon' not 'lng'
-													},
+													lat: gpsInfo.lat,
+													lng: gpsInfo.lon,
 												}
 											: null;
 									})
@@ -155,31 +159,16 @@ export default function Dashboard() {
 							);
 
 							return (
-								<div className=''>
-									{/* Map */}
-									{modemLocations.length > 0 && (
-										<section className='map-section '>
+								<div>
+									{markers.length > 0 && (
+										<section className='map-section'>
 											<div className='map-container'>
-												<APIProvider apiKey={googleMapsApiKey}>
-													<Map
-														defaultCenter={{ lat: 39.8283, lng: -98.5795 }}
-														defaultZoom={7}
-														gestureHandling={'greedy'}
-														disableDefaultUI={false}
-													>
-														{modemLocations.map((modem) => (
-															<Marker
-																key={modem.id}
-																position={modem.position}
-																title={modem.name}
-																// icon={{
-																// 	url: `/assets/markers/${modem.status}.png`,
-																// 	scaledSize: { width: 30, height: 30 },
-																// }}
-															/>
-														))}
-													</Map>
-												</APIProvider>
+												<SatelliteMap
+													center={[39.8283, -98.5795]}
+													zoom={7}
+													markers={markers}
+													style={{ height: '100%', width: '100%' }}
+												/>
 											</div>
 										</section>
 									)}

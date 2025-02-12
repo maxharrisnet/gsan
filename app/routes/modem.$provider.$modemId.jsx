@@ -1,13 +1,14 @@
 import { useEffect, useRef } from 'react';
 import { useLoaderData, Link } from '@remix-run/react';
-import { loader } from './api.modem';
+import { json } from '@remix-run/node';
+import { fetchModemData } from '../routes/api.modem';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
-import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, BarElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import chartStyles from '../styles/charts.css?url';
 import modemStyles from '../styles/modem.css?url';
+import SatelliteMap from '../components/maps/SatelliteMap';
 
 export const links = () => [
 	{ rel: 'stylesheet', href: chartStyles },
@@ -18,25 +19,41 @@ export const links = () => [
 	},
 ];
 
-export { loader };
+export async function loader({ params }) {
+	const { provider, modemId } = params;
+	const data = await fetchModemData(modemId, provider);
+	return json({ data });
+}
+
+export function clientLoader({ data }) {
+	return {
+		...data,
+		mapReady: true,
+	};
+}
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, BarElement, LineElement, Title, Tooltip, Legend);
 
 export default function ModemDetails() {
-	const { modem, mapsAPIKey, gpsData, latencyData, throughputData, signalQualityData, obstructionData, usageData, uptimeData } = useLoaderData();
+	const { data } = useLoaderData();
+	const { modem, mapsAPIKey, gpsData, latencyData, throughputData, signalQualityData, obstructionData, usageData, uptimeData } = data;
 
-	const latencyTimestamps = latencyData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
-	const latencyValues = latencyData.map((entry) => entry[1]);
+	// Add safety checks for each data transformation
+	const latencyTimestamps = Array.isArray(latencyData) ? latencyData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString()) : [];
+	const latencyValues = Array.isArray(latencyData) ? latencyData.map((entry) => entry[1]) : [];
 
-	const throughputTimestamps = throughputData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
-	const throughputDownload = throughputData.map((entry) => entry[1]);
-	const throughputUpload = throughputData.map((entry) => entry[2]);
+	const throughputTimestamps = Array.isArray(throughputData) ? throughputData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString()) : [];
+	const throughputDownload = Array.isArray(throughputData) ? throughputData.map((entry) => entry[1]) : [];
+	const throughputUpload = Array.isArray(throughputData) ? throughputData.map((entry) => entry[2]) : [];
 
-	const signalQualityLabels = signalQualityData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
-	const signalQualityValues = signalQualityData.map((entry) => entry[1]);
+	const signalQualityLabels = Array.isArray(signalQualityData) ? signalQualityData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString()) : [];
+	const signalQualityValues = Array.isArray(signalQualityData) ? signalQualityData.map((entry) => entry[1]) : [];
 
-	const obstructionLabels = obstructionData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
-	const obstructionValues = obstructionData.map((entry) => entry[1] * 100);
+	const obstructionLabels = Array.isArray(obstructionData) ? obstructionData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString()) : [];
+	const obstructionValues = Array.isArray(obstructionData) ? obstructionData.map((entry) => entry[1] * 100) : [];
+
+	const uptimeLabels = Array.isArray(uptimeData) ? uptimeData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString()) : [];
+	const uptimeValues = Array.isArray(uptimeData) ? uptimeData.map((entry) => Math.ceil((entry[1] / 86400) * 10) / 10) : [];
 
 	// Filter and process usage data for the last 14 days
 	const currentDate = new Date();
@@ -59,8 +76,6 @@ export default function ModemDetails() {
 			usageUnlimited.push(day.unlimited ?? 0);
 		});
 	}
-	const uptimeLabels = uptimeData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
-	const uptimeValues = uptimeData.map((entry) => Math.ceil((entry[1] / 86400) * 10) / 10);
 
 	const usageChartRef = useRef(null);
 	const signalQualityChartRef = useRef(null);
@@ -202,17 +217,18 @@ export default function ModemDetails() {
 			<main className='content content-full-width'>
 				{gpsData && gpsData.length > 0 && (
 					<section className='map-wrapper'>
-						<APIProvider apiKey={mapsAPIKey}>
-							<Map
-								style={{ width: '100%', height: '60vh' }}
-								defaultCenter={{ lat: gpsData[0].lat, lng: gpsData[0].lon }}
-								defaultZoom={8}
-								gestureHandling={'greedy'}
-								disableDefaultUI={true}
-							>
-								<Marker position={{ lat: gpsData[0].lat, lng: gpsData[0].lon }} />
-							</Map>
-						</APIProvider>
+						<SatelliteMap
+							center={[gpsData[0].lat, gpsData[0].lon]}
+							markers={[
+								{
+									id: modem.id,
+									lat: gpsData[0].lat,
+									lng: gpsData[0].lon,
+									name: modem.name,
+									status: modem.status,
+								},
+							]}
+						/>
 					</section>
 				)}
 				<div className='chart-container'>

@@ -15,6 +15,10 @@ export function links() {
 			rel: 'stylesheet',
 			href: 'https://fonts.googleapis.com/icon?family=Material+Icons',
 		},
+		{
+			rel: 'stylesheet',
+			href: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+		},
 	];
 }
 
