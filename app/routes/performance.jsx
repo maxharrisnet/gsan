@@ -16,23 +16,32 @@ export const links = () => [{ rel: 'stylesheet', href: dashboardStyles }];
 export async function loader({ request }) {
 	try {
 		const session = await getSession(request.headers.get('Cookie'));
+		console.log('👀 session in performance loader:', session);
 		const userData = session.get('userData');
-		console.log('👉 userData:', userData);
+		console.log('👀 userData in performance loader:', userData);
 
-		// Get user's kit IDs from the session
-		const userKits = userData?.metafield?.value ? userData.metafield.value.split(',').map((kit) => kit.trim()) : [];
-		console.log('👉 userKits:', userKits);
+		// Get user's kit IDs from the session - updated to match session structure
+		const userKits = userData?.metafields?.kits ? userData.metafields.kits.split(',').map((kit) => kit.trim()) : [];
+		console.log('🎯 User Kits:', userKits);
 
 		const accessToken = await getCompassAccessToken();
 		const servicesPromise = fetchServicesAndModemData()
 			.then(async ({ services }) => {
+				console.log('📦 Original services:', services);
+
 				// Filter services to only include modems that match user's kits
 				const filteredServices = services
 					.map((service) => ({
 						...service,
-						modems: service.modems.filter((modem) => userKits.includes(modem.id)),
+						modems: service.modems.filter((modem) => {
+							const matches = userKits.includes(modem.id);
+							console.log(`🔍 Checking modem ${modem.id} against kits ${userKits}: ${matches}`);
+							return matches;
+						}),
 					}))
 					.filter((service) => service.modems.length > 0); // Remove services with no matching modems
+
+				console.log('✨ Filtered services:', filteredServices);
 
 				return {
 					services: filteredServices,
