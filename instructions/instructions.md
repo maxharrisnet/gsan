@@ -2,7 +2,7 @@ Help me complete an app I am working on.
 
 I am working on an app for a client. It is built in Node.js and the Remix framework (using the latest Shopify Remix app template). The purpose off the app is to provide a dashboard so that my client's (GSAN) wholesale customers can log in with their Shopify or Sonar credentials and view the status of the satellites that they access through GSAN (also branded as Switch).
 
-Once customers log in, the app should pull some metafields from the customer to determine what services that have access to. There is a metafield called "kits" that is a comma separated list of kit ids (i.e. "KITP00321175,KITP00321176"). Each kit has a satellite modem that is associated with tjhat id.
+Once customers log in, the app should pull some metafields from the customer to determine what services that have access to. There is a metafield called "kits" that is a comma separated list of kit ids (i.e. "KITP00321175,KITP00321176"). Each kit has a satellite modem that is associated with that id.
 
 - There should be a dashboard page where users can view relevant account information and data at a glance. This should also have a list of modems/satellites with their latency data in a simple bar graph (I have built this part already in performance.jsx. We should probably merge that with what I have in dashboard.jsx). I am unsure about what should be on the rest of the page and how to populate it.
 - a modempage that shows the details of a particular modem's performance in a series of graphs. Access this page by the modem's id in the url or by clicking on the modem listed on the Dashboard page.

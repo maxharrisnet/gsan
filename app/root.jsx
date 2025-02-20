@@ -31,7 +31,7 @@ export const loader = async ({ request }) => {
 
 	// If we have userData and we're on a public route, redirect to dashboard
 	if (userData && isPublicRoute) {
-		console.log('👉 Authenticated user on public route, redirecting to dashboard');
+		console.log('👉 Authenticated user on public route, redirecting to map');
 		return redirect('/map');
 	}
 

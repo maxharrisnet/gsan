@@ -7,6 +7,7 @@ import Layout from '../components/layout/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import dashboardStyles from '../styles/performance.css?url';
+import { getSession } from '../utils/session.server';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -14,11 +15,27 @@ export const links = () => [{ rel: 'stylesheet', href: dashboardStyles }];
 
 export async function loader({ request }) {
 	try {
+		const session = await getSession(request.headers.get('Cookie'));
+		const userData = session.get('userData');
+		console.log('👉 userData:', userData);
+
+		// Get user's kit IDs from the session
+		const userKits = userData?.metafield?.value ? userData.metafield.value.split(',').map((kit) => kit.trim()) : [];
+		console.log('👉 userKits:', userKits);
+
 		const accessToken = await getCompassAccessToken();
 		const servicesPromise = fetchServicesAndModemData()
 			.then(async ({ services }) => {
+				// Filter services to only include modems that match user's kits
+				const filteredServices = services
+					.map((service) => ({
+						...service,
+						modems: service.modems.filter((modem) => userKits.includes(modem.id)),
+					}))
+					.filter((service) => service.modems.length > 0); // Remove services with no matching modems
+
 				return {
-					services: services,
+					services: filteredServices,
 				};
 			})
 			.catch((error) => {

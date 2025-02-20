@@ -5,21 +5,8 @@ const UserContext = createContext();
 export const UserProvider = ({ children, initialUser, shop }) => {
 	const [currentUser, setCurrentUser] = useState(initialUser);
 
-	useEffect(() => {
-		setCurrentUser(initialUser);
-	}, [initialUser]);
-
-	const addShopToRequest = (request) => {
-		const modifiedUrl = new URL(request.url);
-		modifiedUrl.searchParams.set('shop', shop);
-		return new Request(modifiedUrl, {
-			method: request.method,
-			headers: request.headers,
-			body: request.body,
-			redirect: request.redirect,
-			signal: request.signal,
-		});
-	};
+	// Parse kits from user metafields
+	const userKits = currentUser?.metafields?.kits ? currentUser.metafields.kits.split(',').map((kit) => kit.trim()) : [];
 
 	const isProvider = currentUser?.metafields?.provider === 'true';
 
@@ -29,8 +16,8 @@ export const UserProvider = ({ children, initialUser, shop }) => {
 				currentUser,
 				setCurrentUser,
 				shop,
-				addShopToRequest,
 				isProvider,
+				userKits,
 			}}
 		>
 			{children}

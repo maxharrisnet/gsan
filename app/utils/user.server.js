@@ -27,17 +27,17 @@ const fetchStorefrontApi = async ({ shop, storefrontAccessToken, query, variable
 
 export async function authenticateShopifyCustomer(email, password, request) {
 	const customerLoginMutation = `
-  mutation customerAccessTokenCreate($input: CustomerAccessTokenCreateInput!) {
-    customerAccessTokenCreate(input: $input) {
-      customerAccessToken {
-        accessToken
-      }
-      customerUserErrors {
-        message
+    mutation customerAccessTokenCreate($input: CustomerAccessTokenCreateInput!) {
+      customerAccessTokenCreate(input: $input) {
+        customerAccessToken {
+          accessToken
+        }
+        customerUserErrors {
+          message
+        }
       }
     }
-  }
-`;
+  `;
 
 	try {
 		const response = await fetchStorefrontApi({
@@ -56,21 +56,62 @@ export async function authenticateShopifyCustomer(email, password, request) {
 
 		const accessToken = customerAccessTokenCreate.customerAccessToken.accessToken;
 
-		// Create the userData object
+		// Updated query with correct metafields syntax
+		const customerQuery = `
+      query CustomerDetails($customerAccessToken: String!) {
+        customer(customerAccessToken: $customerAccessToken) {
+          id
+          firstName
+          lastName
+          email
+          metafields(identifiers: [
+            {
+              namespace: "custom",
+              key: "kits"
+            }
+          ]) {
+            value
+            key
+          }
+        }
+      }
+    `;
+
+		const customerResponse = await fetchStorefrontApi({
+			shop: process.env.SHOPIFY_STORE_DOMAIN,
+			storefrontAccessToken: process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN,
+			query: customerQuery,
+			variables: { customerAccessToken: accessToken },
+		});
+
+		console.log('👤 Customer Response:', customerResponse);
+
+		if (!customerResponse?.data?.customer) {
+			console.error('❌ No customer data in response:', customerResponse);
+			return { error: 'Failed to fetch customer data' };
+		}
+
+		const customer = customerResponse.data.customer;
+
+		// Handle metafields array
+		const kitsMetafield = customer.metafields.find((m) => m.key === 'kits');
+
 		const userData = {
 			customerAccessToken: accessToken,
 			shop: process.env.SHOPIFY_STORE_DOMAIN,
 			email,
 			type: 'shopify',
+			metafields: {
+				kits: kitsMetafield?.value || '',
+			},
 		};
 
-		console.log('✅ Authentication successful, creating session');
+		console.log('✅ Authentication successful, creating session with:', userData);
 
-		// Redirect to dashboard instead of performance
 		return createUserSession(userData, '/map');
 	} catch (error) {
 		console.error('❌ Authentication error:', error);
-		return { error: 'An unexpected error occurred' };
+		return { error: 'An unexpected error occurred during authentication' };
 	}
 }
 
