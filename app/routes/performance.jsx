@@ -2,29 +2,29 @@
 import { defer } from '@remix-run/node';
 import { useLoaderData, Await, Link } from '@remix-run/react';
 import { Suspense } from 'react';
+import { getSession } from '../utils/session.server';
 import { fetchServicesAndModemData, getCompassAccessToken } from '../compass.server';
 import Layout from '../components/layout/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import dashboardStyles from '../styles/performance.css?url';
+import { hasKitAccess } from '../utils/provider.server';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 export const links = () => [{ rel: 'stylesheet', href: dashboardStyles }];
 
 export async function loader({ request }) {
+	const session = await getSession(request.headers.get('Cookie'));
+	const userData = session.get('userData');
+	const kits = userData?.kits;
+
 	try {
 		const accessToken = await getCompassAccessToken();
-		const servicesPromise = fetchServicesAndModemData()
-			.then(async ({ services }) => {
-				return {
-					services: services,
-				};
-			})
-			.catch((error) => {
-				console.error('🍎 Error in services promise chain:', error);
-				return { services: [] };
-			});
+		const servicesPromise = fetchServicesAndModemData().then(async ({ services }) => ({
+			services,
+			kits, // Pass kits to the component
+		}));
 
 		return defer({
 			servicesData: servicesPromise,
@@ -43,25 +43,28 @@ export default function Dashboard() {
 		<Layout>
 			<main className='content'>
 				<Suspense fallback={<LoadingSpinner />}>
-					<Await
-						resolve={servicesData}
-						errorElement={<div className='error-container'>Error loading dashboard data</div>}
-					>
-						{(resolvedData) => {
-							const { services } = resolvedData;
+					<Await resolve={servicesData}>
+						{({ services, kits }) => {
+							// Now kits comes from the loader data
+							const filteredServices = services
+								.map((service) => ({
+									...service,
+									modems: service.modems?.filter((modem) => hasKitAccess(kits, modem.id)),
+								}))
+								.filter((service) => service.modems?.length > 0);
 
-							if (!services || !Array.isArray(services) || services.length === 0) {
+							if (!filteredServices || filteredServices.length === 0) {
 								return (
 									<div className='empty-state card'>
 										<h3>No Services Available</h3>
-										<p>No active services found for this account.</p>
+										<p>No active services found for your account.</p>
 									</div>
 								);
 							}
 
 							return (
 								<section className='stats-overview card'>
-									{services.map((service) => (
+									{filteredServices.map((service) => (
 										<div key={service.id}>
 											{service.modems && service.modems.length > 0 ? (
 												<div>

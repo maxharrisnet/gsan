@@ -58,13 +58,16 @@ export default function Profile() {
 		shopifyCustomer,
 	});
 
+	// Get company name from metafields
+	const companyName = shopifyCustomer?.metafields?.edges?.find((edge) => edge.node.namespace === 'gsan' && edge.node.key === 'company_name')?.node.value;
+
 	return (
 		<Layout>
 			<main className='content'>
 				<div className='container'>
 					{/* Profile Header */}
 					<header className='section'>
-						<h1>Profile</h1>
+						<h1>{companyName || 'Profile'}</h1>
 					</header>
 
 					{/* Customer Info Section */}
