@@ -28,42 +28,21 @@ const Header = () => {
 	const { currentUser } = userContext;
 	const isProvider = currentUser?.role === 'provider';
 	const isGsanPage = path.includes('/gsan') || currentUser?.authType === 'shopify';
-	const isSwitchPage = path.includes('/switch') || currentUser?.authType === 'sonar';
 	const providerType = isGsanPage ? 'gsan' : 'sonar';
-	const userType = isGsanPage ? 'gsan' : 'switch';
 
 	return (
 		<header className='header'>
 			<div className='header-container'>
 				<div className='logo'>
-					{/* {isGsanPage && ( */}
 					<Link to='/'>
 						<img
 							src='/assets/images/GSAN-logo.png'
 							alt='GSAN Logo'
 						/>
 					</Link>
-
-					{/* )} */}
-					{/* {!isGsanPage && (
-						<Link to='/'>
-							<img
-								src='/assets/images/switch-logo.png'
-								alt='Switch Logo'
-							/>
-						</Link>
-					)} */}
 				</div>
 				<nav className='nav'>
 					<ul className='nav-list'>
-						<li className='nav-item'>
-							<NavLink
-								to={`/dashboard`}
-								className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-							>
-								Dashboard
-							</NavLink>
-						</li>
 						<li className='nav-item'>
 							<NavLink
 								to={`/map`}
@@ -88,27 +67,6 @@ const Header = () => {
 								Reports
 							</NavLink>
 						</li>
-						{/* Only show Customers section to providers */}
-						{isProvider && (
-							<li className='nav-item nav-dropdown'>
-								<NavLink
-									to={`/${providerType}/customers`}
-									className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-								>
-									Customers
-								</NavLink>
-								<ul className='nav-dropdown-content'>
-									<li>
-										<NavLink
-											to={`/${providerType}/users/manage`}
-											className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-										>
-											Add New User
-										</NavLink>
-									</li>
-								</ul>
-							</li>
-						)}
 					</ul>
 					<div
 						className='user-avatar'

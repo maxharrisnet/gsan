@@ -67,7 +67,7 @@ export async function authenticateShopifyCustomer(email, password, request) {
 		console.log('✅ Authentication successful, creating session');
 
 		// Redirect to dashboard instead of performance
-		return createUserSession(userData, '/dashboard');
+		return createUserSession(userData, '/map');
 	} catch (error) {
 		console.error('❌ Authentication error:', error);
 		return { error: 'An unexpected error occurred' };
