@@ -1,4 +1,3 @@
-// app/routes/performance.jsx
 import { defer } from '@remix-run/node';
 import { useLoaderData, Await, Link } from '@remix-run/react';
 import { Suspense } from 'react';
@@ -9,6 +8,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import dashboardStyles from '../styles/performance.css?url';
 import { hasKitAccess } from '../utils/provider.server';
+import { redirect } from '@remix-run/node';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -17,13 +17,24 @@ export const links = () => [{ rel: 'stylesheet', href: dashboardStyles }];
 export async function loader({ request }) {
 	const session = await getSession(request.headers.get('Cookie'));
 	const userData = session.get('userData');
-	const kits = userData?.kits;
+	
+	// Add debug logging
+	console.log('🔍 Session:', session);
+	console.log('👤 UserData from session:', userData);
 
+	if (!userData) {
+		// Redirect to login if no user data is found
+		return redirect('/auth/login');
+	}
+
+	const kits = userData?.kits;
+	
 	try {
 		const accessToken = await getCompassAccessToken();
 		const servicesPromise = fetchServicesAndModemData().then(async ({ services }) => ({
 			services,
-			kits, // Pass kits to the component
+			kits,
+			userData, // Pass the full userData to help with debugging
 		}));
 
 		return defer({

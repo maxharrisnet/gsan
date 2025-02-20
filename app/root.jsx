@@ -22,6 +22,8 @@ export const loader = async ({ request }) => {
 	const session = await getSession(request.headers.get('Cookie'));
 	const url = new URL(request.url);
 	const userData = session.get('userData');
+	const currentPage = url.pathname;
+	console.log('👉 currentPage:', currentPage);
 
 	// Public routes that don't require authentication
 	const publicRoutes = ['/auth', '/login', '/'];
