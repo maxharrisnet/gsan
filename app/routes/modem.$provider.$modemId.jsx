@@ -3,6 +3,7 @@ import { useLoaderData, Link } from '@remix-run/react';
 import { loader } from './api.modem';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, BarElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
@@ -23,7 +24,22 @@ export { loader };
 ChartJS.register(CategoryScale, LinearScale, PointElement, BarElement, LineElement, Title, Tooltip, Legend);
 
 export default function ModemDetails() {
-	const { modem, mapsAPIKey, gpsData, latencyData, throughputData, signalQualityData, obstructionData, usageData, uptimeData } = useLoaderData();
+	const { data } = useLoaderData();
+
+	// Add safety check for data
+	if (!data) {
+		return (
+			<Layout>
+				<main className='content'>
+					<div className='section'>
+						<LoadingSpinner />
+					</div>
+				</main>
+			</Layout>
+		);
+	}
+
+	const { modem, mapsAPIKey, gpsData, latencyData = [], throughputData = [], signalQualityData = [], obstructionData = [], usageData = [], uptimeData = [] } = data;
 
 	// Add safety checks for data transformations
 	const latencyTimestamps = Array.isArray(latencyData) ? latencyData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString()) : [];
@@ -159,6 +175,17 @@ export default function ModemDetails() {
 	return (
 		<Layout>
 			<Sidebar>
+				<div className='sidebar-header'>
+					<h1 className='provider-name'>Switch Canada</h1>
+				</div>
+				<div className='search-container'>
+					<input
+						type='search'
+						placeholder='Search'
+						className='search-input'
+					/>
+				</div>
+
 				<h2 className='select-device-heading'>Select a Device</h2>
 				<Link
 					to={`/modem/${modem.provider}`}

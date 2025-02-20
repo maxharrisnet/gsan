@@ -96,7 +96,7 @@ export default function Dashboard() {
 																	modem={modem}
 																/>
 															) : (
-																<div className='no-latency-message'>No Modem Data Available</div>
+																<div className='no-latency-message'>No Latency Data Available</div>
 															)}
 														</Link>
 													))}
