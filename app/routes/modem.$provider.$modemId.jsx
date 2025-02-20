@@ -3,6 +3,7 @@ import { useLoaderData, Link } from '@remix-run/react';
 import { loader } from './api.modem';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, BarElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
@@ -23,10 +24,26 @@ export { loader };
 ChartJS.register(CategoryScale, LinearScale, PointElement, BarElement, LineElement, Title, Tooltip, Legend);
 
 export default function ModemDetails() {
-	const { modem, mapsAPIKey, gpsData, latencyData, throughputData, signalQualityData, obstructionData, usageData, uptimeData } = useLoaderData();
+	const { data } = useLoaderData();
 
-	const latencyTimestamps = latencyData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
-	const latencyValues = latencyData.map((entry) => entry[1]);
+	// Add safety check for data
+	if (!data) {
+		return (
+			<Layout>
+				<main className='content'>
+					<div className='section'>
+						<LoadingSpinner />
+					</div>
+				</main>
+			</Layout>
+		);
+	}
+
+	const { modem, mapsAPIKey, gpsData, latencyData = [], throughputData = [], signalQualityData = [], obstructionData = [], usageData = [], uptimeData = [] } = data;
+
+	// Add safety checks for data transformations
+	const latencyTimestamps = Array.isArray(latencyData) ? latencyData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString()) : [];
+	const latencyValues = Array.isArray(latencyData) ? latencyData.map((entry) => entry[1]) : [];
 
 	const throughputTimestamps = throughputData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
 	const throughputDownload = throughputData.map((entry) => entry[1]);

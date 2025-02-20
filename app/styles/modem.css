@@ -41,7 +41,7 @@
 }
 
 .chart-wrapper {
-	height: 400px; /* Set a fixed container height */
+	/* height: 400px;  */
 	margin-bottom: var(--spacing-large);
 }
 /* Status Colors */
