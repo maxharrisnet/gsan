@@ -89,53 +89,55 @@ export default function Dashboard() {
 	return (
 		<Layout>
 			<Sidebar>
-				<Suspense fallback={<LoadingSpinner />}>
-					<Await resolve={servicesData}>
-						{(resolvedData) => {
-							const { services } = resolvedData;
+				<div className='dashboard-sidebar'>
+					<Suspense fallback={<LoadingSpinner />}>
+						<Await resolve={servicesData}>
+							{(resolvedData) => {
+								const { services } = resolvedData;
 
-							// Filter modems based on userKits
-							const filteredServices = services
-								.map((service) => ({
-									...service,
-									modems: service.modems?.filter((modem) => userKits.includes(modem.id)) || [],
-								}))
-								.filter((service) => service.modems.length > 0);
+								// Filter modems based on userKits
+								const filteredServices = services
+									.map((service) => ({
+										...service,
+										modems: service.modems?.filter((modem) => userKits.includes(modem.id)) || [],
+									}))
+									.filter((service) => service.modems.length > 0);
 
-							return filteredServices.length > 0 ? (
-								<ul className='modem-list'>
-									{filteredServices.flatMap((service) =>
-										service.modems?.map((modem) => (
-											<li
-												key={modem.id}
-												className={`modem-item status-${modem.status?.toLowerCase()}`}
-											>
-												<Link
-													className='list-button'
-													to={`/modem/${modem.type.toLowerCase()}/${modem.id}`}
-													prefetch='intent'
+								return filteredServices.length > 0 ? (
+									<ul className='modem-list'>
+										{filteredServices.flatMap((service) =>
+											service.modems?.map((modem) => (
+												<li
+													key={modem.id}
+													className={`modem-item status-${modem.status?.toLowerCase()}`}
 												>
-													<span className='modem-name'>{modem.name}</span>
-													<span className='modem-status'>
-														<span className={`status-dot ${modem.status?.toLowerCase()}`} />
-														{modem.status}
-													</span>
-													<span className='modem-chevron material-icons'>chevron_right</span>
-												</Link>
-											</li>
-										))
-									)}
-								</ul>
-							) : (
-								<div className='empty-sidebar'>
-									<p>No modems found in your kits</p>
-								</div>
-							);
-						}}
-					</Await>
-				</Suspense>
+													<Link
+														className='list-button'
+														to={`/modem/${modem.type.toLowerCase()}/${modem.id}`}
+														prefetch='intent'
+													>
+														<span className='modem-name'>{modem.name}</span>
+														<span className='modem-status'>
+															<span className={`status-dot ${modem.status?.toLowerCase()}`} />
+															{modem.status}
+														</span>
+														<span className='modem-chevron material-icons'>chevron_right</span>
+													</Link>
+												</li>
+											))
+										)}
+									</ul>
+								) : (
+									<div className='empty-sidebar'>
+										<p>No modems found in your kits</p>
+									</div>
+								);
+							}}
+						</Await>
+					</Suspense>
+				</div>
 			</Sidebar>
-			<main className='content map-page'>
+			<main className='content content-full-width'>
 				<Suspense fallback={<LoadingSpinner />}>
 					<Await
 						resolve={servicesData}
