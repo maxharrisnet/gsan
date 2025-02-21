@@ -10,6 +10,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import dashboardStyles from '../styles/performance.css?url';
+import { useUser } from '../context/UserContext';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -83,41 +84,57 @@ export async function loader({ request }) {
 
 export default function Dashboard() {
 	const { servicesData, googleMapsApiKey } = useLoaderData();
+	const { userKits } = useUser();
 
 	return (
 		<Layout>
 			<Sidebar>
-				<div className='dashboard-sidebar'>
-					<Suspense fallback={<LoadingSpinner />}>
-						<Await resolve={servicesData}>
-							{(resolvedData) => {
-								const { services } = resolvedData;
-								return services?.length > 0 ? (
-									<ul className='modem-list'>
-										{services.flatMap((service) =>
-											service.modems?.map((modem) => (
-												<li
-													key={modem.id}
-													className={`modem-item status-${modem.status?.toLowerCase()}`}
-												>
-													<Link to={`/modem/${modem.type.toLowerCase()}/${modem.id}`}>
-														<span className='modem-name'>{modem.name}</span>
-														<span className='modem-status'>{modem.status}</span>
-														<span className='modem-chevron material-icons'>chevron_right</span>
-													</Link>
-												</li>
-											))
-										)}
-									</ul>
-								) : (
-									<p>No modems found</p>
-								);
-							}}
-						</Await>
-					</Suspense>
-				</div>
-			</Sidebar>
+				<Suspense fallback={<LoadingSpinner />}>
+					<Await resolve={servicesData}>
+						{(resolvedData) => {
+							const { services } = resolvedData;
 
+							// Filter modems based on userKits
+							const filteredServices = services
+								.map((service) => ({
+									...service,
+									modems: service.modems?.filter((modem) => userKits.includes(modem.id)) || [],
+								}))
+								.filter((service) => service.modems.length > 0);
+
+							return filteredServices.length > 0 ? (
+								<ul className='modem-list'>
+									{filteredServices.flatMap((service) =>
+										service.modems?.map((modem) => (
+											<li
+												key={modem.id}
+												className={`modem-item status-${modem.status?.toLowerCase()}`}
+											>
+												<Link
+													className='list-button'
+													to={`/modem/${modem.type.toLowerCase()}/${modem.id}`}
+													prefetch='intent'
+												>
+													<span className='modem-name'>{modem.name}</span>
+													<span className='modem-status'>
+														<span className={`status-dot ${modem.status?.toLowerCase()}`} />
+														{modem.status}
+													</span>
+													<span className='modem-chevron material-icons'>chevron_right</span>
+												</Link>
+											</li>
+										))
+									)}
+								</ul>
+							) : (
+								<div className='empty-sidebar'>
+									<p>No modems found in your kits</p>
+								</div>
+							);
+						}}
+					</Await>
+				</Suspense>
+			</Sidebar>
 			<main className='content map-page'>
 				<Suspense fallback={<LoadingSpinner />}>
 					<Await
