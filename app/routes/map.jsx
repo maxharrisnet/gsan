@@ -79,17 +79,6 @@ export async function loader({ request }) {
 	}
 }
 
-// Add status-based marker icons
-const getMarkerIcon = (status) => {
-	const statusMap = {
-		online: 'pin-online.svg',
-		offline: 'pin-offline.svg',
-		warning: 'pin-warning.svg',
-		default: 'pin-default.svg',
-	};
-	return `/assets/images/markers/${statusMap[status?.toLowerCase()] || statusMap.default}`;
-};
-
 export default function Dashboard() {
 	const { servicesData, googleMapsApiKey } = useLoaderData();
 	const { userKits } = useUser();
@@ -132,7 +121,7 @@ export default function Dashboard() {
 												}
 
 												const hasAccess = userKits.includes(modem.id);
-												console.log(`�� Modem ${modem.id}: ${hasAccess ? 'Has Access' : 'No Access'}`);
+												console.log(`📡 Modem ${modem.id}: ${hasAccess ? 'Has Access' : 'No Access'}`);
 												return hasAccess;
 											}) || [],
 									}))
@@ -201,6 +190,7 @@ export default function Dashboard() {
 									.map((modem) => {
 										const gpsInfo = gpsData[modem.id]?.[0];
 										console.log(`🗺️ GPS Info for ${modem.id}:`, gpsInfo);
+										console.log(`🎯 Modem status:`, modem.status);
 
 										if (!gpsInfo) {
 											console.log(`⚠️ No GPS data found for modem ${modem.id}`);
@@ -212,16 +202,19 @@ export default function Dashboard() {
 											return null;
 										}
 
-										return {
+										const location = {
 											id: modem.id,
 											name: modem.name,
-											status: modem.status,
+											status: modem.status || 'default',
 											type: modem.type,
 											position: {
 												lat: parseFloat(gpsInfo.lat),
 												lng: parseFloat(gpsInfo.lon),
 											},
 										};
+
+										console.log(`📍 Created location object:`, location);
+										return location;
 									})
 									.filter(Boolean);
 							});
@@ -257,7 +250,7 @@ export default function Dashboard() {
 																position={modem.position}
 																title={modem.name}
 																icon={{
-																	url: getMarkerIcon(modem.status),
+																	url: `/assets/images/markers/pin-online.svg`,
 																	scaledSize: { width: 32, height: 40 },
 																	anchor: { x: 16, y: 40 },
 																}}
