@@ -144,7 +144,6 @@ export default function Dashboard() {
 						errorElement={<div className='error-container'>Error loading dashboard data</div>}
 					>
 						{(resolvedData) => {
-							// console.log('✨ Resolved data:', resolvedData);
 							const { services, gpsData } = resolvedData;
 
 							if (!services || !Array.isArray(services) || services.length === 0) {
@@ -156,19 +155,20 @@ export default function Dashboard() {
 								);
 							}
 
-							// Extract modem locations with GPS data
+							// Filter modems and get their locations
 							const modemLocations = services.flatMap((service) =>
 								(service.modems || [])
+									.filter((modem) => userKits.includes(modem.id)) // Filter by user's kits
 									.map((modem) => {
-										const gpsInfo = gpsData[modem.id]?.[0]; // Get latest GPS entry
+										const gpsInfo = gpsData[modem.id]?.[0];
 										return gpsInfo
 											? {
 													id: modem.id,
 													name: modem.name,
 													status: modem.status,
 													position: {
-														lat: gpsInfo.lat,
-														lng: gpsInfo.lon, // Note: API uses 'lon' not 'lng'
+														lat: parseFloat(gpsInfo.lat),
+														lng: parseFloat(gpsInfo.lon),
 													},
 												}
 											: null;
@@ -176,16 +176,20 @@ export default function Dashboard() {
 									.filter(Boolean)
 							);
 
+							// Get the first modem's position for center, or use default US center
+							const defaultCenter = { lat: 39.8283, lng: -98.5795 }; // US center
+							const mapCenter = modemLocations[0]?.position || defaultCenter;
+							const mapZoom = modemLocations[0]?.position ? 12 : 12; // Zoom closer if we have a modem
+
 							return (
 								<div className=''>
-									{/* Map */}
 									{modemLocations.length > 0 && (
-										<section className='map-section '>
+										<section className='map-section'>
 											<div className='map-container'>
 												<APIProvider apiKey={googleMapsApiKey}>
 													<Map
-														defaultCenter={{ lat: 39.8283, lng: -98.5795 }}
-														defaultZoom={7}
+														defaultCenter={mapCenter}
+														defaultZoom={mapZoom}
 														gestureHandling={'greedy'}
 														disableDefaultUI={false}
 													>
@@ -194,10 +198,6 @@ export default function Dashboard() {
 																key={modem.id}
 																position={modem.position}
 																title={modem.name}
-																// icon={{
-																// 	url: `/assets/markers/${modem.status}.png`,
-																// 	scaledSize: { width: 30, height: 30 },
-																// }}
 															/>
 														))}
 													</Map>
