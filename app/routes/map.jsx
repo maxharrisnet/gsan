@@ -85,6 +85,7 @@ export async function loader({ request }) {
 export default function Dashboard() {
 	const { servicesData, googleMapsApiKey } = useLoaderData();
 	const { userKits } = useUser();
+	console.log('👤 User kits:', userKits);
 	const [selectedModem, setSelectedModem] = useState(null);
 
 	return (
@@ -100,9 +101,32 @@ export default function Dashboard() {
 								const filteredServices = services
 									.map((service) => ({
 										...service,
-										modems: service.modems?.filter((modem) => userKits.includes(modem.id)) || [],
+										modems:
+											service.modems?.filter((modem) => {
+												// Handle null/undefined userKits
+												if (!Array.isArray(userKits)) {
+													console.warn('🚨 userKits is not an array:', userKits);
+													return false;
+												}
+
+												// If userKits includes 'ALL', return all modems
+												if (userKits.includes('ALL')) {
+													return true;
+												}
+
+												// Ensure modem.id exists before comparison
+												if (!modem?.id) {
+													console.warn('⚠️ Modem missing ID:', modem);
+													return false;
+												}
+
+												return userKits.includes(modem.id);
+											}) || [],
 									}))
 									.filter((service) => service.modems.length > 0);
+
+								console.log('🎯 Filtered services:', filteredServices.length);
+								console.log('🔑 UserKits config:', userKits.includes('ALL') ? 'ALL ACCESS' : 'Limited Access');
 
 								return filteredServices.length > 0 ? (
 									<ul className='modem-list'>
@@ -178,8 +202,8 @@ export default function Dashboard() {
 									.filter(Boolean)
 							);
 
-							// Get the first modem's position for center, or use default US center
-							const defaultCenter = { lat: 39.8283, lng: -98.5795 }; // US center
+							// Get the first modem's position for center, or use default Canada center
+							const defaultCenter = { lat: 56.1304, lng: -106.3468 }; // Canada center
 							const mapCenter = modemLocations[0]?.position || defaultCenter;
 							const mapZoom = modemLocations[0]?.position ? 12 : 12; // Zoom closer if we have a modem
 

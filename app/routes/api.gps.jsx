@@ -1,18 +1,84 @@
 import { json } from '@remix-run/node';
 import axios from 'axios';
+import { PrismaClient } from '@prisma/client';
 
-const cache = new Map();
+let prismaClient;
+
+// This is needed because in development we don't want to restart
+// the server with every change, but we want to make sure we don't
+// create a new connection to the DB with every change either.
+if (process.env.NODE_ENV === 'production') {
+	prismaClient = new PrismaClient();
+} else {
+	if (!global.__db) {
+		global.__db = new PrismaClient();
+	}
+	prismaClient = global.__db;
+}
+
+export { prismaClient };
 
 // Add cache configuration
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute in milliseconds
-const MAX_REQUESTS = 30; // Maximum requests per minute
+const MAX_REQUESTS = 30;
 
-// Track API calls
+// Track API calls in memory (this doesn't need to be persisted)
 const apiCalls = {
 	timestamp: Date.now(),
 	count: 0,
 };
+
+async function getCachedData(cacheKey) {
+	try {
+		const cacheEntry = await prismaClient.cache.findUnique({
+			where: { key: cacheKey },
+		});
+
+		if (cacheEntry) {
+			return JSON.parse(cacheEntry.value);
+		}
+	} catch (error) {
+		console.error('🔴 Cache retrieval error:', error);
+	}
+	return null;
+}
+
+async function setCachedData(cacheKey, data) {
+	try {
+		await prismaClient.cache.upsert({
+			where: { key: cacheKey },
+			update: {
+				value: JSON.stringify({
+					timestamp: Date.now(),
+					data: data,
+				}),
+				updatedAt: new Date(),
+			},
+			create: {
+				key: cacheKey,
+				value: JSON.stringify({
+					timestamp: Date.now(),
+					data: data,
+				}),
+			},
+		});
+	} catch (error) {
+		console.error('🔴 Cache storage error:', error);
+	}
+}
+
+// Cleanup old cache entries (can be run periodically)
+async function cleanupOldCache() {
+	const expiryDate = new Date(Date.now() - CACHE_DURATION);
+	await prismaClient.cache.deleteMany({
+		where: {
+			updatedAt: {
+				lt: expiryDate,
+			},
+		},
+	});
+}
 
 export function getGPSURL(provider) {
 	const baseUrl = 'https://api-compass.speedcast.com/v2.0';
@@ -33,30 +99,25 @@ export function getGPSURL(provider) {
 export const fetchGPS = async (provider, ids, accessToken) => {
 	const url = getGPSURL(provider);
 	const postData = { ids };
-	const cacheKey = `${provider}-${ids.join(',')}`;
+	const cacheKey = `gps:${provider}-${ids.join(',')}`;
 
-	// Check if we're within rate limits
+	// Check rate limits
 	const now = Date.now();
 	if (now - apiCalls.timestamp > RATE_LIMIT_WINDOW) {
-		// Reset counter for new window
 		apiCalls.timestamp = now;
 		apiCalls.count = 0;
 	} else if (apiCalls.count >= MAX_REQUESTS) {
 		console.log('🛑 Rate limit prevention - using cached data if available');
-		// Return cached data if available, even if expired
-		if (cache.has(cacheKey)) {
-			return cache.get(cacheKey);
-		}
+		const cachedData = await getCachedData(cacheKey);
+		if (cachedData) return cachedData.data;
 		throw new Error('Rate limit reached and no cached data available');
 	}
 
-	// Check if valid cached data exists
-	if (cache.has(cacheKey)) {
-		const cachedData = cache.get(cacheKey);
-		if (cachedData.timestamp && now - cachedData.timestamp < CACHE_DURATION) {
-			console.log('💰 Returning cached GPS data');
-			return cachedData.data;
-		}
+	// Check for fresh cached data
+	const cachedData = await getCachedData(cacheKey);
+	if (cachedData?.timestamp && now - cachedData.timestamp < CACHE_DURATION) {
+		console.log('💰 Returning cached GPS data');
+		return cachedData.data;
 	}
 
 	try {
@@ -69,23 +130,19 @@ export const fetchGPS = async (provider, ids, accessToken) => {
 		});
 
 		if (response.status === 200) {
-			// Store the response data in the cache with timestamp
-			cache.set(cacheKey, {
-				timestamp: now,
-				data: response.data,
-			});
+			await setCachedData(cacheKey, response.data);
 			console.log('💾 Caching GPS data');
 			return response.data;
-		} else {
-			return { error: `HTTP code ${response.status}` };
 		}
+		return { error: `HTTP code ${response.status}` };
 	} catch (error) {
 		if (error.response && error.response.status === 429) {
 			console.error('🏇 Error 429: Rate limit exceeded.');
 			// Return cached data if available, even if expired
-			if (cache.has(cacheKey)) {
+			const cachedData = await getCachedData(cacheKey);
+			if (cachedData) {
 				console.log('🔄 Returning expired cached data due to rate limit');
-				return cache.get(cacheKey).data;
+				return cachedData.data;
 			}
 			return { error: 'Rate limit exceeded' };
 		} else {
@@ -96,3 +153,4 @@ export const fetchGPS = async (provider, ids, accessToken) => {
 };
 
 export default fetchGPS;
+<div className=''></div>;

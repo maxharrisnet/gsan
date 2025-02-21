@@ -508,9 +508,10 @@ section {
 
 .info-window-link {
 	display: flex;
-	align-items: center;
+align-items: center;
 	justify-content: space-between;
-	margin-top: var(--spacing-base);
+	margin-bottom: var(--spacing-small);
+	margin-top: var(--spacing-large);
 	padding: var(--spacing-small) 0;
 	color: var(--color-primary);
 	text-decoration: none;
