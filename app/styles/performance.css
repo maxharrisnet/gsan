@@ -489,3 +489,32 @@ section {
 	padding: var(--spacing-base);
 	margin-bottom: var(--spacing-large);
 }
+
+.info-window {
+	padding: var(--spacing-small);
+}
+
+.info-window h3 {
+	margin: 0 0 var(--spacing-small);
+	font-size: var(--font-size-base);
+	font-weight: 600;
+}
+
+.info-window p {
+	margin: var(--spacing-xsmall) 0;
+	font-size: var(--font-size-sm);
+	color: var(--color-text-secondary);
+}
+
+.info-window-link {
+	display: block;
+	margin-top: var(--spacing-base);
+	color: var(--color-primary);
+	text-decoration: none;
+	font-size: var(--font-size-sm);
+	font-weight: 500;
+}
+
+.info-window-link:hover {
+	text-decoration: underline;
+}

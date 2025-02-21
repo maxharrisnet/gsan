@@ -1,13 +1,13 @@
 // app/routes/performance.jsx
 import { defer } from '@remix-run/node';
 import { useLoaderData, Await, Link } from '@remix-run/react';
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { fetchServicesAndModemData, getCompassAccessToken } from '../compass.server';
 import { fetchGPS } from './api.gps';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, Marker, InfoWindow } from '@vis.gl/react-google-maps';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import dashboardStyles from '../styles/performance.css?url';
 import { useUser } from '../context/UserContext';
@@ -85,6 +85,7 @@ export async function loader({ request }) {
 export default function Dashboard() {
 	const { servicesData, googleMapsApiKey } = useLoaderData();
 	const { userKits } = useUser();
+	const [selectedModem, setSelectedModem] = useState(null);
 
 	return (
 		<Layout>
@@ -203,20 +204,29 @@ export default function Dashboard() {
 																	scaledSize: { width: 32, height: 40 },
 																	anchor: { x: 16, y: 40 },
 																}}
-																onClick={() => {
-																	// Optional: Add click handler to show more info or navigate
-																	window.location.href = `/modem/${modem.type.toLowerCase()}/${modem.id}`;
-																}}
-															>
-																{/* Optional: Add InfoWindow for hover state */}
-																<div className='marker-content'>
-																	<h3>{modem.name}</h3>
-																	<p>Status: {modem.status}</p>
-																	<p>Lat: {modem.position.lat}</p>
-																	<p>Lng: {modem.position.lng}</p>
-																</div>
-															</Marker>
+																onClick={() => setSelectedModem(modem)}
+															/>
 														))}
+
+														{selectedModem && (
+															<InfoWindow
+																position={selectedModem.position}
+																onCloseClick={() => setSelectedModem(null)}
+															>
+																<div className='info-window'>
+																	<h3>{selectedModem.name}</h3>
+																	<p>Status: {selectedModem.status}</p>
+																	<p>Lat: {selectedModem.position.lat.toFixed(6)}</p>
+																	<p>Lng: {selectedModem.position.lng.toFixed(6)}</p>
+																	<Link
+																		to={`/modem/${selectedModem.type.toLowerCase()}/${selectedModem.id}`}
+																		className='info-window-link'
+																	>
+																		View Details →
+																	</Link>
+																</div>
+															</InfoWindow>
+														)}
 													</Map>
 												</APIProvider>
 											</div>
