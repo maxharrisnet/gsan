@@ -507,14 +507,25 @@ section {
 }
 
 .info-window-link {
-	display: block;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
 	margin-top: var(--spacing-base);
+	padding: var(--spacing-small) 0;
 	color: var(--color-primary);
 	text-decoration: none;
-	font-size: var(--font-size-sm);
 	font-weight: 500;
+	border-top: 1px solid var(--color-border);
 }
 
 .info-window-link:hover {
-	text-decoration: underline;
+	color: var(--color-primary-dark);
+}
+
+.info-window-link .modem-name {
+	font-size: var(--font-size-sm);
+}
+
+.info-window-link .modem-chevron {
+	font-size: var(--font-size-lg);
 }

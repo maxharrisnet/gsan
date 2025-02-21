@@ -167,6 +167,7 @@ export default function Dashboard() {
 													id: modem.id,
 													name: modem.name,
 													status: modem.status,
+													type: modem.type,
 													position: {
 														lat: parseFloat(gpsInfo.lat),
 														lng: parseFloat(gpsInfo.lon),
@@ -218,12 +219,15 @@ export default function Dashboard() {
 																	<p>Status: {selectedModem.status}</p>
 																	<p>Lat: {selectedModem.position.lat.toFixed(6)}</p>
 																	<p>Lng: {selectedModem.position.lng.toFixed(6)}</p>
-																	<Link
-																		to={`/modem/${selectedModem.type.toLowerCase()}/${selectedModem.id}`}
-																		className='info-window-link'
-																	>
-																		View Details →
-																	</Link>
+																	{selectedModem.type && (
+																		<Link
+																			to={`/modem/${selectedModem.type.toLowerCase()}/${selectedModem.id}`}
+																			className='info-window-link'
+																		>
+																			<span className='modem-name'>{selectedModem.name.toUpperCase()}</span>
+																			<span className='modem-chevron material-icons'>chevron_right</span>
+																		</Link>
+																	)}
 																</div>
 															</InfoWindow>
 														)}
