@@ -125,10 +125,6 @@ export default function Dashboard() {
 										...service,
 										modems:
 											service.modems?.filter((modem) => {
-												console.log('🔍 Current userKits:', userKits);
-												console.log('🎯 Checking modem:', modem.id);
-												console.log('🔑 ALL access check:', userKits.includes('ALL'));
-
 												// If userKits includes 'ALL', grant access to all modems
 												if (userKits.includes('ALL')) {
 													console.log(`📡 Modem ${modem.id}: Access granted (ALL)`);
@@ -242,6 +238,8 @@ export default function Dashboard() {
 									{modemLocations.length > 0 && (
 										<section className='map-section'>
 											<div className='map-container'>
+												{console.log(`Google Maps API Key:`, googleMapsApiKey)}
+
 												<APIProvider apiKey={googleMapsApiKey}>
 													<Map
 														defaultCenter={mapCenter}
