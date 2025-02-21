@@ -198,7 +198,24 @@ export default function Dashboard() {
 																key={modem.id}
 																position={modem.position}
 																title={modem.name}
-															/>
+																icon={{
+																	url: `/assets/images/markers/pin-online.svg`,
+																	scaledSize: { width: 32, height: 40 },
+																	anchor: { x: 16, y: 40 },
+																}}
+																onClick={() => {
+																	// Optional: Add click handler to show more info or navigate
+																	window.location.href = `/modem/${modem.type.toLowerCase()}/${modem.id}`;
+																}}
+															>
+																{/* Optional: Add InfoWindow for hover state */}
+																<div className='marker-content'>
+																	<h3>{modem.name}</h3>
+																	<p>Status: {modem.status}</p>
+																	<p>Lat: {modem.position.lat}</p>
+																	<p>Lng: {modem.position.lng}</p>
+																</div>
+															</Marker>
 														))}
 													</Map>
 												</APIProvider>
