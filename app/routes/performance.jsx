@@ -34,6 +34,12 @@ export async function loader({ request }) {
 					.map((service) => ({
 						...service,
 						modems: service.modems.filter((modem) => {
+							// If userKits includes 'ALL', return all modems
+							if (userKits.includes('ALL')) {
+								console.log(`🌎 ALL access granted - including modem ${modem.id}`);
+								return true;
+							}
+
 							const matches = userKits.includes(modem.id);
 							console.log(`🔍 Checking modem ${modem.id} against kits ${userKits}: ${matches}`);
 							return matches;
@@ -42,6 +48,7 @@ export async function loader({ request }) {
 					.filter((service) => service.modems.length > 0); // Remove services with no matching modems
 
 				console.log('✨ Filtered services:', filteredServices);
+				console.log('🔑 Access Level:', userKits.includes('ALL') ? 'ALL ACCESS' : 'Limited Access');
 
 				return {
 					services: filteredServices,

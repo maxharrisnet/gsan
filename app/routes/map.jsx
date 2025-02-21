@@ -84,8 +84,8 @@ export async function loader({ request }) {
 
 export default function Dashboard() {
 	const { servicesData, googleMapsApiKey } = useLoaderData();
+	console.log('🗺️ Google Maps API Key:', googleMapsApiKey);
 	const { userKits } = useUser();
-	console.log('👤 User kits:', userKits);
 	const [selectedModem, setSelectedModem] = useState(null);
 
 	return (
