@@ -399,11 +399,17 @@ section {
 	color: var(--color-error);
 }
 
+.modem-header {
+	flex: 1 0 40%;
+	padding-right: var(--spacing-base);
+}
+
 /* Add/update these styles */
 .service-status-container {
 	display: flex;
 	width: 100%;
 	gap: var(--spacing-small);
+	flex: 1 1 60%;
 }
 
 .status-indicator {
@@ -508,7 +514,7 @@ section {
 
 .info-window-link {
 	display: flex;
-align-items: center;
+	align-items: center;
 	justify-content: space-between;
 	margin-bottom: var(--spacing-small);
 	margin-top: var(--spacing-large);

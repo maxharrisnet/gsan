@@ -142,10 +142,6 @@ export default function Dashboard() {
 														prefetch='intent'
 													>
 														<span className='modem-name'>{modem.name}</span>
-														<span className='modem-status'>
-															<span className={`status-dot ${modem.status?.toLowerCase()}`} />
-															{modem.status}
-														</span>
 														<span className='modem-chevron material-icons'>chevron_right</span>
 													</Link>
 												</li>
