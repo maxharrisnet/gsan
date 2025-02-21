@@ -21,11 +21,13 @@ export async function loader({ request }) {
 		const accessToken = await getCompassAccessToken();
 		const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
 
+		// Add console logs for debugging
+		console.log('🔑 Google Maps API Key:', googleMapsApiKey ? 'Present' : 'Missing');
+
 		const servicesPromise = fetchServicesAndModemData()
 			.then(async ({ services }) => {
-				console.log('📦 Raw services data received');
+				console.log('🌍 Initial services data:', services);
 
-				// Group modems by provider type
 				const modemsByProvider = services.reduce((acc, service) => {
 					(service.modems || []).forEach((modem) => {
 						if (modem.type) {
@@ -36,11 +38,13 @@ export async function loader({ request }) {
 					return acc;
 				}, {});
 
-				// Fetch GPS data for each provider type
+				console.log('📡 Modems grouped by provider:', modemsByProvider);
+
 				const gpsDataPromises = Object.entries(modemsByProvider).map(async ([provider, ids]) => {
 					try {
-						console.log(`🗺️ Fetching GPS data for ${provider}:`, ids);
+						console.log(`🗺️ Fetching GPS for ${provider} with IDs:`, ids);
 						const gpsData = await fetchGPS(provider, ids, accessToken);
+						console.log(`✅ GPS data received for ${provider}:`, gpsData);
 						return { provider, data: gpsData };
 					} catch (error) {
 						console.error(`🚨 GPS fetch error for ${provider}:`, error);
@@ -49,20 +53,13 @@ export async function loader({ request }) {
 				});
 
 				const gpsResults = await Promise.all(gpsDataPromises);
-				const gpsDataMap = gpsResults.reduce((acc, { provider, data }) => {
-					if (data && typeof data === 'object') {
-						return {
-							...acc,
-							...data,
-						};
-					}
-					return acc;
-				}, {});
+				console.log('🌎 All GPS results:', gpsResults);
 
-				console.log('🗺️ Combined GPS data map:', gpsDataMap);
+				const gpsDataMap = gpsResults.reduce((acc, { data }) => ({ ...acc, ...data }), {});
+				console.log('🗺️ Final GPS data map:', gpsDataMap);
 
 				return {
-					services: services,
+					services,
 					gpsData: gpsDataMap,
 				};
 			})
@@ -82,11 +79,36 @@ export async function loader({ request }) {
 	}
 }
 
+// Add status-based marker icons
+const getMarkerIcon = (status) => {
+	const statusMap = {
+		online: 'pin-online.svg',
+		offline: 'pin-offline.svg',
+		warning: 'pin-warning.svg',
+		default: 'pin-default.svg',
+	};
+	return `/assets/images/markers/${statusMap[status?.toLowerCase()] || statusMap.default}`;
+};
+
 export default function Dashboard() {
 	const { servicesData, googleMapsApiKey } = useLoaderData();
-	console.log('🗺️ Google Maps API Key:', googleMapsApiKey);
 	const { userKits } = useUser();
 	const [selectedModem, setSelectedModem] = useState(null);
+
+	// Add map state management
+	const [mapInstance, setMapInstance] = useState(null);
+	const [bounds, setBounds] = useState(null);
+
+	// Function to fit map to markers
+	const fitMapToBounds = (locations) => {
+		if (mapInstance && locations.length > 0) {
+			const bounds = new google.maps.LatLngBounds();
+			locations.forEach((location) => {
+				bounds.extend(location.position);
+			});
+			mapInstance.fitBounds(bounds);
+		}
+	};
 
 	return (
 		<Layout>
@@ -103,30 +125,24 @@ export default function Dashboard() {
 										...service,
 										modems:
 											service.modems?.filter((modem) => {
-												// Handle null/undefined userKits
-												if (!Array.isArray(userKits)) {
-													console.warn('🚨 userKits is not an array:', userKits);
-													return false;
-												}
+												console.log('🔍 Current userKits:', userKits);
+												console.log('🎯 Checking modem:', modem.id);
+												console.log('🔑 ALL access check:', userKits.includes('ALL'));
 
-												// If userKits includes 'ALL', return all modems
+												// If userKits includes 'ALL', grant access to all modems
 												if (userKits.includes('ALL')) {
+													console.log(`📡 Modem ${modem.id}: Access granted (ALL)`);
 													return true;
 												}
 
-												// Ensure modem.id exists before comparison
-												if (!modem?.id) {
-													console.warn('⚠️ Modem missing ID:', modem);
-													return false;
-												}
-
-												return userKits.includes(modem.id);
+												const hasAccess = userKits.includes(modem.id);
+												console.log(`�� Modem ${modem.id}: ${hasAccess ? 'Has Access' : 'No Access'}`);
+												return hasAccess;
 											}) || [],
 									}))
 									.filter((service) => service.modems.length > 0);
 
-								console.log('🎯 Filtered services:', filteredServices.length);
-								console.log('🔑 UserKits config:', userKits.includes('ALL') ? 'ALL ACCESS' : 'Limited Access');
+								console.log('🔍 Filtered Services:', filteredServices);
 
 								return filteredServices.length > 0 ? (
 									<ul className='modem-list'>
@@ -166,6 +182,7 @@ export default function Dashboard() {
 					>
 						{(resolvedData) => {
 							const { services, gpsData } = resolvedData;
+							console.log('🗺️ Map Page GPS Data:', gpsData);
 
 							if (!services || !Array.isArray(services) || services.length === 0) {
 								return (
@@ -177,26 +194,43 @@ export default function Dashboard() {
 							}
 
 							// Filter modems and get their locations
-							const modemLocations = services.flatMap((service) =>
-								(service.modems || [])
-									.filter((modem) => userKits.includes(modem.id)) // Filter by user's kits
+							const modemLocations = services.flatMap((service) => {
+								console.log('🏢 Processing service:', service.name || 'Unknown Service');
+								return (service.modems || [])
+									.filter((modem) => {
+										const hasAccess = userKits.includes(modem.id);
+										console.log(`📡 Modem ${modem.id}: ${hasAccess ? 'Has Access' : 'No Access'}`);
+										return hasAccess;
+									})
 									.map((modem) => {
 										const gpsInfo = gpsData[modem.id]?.[0];
-										return gpsInfo
-											? {
-													id: modem.id,
-													name: modem.name,
-													status: modem.status,
-													type: modem.type,
-													position: {
-														lat: parseFloat(gpsInfo.lat),
-														lng: parseFloat(gpsInfo.lon),
-													},
-												}
-											: null;
+										console.log(`🗺️ GPS Info for ${modem.id}:`, gpsInfo);
+
+										if (!gpsInfo) {
+											console.log(`⚠️ No GPS data found for modem ${modem.id}`);
+											return null;
+										}
+
+										if (!gpsInfo.lat || !gpsInfo.lon) {
+											console.log(`⚠️ Invalid GPS coordinates for modem ${modem.id}:`, gpsInfo);
+											return null;
+										}
+
+										return {
+											id: modem.id,
+											name: modem.name,
+											status: modem.status,
+											type: modem.type,
+											position: {
+												lat: parseFloat(gpsInfo.lat),
+												lng: parseFloat(gpsInfo.lon),
+											},
+										};
 									})
-									.filter(Boolean)
-							);
+									.filter(Boolean);
+							});
+
+							console.log('📍 Final modem locations:', modemLocations);
 
 							// Get the first modem's position for center, or use default Canada center
 							const defaultCenter = { lat: 56.1304, lng: -106.3468 }; // Canada center
@@ -204,7 +238,7 @@ export default function Dashboard() {
 							const mapZoom = modemLocations[0]?.position ? 12 : 12; // Zoom closer if we have a modem
 
 							return (
-								<div className=''>
+								<div className='map-wrapper'>
 									{modemLocations.length > 0 && (
 										<section className='map-section'>
 											<div className='map-container'>
@@ -214,6 +248,10 @@ export default function Dashboard() {
 														defaultZoom={mapZoom}
 														gestureHandling={'greedy'}
 														disableDefaultUI={false}
+														onLoad={(map) => {
+															setMapInstance(map);
+															fitMapToBounds(modemLocations);
+														}}
 													>
 														{modemLocations.map((modem) => (
 															<Marker
@@ -221,7 +259,7 @@ export default function Dashboard() {
 																position={modem.position}
 																title={modem.name}
 																icon={{
-																	url: `/assets/images/markers/pin-online.svg`,
+																	url: getMarkerIcon(modem.status),
 																	scaledSize: { width: 32, height: 40 },
 																	anchor: { x: 16, y: 40 },
 																}}
@@ -236,16 +274,17 @@ export default function Dashboard() {
 															>
 																<div className='info-window'>
 																	<h3>{selectedModem.name}</h3>
-																	<p>Status: {selectedModem.status}</p>
-																	<p>Lat: {selectedModem.position.lat.toFixed(6)}</p>
-																	<p>Lng: {selectedModem.position.lng.toFixed(6)}</p>
+																	<p className={`status status-${selectedModem.status?.toLowerCase()}`}>Status: {selectedModem.status}</p>
+																	<p>
+																		Coordinates: {selectedModem.position.lat.toFixed(6)}, {selectedModem.position.lng.toFixed(6)}
+																	</p>
 																	{selectedModem.type && (
 																		<Link
 																			to={`/modem/${selectedModem.type.toLowerCase()}/${selectedModem.id}`}
 																			className='info-window-link'
 																		>
-																			<span className='modem-name'>{selectedModem.name.toUpperCase()}</span>
-																			<span className='modem-chevron material-icons'>chevron_right</span>
+																			View Details
+																			<span className='material-icons'>chevron_right</span>
 																		</Link>
 																	)}
 																</div>

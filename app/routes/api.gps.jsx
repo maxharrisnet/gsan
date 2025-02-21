@@ -82,75 +82,72 @@ async function cleanupOldCache() {
 
 export function getGPSURL(provider) {
 	const baseUrl = 'https://api-compass.speedcast.com/v2.0';
-	switch (encodeURI(provider.toLowerCase())) {
-		case 'starlink':
-			return `${baseUrl}/starlinkgps`;
-		case 'idirect':
-			return `${baseUrl}/idirectgps`;
-		case 'newtec':
-			return `${baseUrl}/newtecgps`;
-		case 'oneweb':
-			return `${baseUrl}/oneweb`; // TODO: Test, fix with terminalId (see docs)
-		default:
-			return null;
-	}
+	const url = encodeURI(provider.toLowerCase()) === 'starlink' ? `${baseUrl}/starlinkgps` : `${baseUrl}/${provider.toLowerCase()}gps`;
+
+	return url;
 }
 
 export const fetchGPS = async (provider, ids, accessToken) => {
 	const url = getGPSURL(provider);
-	const postData = { ids };
 	const cacheKey = `gps:${provider}-${ids.join(',')}`;
 
-	// Check rate limits
-	const now = Date.now();
-	if (now - apiCalls.timestamp > RATE_LIMIT_WINDOW) {
-		apiCalls.timestamp = now;
-		apiCalls.count = 0;
-	} else if (apiCalls.count >= MAX_REQUESTS) {
-		console.log('🛑 Rate limit prevention - using cached data if available');
-		const cachedData = await getCachedData(cacheKey);
-		if (cachedData) return cachedData.data;
-		throw new Error('Rate limit reached and no cached data available');
-	}
-
-	// Check for fresh cached data
-	const cachedData = await getCachedData(cacheKey);
-	if (cachedData?.timestamp && now - cachedData.timestamp < CACHE_DURATION) {
-		console.log('💰 Returning cached GPS data');
-		return cachedData.data;
-	}
-
 	try {
-		apiCalls.count++;
-		const response = await axios.post(url, postData, {
-			headers: {
-				Authorization: `Bearer ${accessToken}`,
-				'Content-Type': 'application/json',
-			},
-		});
-
-		if (response.status === 200) {
-			await setCachedData(cacheKey, response.data);
-			console.log('💾 Caching GPS data');
-			return response.data;
+		// First check cache
+		const cachedData = await getCachedData(cacheKey);
+		if (cachedData?.timestamp && Date.now() - cachedData.timestamp < CACHE_DURATION) {
+			console.log('💾 Using cached GPS data');
+			return cachedData.data;
 		}
-		return { error: `HTTP code ${response.status}` };
-	} catch (error) {
-		if (error.response && error.response.status === 429) {
-			console.error('🏇 Error 429: Rate limit exceeded.');
-			// Return cached data if available, even if expired
-			const cachedData = await getCachedData(cacheKey);
-			if (cachedData) {
-				console.log('🔄 Returning expired cached data due to rate limit');
+
+		// Check rate limits
+		const now = Date.now();
+		if (now - apiCalls.timestamp > RATE_LIMIT_WINDOW) {
+			apiCalls.timestamp = now;
+			apiCalls.count = 0;
+		}
+
+		if (apiCalls.count >= MAX_REQUESTS) {
+			console.log('🚫 Rate limit hit - using cached data if available');
+			if (cachedData?.data) {
 				return cachedData.data;
 			}
-			return { error: 'Rate limit exceeded' };
-		} else {
-			console.error('Network Error:', error.message);
-			return { error: 'Network Error' };
+			console.log('⚠️ No cached data available');
+			return {};
 		}
+
+		// Make API request
+		apiCalls.count++;
+
+		const response = await axios.post(
+			url,
+			{ ids },
+			{
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+					'Content-Type': 'application/json',
+				},
+			}
+		);
+
+		// Cache successful response
+		if (response.data) {
+			await setCachedData(cacheKey, response.data);
+			console.log('💾 Cached new GPS data');
+		}
+
+		return response.data;
+	} catch (error) {
+		console.error('🚨 GPS fetch error:', error.message);
+
+		// On error, try to return cached data
+		const cachedData = await getCachedData(cacheKey);
+		if (cachedData?.data) {
+			console.log('🔄 Using cached data after error');
+			return cachedData.data;
+		}
+
+		return {};
 	}
 };
 
 export default fetchGPS;
-<div className=''></div>;

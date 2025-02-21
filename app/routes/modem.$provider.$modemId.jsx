@@ -171,7 +171,7 @@ export default function ModemDetails() {
 
 				<h2 className='select-device-heading'>Select a Device</h2>
 				<Link
-					to={`/modem/${modem.provider}`}
+					to={`/map`}
 					className='list-button back-link'
 				>
 					<span className='material-icons'>chevron_left</span>

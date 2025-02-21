@@ -1,50 +1,41 @@
 import { json } from '@remix-run/node';
-import axios from 'axios';
 import { getCompassAccessToken } from '../compass.server';
-import fetchGPS from './api.gps';
+import axios from 'axios';
+import { fetchGPS } from './api.gps'; // Import the cached GPS fetcher
 
-export const loader = async ({ params }) => {
-	const { provider, modemId } = params;
-	const accessToken = await getCompassAccessToken();
-	const modemDetailsURL = `https://api-compass.speedcast.com/v2.0/${encodeURIComponent(provider.toLowerCase())}/${modemId}`;
-
+export async function loader({ params }) {
 	try {
-		const modemResponse = await axios.get(modemDetailsURL, {
+		const { provider, modemId } = params;
+		const accessToken = await getCompassAccessToken();
+
+		// Get modem details
+		const modemUrl = `https://api-compass.speedcast.com/v2.0/${provider.toLowerCase()}/${modemId}`;
+		const modemResponse = await axios.get(modemUrl, {
 			headers: { Authorization: `Bearer ${accessToken}` },
 		});
 
-		const modem = modemResponse.data;
-
-		const latencyData = modem.data.latency.data || [];
-		const throughputData = modem.data.throughput.data || [];
-		const signalQualityData = modem.data.signal.data || [];
-		const obstructionData = modem.data.obstruction.data || [];
-		const usageData = modem.usage || [];
-		const uptimeData = modem.data.uptime.data || [];
-
-		const mapsAPIKey = process.env.GOOGLE_MAPS_API_KEY;
-		const gpsResponse = await fetchGPS(provider, [modemId], accessToken);
-		const gpsData = gpsResponse[modemId] || {};
-
-		const modemDetails = {
-			modem,
-			mapsAPIKey,
-			gpsData,
-			latencyData,
-			throughputData,
-			signalQualityData,
-			obstructionData,
-			usageData,
-			uptimeData,
-		};
-
-		if (!modemDetails) {
-			throw new Response('No data available for modem 🦤', { status: 404 });
+		// Safety check for response data
+		if (!modemResponse?.data) {
+			console.error('🚨 No modem data received');
+			throw new Error('No modem data available');
 		}
 
-		return json(modemDetails);
+		// Use cached GPS fetcher instead of direct API call
+		const gpsData = await fetchGPS(provider, [modemId], accessToken);
+
+		return json({
+			modem: modemResponse.data,
+			gpsData: gpsData[modemId] || [],
+			mapsAPIKey: process.env.GOOGLE_MAPS_API_KEY,
+			latencyData: modemResponse.data?.data?.latency?.data || [],
+			throughputData: modemResponse.data?.data?.throughput?.data || [],
+			signalQualityData: modemResponse.data?.data?.signal_quality?.data || [],
+			obstructionData: modemResponse.data?.data?.obstruction?.data || [],
+			usageData: modemResponse.data?.data?.usage?.data || [],
+			uptimeData: modemResponse.data?.data?.uptime?.data || [],
+		});
 	} catch (error) {
-		console.error('Error fetching modem details: ', error);
-		throw new Response('Internal Server Error 🦧', { status: 500 });
+		console.error('🚨 Error fetching modem details:', error);
+		throw new Response('Error loading modem data', { status: 500 });
 	}
-};
+}

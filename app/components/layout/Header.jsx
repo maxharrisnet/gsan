@@ -34,7 +34,7 @@ const Header = () => {
 		<header className='header'>
 			<div className='header-container'>
 				<div className='logo'>
-					<Link to='/'>
+					<Link to='/map'>
 						<img
 							src='/assets/images/GSAN-logo.png'
 							alt='GSAN Logo'

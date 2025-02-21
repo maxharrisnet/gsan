@@ -3,10 +3,10 @@ import { useLoaderData, useNavigation } from '@remix-run/react';
 import { fetchServicesAndModemData } from '../compass.server';
 import Layout from './../components/layout/Layout';
 import reportStyles from '../styles/reports.css?url';
+import { useUser } from '../context/UserContext';
 
 export const loader = async ({ request }) => {
 	try {
-		console.log('🏈 Loading reports data...');
 		const servicesData = await fetchServicesAndModemData();
 		return { services: servicesData.services };
 	} catch (error) {
@@ -16,6 +16,7 @@ export const loader = async ({ request }) => {
 };
 
 const ReportsContent = ({ services }) => {
+	const { userKits } = useUser();
 	const isLoadingRef = useRef(true);
 	const [isClient, setIsClient] = useState(false);
 	const webdatarocksRef = useRef(null);
@@ -23,32 +24,42 @@ const ReportsContent = ({ services }) => {
 	const calculateAverage = (arr) => (arr.length > 0 ? arr.reduce((sum, val) => sum + val, 0) / arr.length : 0);
 
 	const flattenedData = services.flatMap((service) =>
-		service.modems.map((modem) => {
-			const latencyData = modem.data?.latency?.data || [];
-			const throughputData = modem.data?.throughput?.data || {};
-			const signalQualityData = modem.data?.signal?.data || [];
-			const usageData = modem.usage || [];
-			const totalPriority = usageData.reduce((sum, u) => sum + (u.priority || 0), 0).toFixed(2);
-			const totalStandard = usageData.reduce((sum, u) => sum + (u.standard || 0), 0).toFixed(2);
-			const usageLimit = modem.details?.meta?.usageLimit || 0;
-			const dataOverage = Math.max(0, parseFloat(totalPriority) + parseFloat(totalStandard) - usageLimit).toFixed(2);
+		service.modems
+			.filter((modem) => {
+				if (userKits.includes('ALL')) {
+					console.log(`📡 Modem ${modem.id}: Access granted (ALL)`);
+					return true;
+				}
+				const hasAccess = userKits.includes(modem.id);
+				console.log(`📡 Modem ${modem.id}: ${hasAccess ? 'Has Access' : 'No Access'}`);
+				return hasAccess;
+			})
+			.map((modem) => {
+				const latencyData = modem.data?.latency?.data || [];
+				const throughputData = modem.data?.throughput?.data || {};
+				const signalQualityData = modem.data?.signal?.data || [];
+				const usageData = modem.usage || [];
+				const totalPriority = usageData.reduce((sum, u) => sum + (u.priority || 0), 0).toFixed(2);
+				const totalStandard = usageData.reduce((sum, u) => sum + (u.standard || 0), 0).toFixed(2);
+				const usageLimit = modem.details?.meta?.usageLimit || 0;
+				const dataOverage = Math.max(0, parseFloat(totalPriority) + parseFloat(totalStandard) - usageLimit).toFixed(2);
 
-			return {
-				Service: service.name,
-				Status: modem.status === 'online' ? 'Online' : 'Offline',
-				Kit: modem.id,
-				PriorityData: totalPriority,
-				StandardData: totalStandard,
-				UsageLimit: usageLimit,
-				DataOverage: dataOverage,
-				AvgLatency: calculateAverage(latencyData.map((d) => d[1])).toFixed(3),
-				AvgDownloadThroughput: calculateAverage(throughputData.download || []).toFixed(3),
-				AvgUploadThroughput: calculateAverage(throughputData.upload || []).toFixed(3),
-				AvgSignalQuality: `${calculateAverage(signalQualityData).toFixed(0)}%`,
-				OptIn: 'No',
-				MobilePlan: 'No',
-			};
-		})
+				return {
+					Service: service.name,
+					Status: modem.status === 'online' ? 'Online' : 'Offline',
+					Kit: modem.id,
+					PriorityData: totalPriority,
+					StandardData: totalStandard,
+					UsageLimit: usageLimit,
+					DataOverage: dataOverage,
+					AvgLatency: calculateAverage(latencyData.map((d) => d[1])).toFixed(3),
+					AvgDownloadThroughput: calculateAverage(throughputData.download || []).toFixed(3),
+					AvgUploadThroughput: calculateAverage(throughputData.upload || []).toFixed(3),
+					AvgSignalQuality: `${calculateAverage(signalQualityData).toFixed(0)}%`,
+					OptIn: 'No',
+					MobilePlan: 'No',
+				};
+			})
 	);
 
 	useEffect(() => {
