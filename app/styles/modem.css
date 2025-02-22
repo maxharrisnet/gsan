@@ -40,10 +40,16 @@
 	grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
 }
 
+.chart-container {
+	padding: var(--spacing-xxlarge);
+}
+
 .chart-wrapper {
 	/* height: 400px;  */
 	margin-bottom: var(--spacing-large);
+	box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
 }
+
 /* Status Colors */
 .text-success {
 	color: var(--color-success);

@@ -51,15 +51,13 @@ export async function loader({ params, request }) {
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, BarElement, LineElement, Filler, Title, Tooltip, Legend);
 
-// Add this helper function at the top of the file
+// Update the timestamp formatting function
 const formatTimestamp = (timestamp) => {
-	return new Date(timestamp * 1000)
-		.toLocaleTimeString('en-US', {
-			hour: 'numeric',
-			minute: '2-digit',
-			hour12: true,
-		})
-		.toUpperCase();
+	return new Date(timestamp * 1000).toLocaleTimeString('en-US', {
+		hour: 'numeric',
+		minute: '2-digit',
+		hour12: false, // This will use 24-hour format
+	});
 };
 
 export default function ModemDetails() {
@@ -357,7 +355,7 @@ export default function ModemDetails() {
 							options={{
 								scales: {
 									y: {
-										ticks: { callback: (value) => `${value}GB`, stepSize: 1 },
+										ticks: { callback: (value) => `${value}GB`, stepSize: 5 },
 										beginAtZero: true,
 									},
 								},
@@ -388,7 +386,7 @@ export default function ModemDetails() {
 							options={{
 								scales: {
 									y: {
-										ticks: { callback: (value) => `${value}%`, stepSize: 20 },
+										ticks: { callback: (value) => `${value}%`, stepSize: 50 },
 										beginAtZero: true,
 									},
 								},
