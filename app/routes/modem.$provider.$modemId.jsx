@@ -142,27 +142,32 @@ export default function ModemDetails() {
 
 	const obstructionValues = obstructionData.map((entry) => entry[1] * 100);
 
-	// Filter and process usage data for the last 14 days
+	// Replace the current usage data filtering with this:
 	const currentDate = new Date();
-	const usageDayOffset = new Date();
-	usageDayOffset.setDate(currentDate.getDate() - 14);
+	const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
 
-	const weeklyUsageData = usageData.filter((entry) => {
-		const entryDate = new Date(entry.date);
-		return entryDate >= usageDayOffset && entryDate <= currentDate;
-	});
+	const monthlyUsageData = usageData
+		.filter((entry) => {
+			const entryDate = new Date(entry.date);
+			return entryDate >= startOfMonth && entryDate <= currentDate;
+		})
+		.sort((a, b) => new Date(a.date) - new Date(b.date)); // Ensure chronological order
 
 	const usageLabels = [];
 	const usagePriority = [];
 	const usageUnlimited = [];
 
-	if (Array.isArray(weeklyUsageData) && weeklyUsageData.length > 0) {
-		weeklyUsageData.forEach((day) => {
-			usageLabels.push(new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-			usagePriority.push(day.priority ?? 0);
-			usageUnlimited.push(day.unlimited ?? 0);
-		});
-	}
+	monthlyUsageData.forEach((day) => {
+		usageLabels.push(
+			new Date(day.date).toLocaleDateString('en-US', {
+				month: 'short',
+				day: 'numeric',
+			})
+		);
+		usagePriority.push(day.priority ?? 0);
+		usageUnlimited.push(day.unlimited ?? 0);
+	});
+
 	const uptimeValues = uptimeData.map((entry) => Math.ceil((entry[1] / 86400) * 10) / 10);
 
 	// Set global defaults for Chart.js
