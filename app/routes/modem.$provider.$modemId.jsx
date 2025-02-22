@@ -235,7 +235,7 @@ export default function ModemDetails() {
 
 			<main className='content content-full-width'>
 				{errors.general && (
-					<div className='error-banner'>
+					<div className='error-banner card'>
 						<span className='material-icons'>warning</span>
 						<p>Some data may be unavailable: {errors.general}</p>
 					</div>
