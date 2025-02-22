@@ -163,10 +163,6 @@
 	line-height: 1.2;
 }
 
-.modem-item.active .list-button {
-	background-color: var(--color-background-hover);
-}
-
 .modem-info {
 	display: flex;
 	flex-direction: column;

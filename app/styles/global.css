@@ -230,7 +230,8 @@ button:hover,
 	transition: all 0.3s ease;
 }
 
-.list-button:hover {
+.list-button:hover,
+.active .list-button {
 	background-color: var(--color-background);
 	text-decoration: none;
 	border-left: 4px solid var(--color-primary);

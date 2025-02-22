@@ -1,10 +1,40 @@
 import { json } from '@remix-run/node';
 import axios from 'axios';
 
-const cache = new Map();
-
-// Add cache configuration
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+const GPS_CACHE_KEY = 'gps_data_cache';
+
+// Replace the Map cache with localStorage
+const getCache = (cacheKey) => {
+	try {
+		const cached = localStorage.getItem(cacheKey);
+		if (!cached) return null;
+
+		const { timestamp, data } = JSON.parse(cached);
+		if (Date.now() - timestamp < CACHE_DURATION) {
+			console.log('💰 Using cached GPS data');
+			return data;
+		}
+		localStorage.removeItem(cacheKey);
+	} catch (error) {
+		console.error('🚨 Cache read error:', error);
+	}
+	return null;
+};
+
+const setCache = (cacheKey, data) => {
+	try {
+		localStorage.setItem(
+			cacheKey,
+			JSON.stringify({
+				timestamp: Date.now(),
+				data,
+			})
+		);
+	} catch (error) {
+		console.error('🚨 Cache write error:', error);
+	}
+};
 
 export function getGPSURL(provider) {
 	const baseUrl = 'https://api-compass.speedcast.com/v2.0';
@@ -25,17 +55,11 @@ export function getGPSURL(provider) {
 export const fetchGPS = async (provider, ids, accessToken) => {
 	const url = getGPSURL(provider);
 	const postData = { ids };
-	const cacheKey = `${provider}-${ids.join(',')}`;
-	const now = Date.now();
+	const cacheKey = `${GPS_CACHE_KEY}-${provider}-${ids.join(',')}`;
 
 	// Check cache first
-	if (cache.has(cacheKey)) {
-		const cachedData = cache.get(cacheKey);
-		if (now - cachedData.timestamp < CACHE_DURATION) {
-			console.log('💰 Using cached GPS data');
-			return cachedData.data;
-		}
-	}
+	const cachedData = getCache(cacheKey);
+	if (cachedData) return cachedData;
 
 	try {
 		const response = await axios.post(url, postData, {
@@ -48,21 +72,15 @@ export const fetchGPS = async (provider, ids, accessToken) => {
 		if (response.status === 200) {
 			const latestGPSData = Object.entries(response.data).reduce((acc, [modemId, entries]) => {
 				if (!Array.isArray(entries) || entries.length === 0) return acc;
-
 				const sortedEntries = entries.filter((entry) => entry && entry.timestamp).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
 				if (sortedEntries.length > 0) {
 					acc[modemId] = [sortedEntries[0]];
 				}
-
 				return acc;
 			}, {});
 
-			cache.set(cacheKey, {
-				timestamp: now,
-				data: latestGPSData,
-			});
-
+			// Update cache storage
+			setCache(cacheKey, latestGPSData);
 			return latestGPSData;
 		}
 
@@ -79,9 +97,9 @@ export const fetchGPS = async (provider, ids, accessToken) => {
 			console.log(`🕒 Need to wait until: ${retryDate.toISOString()}`);
 
 			// Return cached data if available
-			if (cache.has(cacheKey)) {
+			if (getCache(cacheKey)) {
 				console.log('📦 Returning cached data while rate limited');
-				return cache.get(cacheKey).data;
+				return getCache(cacheKey);
 			}
 
 			// If no cache, wait and retry once
