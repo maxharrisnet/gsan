@@ -45,7 +45,7 @@ export const fetchGPS = async (provider, ids, accessToken) => {
 		console.log('🛑 Rate limit prevention - using cached data if available');
 		// Return cached data if available, even if expired
 		if (cache.has(cacheKey)) {
-			return cache.get(cacheKey);
+			return cache.get(cacheKey).data;
 		}
 		throw new Error('Rate limit reached and no cached data available');
 	}
@@ -68,14 +68,32 @@ export const fetchGPS = async (provider, ids, accessToken) => {
 			},
 		});
 
+		console.log('💰 GPS response:', response.data);
+
 		if (response.status === 200) {
-			// Store the response data in the cache with timestamp
+			// Transform the data to only include the most recent entry for each modem
+			const latestGPSData = Object.entries(response.data).reduce((acc, [modemId, entries]) => {
+				if (!Array.isArray(entries) || entries.length === 0) {
+					return acc;
+				}
+
+				// Sort entries by timestamp (descending) and take the first one
+				const sortedEntries = entries.filter((entry) => entry && entry.timestamp).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+				if (sortedEntries.length > 0) {
+					acc[modemId] = [sortedEntries[0]];
+				}
+
+				return acc;
+			}, {});
+
+			// Store the transformed data in the cache
 			cache.set(cacheKey, {
 				timestamp: now,
-				data: response.data,
+				data: latestGPSData,
 			});
 			console.log('💾 Caching GPS data');
-			return response.data;
+			return latestGPSData;
 		} else {
 			return { error: `HTTP code ${response.status}` };
 		}

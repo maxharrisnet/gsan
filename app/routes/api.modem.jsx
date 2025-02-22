@@ -14,6 +14,7 @@ export const loader = async ({ params }) => {
 		});
 
 		const modem = modemResponse.data;
+		console.log('💰 Modem response:', modem);
 
 		const latencyData = modem.data.latency.data || [];
 		const throughputData = modem.data.throughput.data || [];
