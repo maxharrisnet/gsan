@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
-import { useLoaderData, Link } from '@remix-run/react';
-import { loader } from './api.modem';
+import { useEffect, useRef, Suspense } from 'react';
+import { useLoaderData, Link, Await } from '@remix-run/react';
+import { loader as modemApiLoader } from './api.modem';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
 import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
@@ -8,6 +8,10 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, BarElement,
 import { Line, Bar } from 'react-chartjs-2';
 import chartStyles from '../styles/charts.css?url';
 import modemStyles from '../styles/modem.css?url';
+import { useUser } from '../context/UserContext';
+import LoadingSpinner from '../components/LoadingSpinner';
+import { defer } from '@remix-run/node';
+import { fetchServicesAndModemData } from '../compass.server';
 
 export const links = () => [
 	{ rel: 'stylesheet', href: chartStyles },
@@ -18,12 +22,50 @@ export const links = () => [
 	},
 ];
 
-export { loader };
+export async function loader({ params, request }) {
+	try {
+		// Get modem details from the existing API loader
+		const modemDetails = await modemApiLoader({ params, request });
+		const modemData = await modemDetails.json();
+
+		// Fetch services data
+		const servicesPromise = fetchServicesAndModemData()
+			.then(({ services }) => ({
+				services,
+			}))
+			.catch((error) => {
+				console.error('🍎 Error fetching services:', error);
+				return { services: [] };
+			});
+
+		// Return both sets of data
+		return defer({
+			servicesData: servicesPromise,
+			...modemData, // This spreads all the existing modem data (modem, mapsAPIKey, gpsData, etc.)
+		});
+	} catch (error) {
+		console.error('🚨 Error in loader:', error);
+		throw new Response('Error loading data', { status: 500 });
+	}
+}
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, BarElement, LineElement, Title, Tooltip, Legend);
 
+// Move chart configuration to a separate file or component
+const chartConfig = {
+	responsive: true,
+	maintainAspectRatio: false,
+	height: 300,
+	animation: { duration: 0 },
+	elements: {
+		point: { radius: 0 },
+		line: { tension: 0.1 },
+	},
+};
+
 export default function ModemDetails() {
-	const { modem = {}, mapsAPIKey, gpsData = [], latencyData = [], throughputData = [], signalQualityData = [], obstructionData = [], usageData = [], uptimeData = [], errors = {} } = useLoaderData();
+	const { modem = {}, mapsAPIKey, gpsData = [], latencyData = [], throughputData = [], signalQualityData = [], obstructionData = [], usageData = [], uptimeData = [], errors = {}, servicesData } = useLoaderData();
+	const { userKits } = useUser();
 
 	// Move all useRef hooks here
 	const usageChartRef = useRef(null);
@@ -49,6 +91,9 @@ export default function ModemDetails() {
 	// Check if we have any data at all
 	const hasNoData = !modem?.data && !gpsData.length;
 
+	// Fix map rendering
+	const mapPosition = gpsData?.[0] ? { lat: parseFloat(gpsData[0].lat), lng: parseFloat(gpsData[0].lon) } : { lat: 39.8283, lng: -98.5795 }; // Default to US center
+
 	if (hasNoData) {
 		return (
 			<Layout>
@@ -64,7 +109,7 @@ export default function ModemDetails() {
 						</Link>
 					</div>
 				</Sidebar>
-				<main className='content '>
+				<main className='content content-full-width'>
 					<div className='error-banner card'>
 						<span className='material-icons'>error_outline</span>
 						<div>
@@ -207,44 +252,57 @@ export default function ModemDetails() {
 	return (
 		<Layout>
 			<Sidebar>
-				<div className='sidebar-header'>
-					<h1 className='provider-name'>Switch Canada</h1>
-				</div>
-				<div className='search-container'>
-					<input
-						type='search'
-						placeholder='Search'
-						className='search-input'
-					/>
-				</div>
+				<div className='dashboard-sidebar'>
+					<h2 className='select-device-heading'>Select a Device</h2>
+					<Link
+						to={`/map`}
+						className='list-button back-link'
+					>
+						<span className='material-icons'>chevron_left</span>
+						<span>Back to Map</span>
+					</Link>
 
-				<h2 className='select-device-heading'>Select a Device</h2>
-				<Link
-					to={`/map`}
-					className='list-button back-link'
-				>
-					<span className='material-icons'>chevron_left</span>
-					<span>Switch Canada-{modem.id}</span>
-				</Link>
+					<Suspense fallback={<LoadingSpinner />}>
+						<Await resolve={servicesData}>
+							{(resolvedData) => {
+								const { services } = resolvedData;
 
-				<div className='devices-section'>
-					<button className='list-button section-toggle'>
-						<span>Modems</span>
-						<span className='material-icons'>expand_more</span>
-					</button>
+								// Filter modems based on userKits
+								const filteredServices = services
+									.map((service) => ({
+										...service,
+										modems: service.modems?.filter((modem) => userKits.includes(modem.id)) || [],
+									}))
+									.filter((service) => service.modems.length > 0);
 
-					<div className='modem-list'>
-						<div className='modem-item active'>
-							<div className='modem-info'>
-								<span className='status-badge online'>Online</span>
-								<h3 className='modem-name'>{modem.name}</h3>
-								<p className='modem-id'>{modem.id}</p>
-							</div>
-							<div className='provider-brand'>
-								<span>STARLINK</span>
-							</div>
-						</div>
-					</div>
+								return filteredServices.length > 0 ? (
+									<ul className='modem-list'>
+										{filteredServices.flatMap((service) =>
+											service.modems?.map((modemItem) => (
+												<li
+													key={modemItem.id}
+													className={`modem-item ${modemItem.id === modem.id ? 'active' : ''} status-${modemItem.status?.toLowerCase()}`}
+												>
+													<Link
+														className='list-button'
+														to={`/modem/${modemItem.type.toLowerCase()}/${modemItem.id}`}
+														prefetch='intent'
+													>
+														<span className='modem-name'>{modemItem.name}</span>
+														<span className='modem-chevron material-icons'>chevron_right</span>
+													</Link>
+												</li>
+											))
+										)}
+									</ul>
+								) : (
+									<div className='empty-sidebar'>
+										<p>No modems found in your kits</p>
+									</div>
+								);
+							}}
+						</Await>
+					</Suspense>
 				</div>
 			</Sidebar>
 
@@ -256,17 +314,17 @@ export default function ModemDetails() {
 					</div>
 				)}
 
-				{gpsData && gpsData.length > 0 && (
+				{gpsData?.length > 0 && (
 					<section className='map-wrapper'>
 						<APIProvider apiKey={mapsAPIKey}>
 							<Map
 								style={{ width: '100%', height: '60vh' }}
-								defaultCenter={{ lat: gpsData[0].lat, lng: gpsData[0].lon }}
+								defaultCenter={mapPosition}
 								defaultZoom={8}
 								gestureHandling={'greedy'}
 								disableDefaultUI={true}
 							>
-								<Marker position={{ lat: gpsData[0].lat, lng: gpsData[0].lon }} />
+								<Marker position={mapPosition} />
 							</Map>
 						</APIProvider>
 					</section>

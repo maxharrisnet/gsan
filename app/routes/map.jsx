@@ -173,7 +173,7 @@ export default function Dashboard() {
 							// Get the first modem's position for center, or use default US center
 							const defaultCenter = { lat: 39.8283, lng: -98.5795 }; // US center
 							const mapCenter = modemLocations[0]?.position || defaultCenter;
-							const mapZoom = modemLocations[0]?.position ? 12 : 12; // Zoom closer if we have a modem
+							const mapZoom = modemLocations[0]?.position ? 6 : 2; // Zoom closer if we have a modem
 
 							return (
 								<div className=''>

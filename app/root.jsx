@@ -1,5 +1,5 @@
 import { redirect } from '@remix-run/node';
-import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteError, useLoaderData, Link, isRouteErrorResponse, LiveReload } from '@remix-run/react';
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteError, useLoaderData, Link, isRouteErrorResponse } from '@remix-run/react';
 import { getSession } from './utils/session.server';
 import { UserProvider } from './context/UserContext';
 import Layout from './components/layout/Layout';
@@ -58,7 +58,6 @@ export default function Root() {
 				</UserProvider>
 				<ScrollRestoration />
 				<Scripts />
-				<LiveReload />
 			</body>
 		</html>
 	);
