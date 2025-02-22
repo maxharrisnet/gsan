@@ -28,9 +28,7 @@
 .error-details {
 	margin-top: 1rem;
 	text-align: left;
-	background-color: #f0f0f0;
-	padding: 1rem;
-	border-radius: 0.375rem;
+	padding: var(--spacing-small) 0;
 	overflow: auto;
 }
 

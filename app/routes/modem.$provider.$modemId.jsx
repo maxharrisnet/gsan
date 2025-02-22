@@ -23,10 +23,62 @@ export { loader };
 ChartJS.register(CategoryScale, LinearScale, PointElement, BarElement, LineElement, Title, Tooltip, Legend);
 
 export default function ModemDetails() {
-	const { modem, mapsAPIKey, gpsData = [], latencyData = [], throughputData = [], signalQualityData = [], obstructionData = [], usageData = [], uptimeData = [], errors = {} } = useLoaderData();
+	const { modem = {}, mapsAPIKey, gpsData = [], latencyData = [], throughputData = [], signalQualityData = [], obstructionData = [], usageData = [], uptimeData = [], errors = {} } = useLoaderData();
 
-	const latencyTimestamps = latencyData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
-	const latencyValues = latencyData.map((entry) => entry[1]);
+	// Move all useRef hooks here
+	const usageChartRef = useRef(null);
+	const signalQualityChartRef = useRef(null);
+	const throughputChartRef = useRef(null);
+	const latencyChartRef = useRef(null);
+	const obstructionChartRef = useRef(null);
+	const uptimeChartRef = useRef(null);
+
+	// Move useEffect here
+	useEffect(() => {
+		return () => {
+			// Cleanup code...
+			if (usageChartRef.current) usageChartRef.current.destroy();
+			if (signalQualityChartRef.current) signalQualityChartRef.current.destroy();
+			if (throughputChartRef.current) throughputChartRef.current.destroy();
+			if (latencyChartRef.current) latencyChartRef.current.destroy();
+			if (obstructionChartRef.current) obstructionChartRef.current.destroy();
+			if (uptimeChartRef.current) uptimeChartRef.current.destroy();
+		};
+	}, []);
+
+	// Check if we have any data at all
+	const hasNoData = !modem?.data && !gpsData.length;
+
+	if (hasNoData) {
+		return (
+			<Layout>
+				<Sidebar>
+					<div className='dashboard-sidebar'>
+						<h2 className='select-device-heading'>Select a Device</h2>
+						<Link
+							to='/map'
+							className='list-button back-link'
+						>
+							<span className='material-icons'>arrow_back</span>
+							Back to Map
+						</Link>
+					</div>
+				</Sidebar>
+				<main className='content '>
+					<div className='error-banner card'>
+						<span className='material-icons'>error_outline</span>
+						<div>
+							<p className='error-message'>No data available for this modem</p>
+							<p className='error-details'>The modem may be offline or there might be connectivity issues</p>
+						</div>
+					</div>
+				</main>
+			</Layout>
+		);
+	}
+
+	const latencyTimestamps = latencyData?.map?.((entry) => new Date(entry[0] * 1000).toLocaleTimeString()) || [];
+	const latencyValues = latencyData?.map?.((entry) => entry[1]) || [];
 
 	const throughputTimestamps = throughputData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
 	const throughputDownload = throughputData.map((entry) => entry[1]);
@@ -61,13 +113,6 @@ export default function ModemDetails() {
 	}
 	const uptimeLabels = uptimeData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
 	const uptimeValues = uptimeData.map((entry) => Math.ceil((entry[1] / 86400) * 10) / 10);
-
-	const usageChartRef = useRef(null);
-	const signalQualityChartRef = useRef(null);
-	const throughputChartRef = useRef(null);
-	const latencyChartRef = useRef(null);
-	const obstructionChartRef = useRef(null);
-	const uptimeChartRef = useRef(null);
 
 	// Set global defaults for Chart.js
 	ChartJS.defaults.global = {
@@ -125,43 +170,13 @@ export default function ModemDetails() {
 	ChartJS.defaults.elements.line.borderWidth = 1;
 	ChartJS.defaults.elements.line.fill = true;
 
-	useEffect(() => {
-		return () => {
-			// Clean up chart instances on component unmount to prevent reuse issues
-			if (usageChartRef.current) {
-				usageChartRef.current.destroy();
-				usageChartRef.current = null;
-			}
-			if (signalQualityChartRef.current) {
-				signalQualityChartRef.current.destroy();
-				signalQualityChartRef.current = null;
-			}
-			if (throughputChartRef.current) {
-				throughputChartRef.current.destroy();
-				throughputChartRef.current = null;
-			}
-			if (latencyChartRef.current) {
-				latencyChartRef.current.destroy();
-				latencyChartRef.current = null;
-			}
-			if (obstructionChartRef.current) {
-				obstructionChartRef.current.destroy();
-				obstructionChartRef.current = null;
-			}
-			if (uptimeChartRef.current) {
-				uptimeChartRef.current.destroy();
-				uptimeChartRef.current = null;
-			}
-		};
-	}, []);
-
 	// Helper function to render a chart section with error handling
 	const renderChartSection = (title, data, chart, errorKey) => {
 		if (errors[errorKey]) {
 			return (
 				<section className='section chart-wrapper'>
 					<h2>{title}</h2>
-					<div className='error-message'>
+					<div className='error-banner card'>
 						<span className='material-icons'>error_outline</span>
 						<p>Unable to load {title.toLowerCase()} data</p>
 					</div>
@@ -205,7 +220,7 @@ export default function ModemDetails() {
 
 				<h2 className='select-device-heading'>Select a Device</h2>
 				<Link
-					to={`/modem/${modem.provider}`}
+					to={`/map`}
 					className='list-button back-link'
 				>
 					<span className='material-icons'>chevron_left</span>
@@ -234,10 +249,10 @@ export default function ModemDetails() {
 			</Sidebar>
 
 			<main className='content content-full-width'>
-				{errors.general && (
+				{!modem?.data && (
 					<div className='error-banner card'>
 						<span className='material-icons'>warning</span>
-						<p>Some data may be unavailable: {errors.general}</p>
+						<p>Limited data available for this modem</p>
 					</div>
 				)}
 

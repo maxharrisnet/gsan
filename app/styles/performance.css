@@ -535,30 +535,32 @@ section {
 	font-size: var(--font-size-lg);
 }
 
-.error-banner {
+.error-banner.card {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--spacing-base);
 	background-color: var(--color-error-light);
 	border: 1px solid var(--color-error);
 	border-radius: var(--border-radius);
-	color: var(--color-error);
-	margin: var(--spacing-base) 0;
-	padding: var(--spacing-base);
-	display: flex;
-	align-items: center;
-	gap: var(--spacing-small);
+	padding: var(--spacing-large);
+	margin: var(--spacing-large);
+	max-width: 600px;
 }
 
-.error-banner .error-icon {
-	font-size: var(--font-size-lg);
+.error-banner .material-icons {
 	color: var(--color-error);
+	font-size: var(--font-size-xl);
+	flex-shrink: 0;
 }
 
 .error-banner .error-message {
-	font-size: var(--font-size-sm);
+	color: var(--color-error);
 	font-weight: 500;
+	margin: 0 0 var(--spacing-xsmall);
 }
 
 .error-banner .error-details {
-	font-size: var(--font-size-xs);
-	margin-top: var(--spacing-xsmall);
-	color: var(--color-text-light);
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-sm);
+	margin: 0;
 }

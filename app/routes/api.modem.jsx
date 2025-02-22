@@ -5,10 +5,15 @@ import fetchGPS from './api.gps';
 
 export const loader = async ({ params }) => {
 	const { provider, modemId } = params;
-	const accessToken = await getCompassAccessToken();
-	const modemDetailsURL = `https://api-compass.speedcast.com/v2.0/${encodeURIComponent(provider.toLowerCase())}/${modemId}`;
+
+	if (!provider || !modemId) {
+		return json({ error: 'Missing provider or modemId 🚫' }, { status: 400 });
+	}
 
 	try {
+		const accessToken = await getCompassAccessToken();
+		const modemDetailsURL = `https://api-compass.speedcast.com/v2.0/${encodeURIComponent(provider.toLowerCase())}/${modemId}`;
+
 		const modemResponse = await axios.get(modemDetailsURL, {
 			headers: { Authorization: `Bearer ${accessToken}` },
 		});
@@ -40,12 +45,20 @@ export const loader = async ({ params }) => {
 		};
 
 		if (!modemDetails) {
-			throw new Response('No data available for modem 🦤', { status: 404 });
+			return json({ error: 'No data available for modem 🦤' }, { status: 404 });
 		}
 
 		return json(modemDetails);
 	} catch (error) {
-		console.error('Error fetching modem details: ', error);
-		throw new Response('Internal Server Error 🦧', { status: 500 });
+		console.error('🔴 Error fetching modem details:', error);
+		return json(
+			{
+				error: 'Failed to fetch modem details 🦧',
+				message: error.message,
+			},
+			{
+				status: error.response?.status || 500,
+			}
+		);
 	}
 };

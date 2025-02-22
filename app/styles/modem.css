@@ -123,7 +123,7 @@
 .search-input {
 	width: 100%;
 	padding: var(--spacing-small) var(--spacing-base);
-	border: 1px solid var(--color-border);
+	border: 2px solid var(--color-border);
 	border-radius: 20px;
 	background-color: var(--color-background-light);
 }
@@ -199,4 +199,38 @@
 .chart-wrapper canvas {
 	will-change: transform;
 	transform: translateZ(0);
+}
+
+.error-banner {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	padding: 1.5rem;
+	background-color: #fff1f1;
+	border: 1px solid var(--color-error);
+	border-radius: 4px;
+	margin: 1rem 0;
+}
+
+.error-banner .material-icons {
+	color: var(--color-error);
+	font-size: 24px;
+}
+
+.error-banner div {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.error-message {
+	color: var(--color-error);
+	font-weight: 600;
+	margin: 0;
+}
+
+.error-details {
+	color: #666;
+	font-size: 0.9rem;
+	margin: 0;
 }
