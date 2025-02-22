@@ -1,38 +1,44 @@
-import { json } from '@remix-run/node';
 import axios from 'axios';
 
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
-const GPS_CACHE_KEY = 'gps_data_cache';
+const GPS_STORAGE_KEY = 'shared_gps_cache';
+const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
 
-// Replace the Map cache with localStorage
-const getCache = (cacheKey) => {
+// Helper to check if we're in browser environment
+const isBrowser = typeof window !== 'undefined';
+
+// Helper to get shared GPS data
+const getSharedGPSData = (modemId) => {
+	if (!isBrowser) return null;
+
 	try {
-		const cached = localStorage.getItem(cacheKey);
+		const cached = window.localStorage.getItem(GPS_STORAGE_KEY);
 		if (!cached) return null;
 
 		const { timestamp, data } = JSON.parse(cached);
 		if (Date.now() - timestamp < CACHE_DURATION) {
-			console.log('💰 Using cached GPS data');
-			return data;
+			return data[modemId];
 		}
-		localStorage.removeItem(cacheKey);
+		window.localStorage.removeItem(GPS_STORAGE_KEY);
 	} catch (error) {
-		console.error('🚨 Cache read error:', error);
+		console.error('🚨 Shared GPS read error:', error);
 	}
 	return null;
 };
 
-const setCache = (cacheKey, data) => {
+// Update the storage helper
+const setSharedGPSData = (data) => {
+	if (!isBrowser) return;
+
 	try {
-		localStorage.setItem(
-			cacheKey,
+		window.localStorage.setItem(
+			GPS_STORAGE_KEY,
 			JSON.stringify({
 				timestamp: Date.now(),
 				data,
 			})
 		);
 	} catch (error) {
-		console.error('🚨 Cache write error:', error);
+		console.error('🚨 Shared GPS write error:', error);
 	}
 };
 
@@ -55,13 +61,14 @@ export function getGPSURL(provider) {
 export const fetchGPS = async (provider, ids, accessToken) => {
 	const url = getGPSURL(provider);
 	const postData = { ids };
-	const cacheKey = `${GPS_CACHE_KEY}-${provider}-${ids.join(',')}`;
+	const cacheKey = `${GPS_STORAGE_KEY}-${provider}-${ids.join(',')}`;
 
 	// Check cache first
-	const cachedData = getCache(cacheKey);
+	const cachedData = getSharedGPSData(cacheKey);
 	if (cachedData) return cachedData;
 
 	try {
+		console.log('🔍 Fetching GPS data from API');
 		const response = await axios.post(url, postData, {
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
@@ -80,7 +87,7 @@ export const fetchGPS = async (provider, ids, accessToken) => {
 			}, {});
 
 			// Update cache storage
-			setCache(cacheKey, latestGPSData);
+			setSharedGPSData(latestGPSData);
 			return latestGPSData;
 		}
 
@@ -97,9 +104,9 @@ export const fetchGPS = async (provider, ids, accessToken) => {
 			console.log(`🕒 Need to wait until: ${retryDate.toISOString()}`);
 
 			// Return cached data if available
-			if (getCache(cacheKey)) {
+			if (getSharedGPSData(cacheKey)) {
 				console.log('📦 Returning cached data while rate limited');
-				return getCache(cacheKey);
+				return getSharedGPSData(cacheKey);
 			}
 
 			// If no cache, wait and retry once

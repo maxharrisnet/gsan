@@ -1,7 +1,7 @@
 // app/routes/performance.jsx
 import { defer } from '@remix-run/node';
 import { useLoaderData, Await, Link } from '@remix-run/react';
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect, useMemo } from 'react';
 import { fetchServicesAndModemData, getCompassAccessToken } from '../compass.server';
 import { fetchGPS } from './api.gps';
 import Layout from '../components/layout/Layout';
@@ -21,55 +21,39 @@ export async function loader({ request }) {
 		const accessToken = await getCompassAccessToken();
 		const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
 
-		const servicesPromise = fetchServicesAndModemData()
-			.then(async ({ services }) => {
-				console.log('📦 Raw services data received');
+		// Get services data first
+		const { services } = await fetchServicesAndModemData();
 
-				// Group modems by provider type
-				const modemsByProvider = services.reduce((acc, service) => {
-					(service.modems || []).forEach((modem) => {
-						if (modem.type) {
-							acc[modem.type.toLowerCase()] = acc[modem.type.toLowerCase()] || [];
-							acc[modem.type.toLowerCase()].push(modem.id);
-						}
-					});
-					return acc;
-				}, {});
-
-				const gpsDataPromises = Object.entries(modemsByProvider).map(async ([provider, ids]) => {
-					try {
-						const gpsData = await fetchGPS(provider, ids, accessToken);
-						return { provider, data: gpsData };
-					} catch (error) {
-						console.error(`🚨 GPS fetch error for ${provider}:`, error);
-						return { provider, data: {} };
-					}
-				});
-
-				const gpsResults = await Promise.all(gpsDataPromises);
-				const gpsDataMap = gpsResults.reduce((acc, { provider, data }) => {
-					if (data && typeof data === 'object') {
-						return {
-							...acc,
-							...data,
-						};
-					}
-					return acc;
-				}, {});
-
-				return {
-					services: services,
-					gpsData: gpsDataMap,
-				};
-			})
-			.catch((error) => {
-				console.error('🍎 Error in services promise chain:', error);
-				return { services: [], gpsData: {} };
+		// Group modem IDs by provider to minimize GPS API calls
+		const modemsByProvider = services.reduce((acc, service) => {
+			(service.modems || []).forEach((modem) => {
+				if (modem.type) {
+					const provider = modem.type.toLowerCase();
+					acc[provider] = acc[provider] || [];
+					acc[provider].push(modem.id);
+				}
 			});
+			return acc;
+		}, {});
+
+		// Batch GPS requests by provider
+		const gpsData = await Promise.all(
+			Object.entries(modemsByProvider).map(async ([provider, ids]) => {
+				try {
+					const data = await fetchGPS(provider, ids, accessToken);
+					return { provider, data };
+				} catch (error) {
+					console.error(`🚨 GPS fetch error for ${provider}:`, error);
+					return { provider, data: {} };
+				}
+			})
+		);
 
 		return defer({
-			servicesData: servicesPromise,
-			accessToken,
+			servicesData: {
+				services,
+				gpsData: gpsData.reduce((acc, { data }) => ({ ...acc, ...data }), {}),
+			},
 			googleMapsApiKey,
 		});
 	} catch (error) {
@@ -82,6 +66,66 @@ export default function Dashboard() {
 	const { servicesData, googleMapsApiKey } = useLoaderData();
 	const { userKits } = useUser();
 	const [selectedModem, setSelectedModem] = useState(null);
+
+	// Memoize the filtered and processed modem locations
+	const modemLocations = useMemo(() => {
+		if (!servicesData?.services) return [];
+
+		return servicesData.services.flatMap((service) =>
+			(service.modems || [])
+				.filter((modem) => userKits.includes(modem.id))
+				.map((modem) => {
+					const gpsInfo = servicesData.gpsData?.[modem.id]?.[0];
+					return gpsInfo
+						? {
+								id: modem.id,
+								name: modem.name,
+								status: modem.status,
+								type: modem.type,
+								position: {
+									lat: parseFloat(gpsInfo.lat),
+									lng: parseFloat(gpsInfo.lon),
+								},
+							}
+						: null;
+				})
+				.filter(Boolean)
+		);
+	}, [servicesData, userKits]);
+
+	// Memoize map center and zoom
+	const mapConfig = useMemo(
+		() => ({
+			center: modemLocations[0]?.position || { lat: 39.8283, lng: -98.5795 },
+			zoom: modemLocations[0]?.position ? 6 : 2,
+		}),
+		[modemLocations]
+	);
+
+	// Handle GPS data caching on the client side
+	useEffect(() => {
+		const handleGPSData = async (resolvedData) => {
+			if (resolvedData?.gpsData) {
+				try {
+					localStorage.setItem(
+						'shared_gps_cache',
+						JSON.stringify({
+							timestamp: Date.now(),
+							data: resolvedData.gpsData,
+						})
+					);
+					console.log('📱 GPS data cached in localStorage');
+				} catch (error) {
+					console.error('🚨 Error caching GPS data:', error);
+				}
+			}
+		};
+
+		// Subscribe to when data is resolved
+		if (servicesData instanceof Promise) {
+			servicesData.then(handleGPSData);
+		}
+	}, [servicesData]);
 
 	return (
 		<Layout>
@@ -148,33 +192,6 @@ export default function Dashboard() {
 								);
 							}
 
-							// Filter modems and get their locations
-							const modemLocations = services.flatMap((service) =>
-								(service.modems || [])
-									.filter((modem) => userKits.includes(modem.id)) // Filter by user's kits
-									.map((modem) => {
-										const gpsInfo = gpsData[modem.id]?.[0];
-										return gpsInfo
-											? {
-													id: modem.id,
-													name: modem.name,
-													status: modem.status,
-													type: modem.type,
-													position: {
-														lat: parseFloat(gpsInfo.lat),
-														lng: parseFloat(gpsInfo.lon),
-													},
-												}
-											: null;
-									})
-									.filter(Boolean)
-							);
-
-							// Get the first modem's position for center, or use default US center
-							const defaultCenter = { lat: 39.8283, lng: -98.5795 }; // US center
-							const mapCenter = modemLocations[0]?.position || defaultCenter;
-							const mapZoom = modemLocations[0]?.position ? 6 : 2; // Zoom closer if we have a modem
-
 							return (
 								<div className=''>
 									{modemLocations.length > 0 && (
@@ -182,8 +199,8 @@ export default function Dashboard() {
 											<div className='map-container'>
 												<APIProvider apiKey={googleMapsApiKey}>
 													<Map
-														defaultCenter={mapCenter}
-														defaultZoom={mapZoom}
+														defaultCenter={mapConfig.center}
+														defaultZoom={mapConfig.zoom}
 														gestureHandling={'greedy'}
 														disableDefaultUI={false}
 													>
