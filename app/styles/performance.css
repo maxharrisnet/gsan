@@ -232,6 +232,10 @@ section {
 	background-color: var(--color-background);
 }
 
+.modem-header {
+	flex: 1 0 40%;
+}
+
 .modem-header h3 {
 	margin: 0;
 
@@ -403,6 +407,7 @@ section {
 .service-status-container {
 	display: flex;
 	width: 100%;
+	flex: 1 1 60%;
 	gap: var(--spacing-small);
 }
 

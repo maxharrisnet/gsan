@@ -36,10 +36,8 @@ export async function loader({ request }) {
 					return acc;
 				}, {});
 
-				// Fetch GPS data for each provider type
 				const gpsDataPromises = Object.entries(modemsByProvider).map(async ([provider, ids]) => {
 					try {
-						console.log(`🗺️ Fetching GPS data for ${provider}:`, ids);
 						const gpsData = await fetchGPS(provider, ids, accessToken);
 						return { provider, data: gpsData };
 					} catch (error) {
@@ -58,8 +56,6 @@ export async function loader({ request }) {
 					}
 					return acc;
 				}, {});
-
-				console.log('🗺️ Combined GPS data map:', gpsDataMap);
 
 				return {
 					services: services,
@@ -118,10 +114,6 @@ export default function Dashboard() {
 														prefetch='intent'
 													>
 														<span className='modem-name'>{modem.name}</span>
-														<span className='modem-status'>
-															<span className={`status-dot ${modem.status?.toLowerCase()}`} />
-															{modem.status}
-														</span>
 														<span className='modem-chevron material-icons'>chevron_right</span>
 													</Link>
 												</li>

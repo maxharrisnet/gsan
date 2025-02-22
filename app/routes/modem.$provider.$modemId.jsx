@@ -23,7 +23,7 @@ export { loader };
 ChartJS.register(CategoryScale, LinearScale, PointElement, BarElement, LineElement, Title, Tooltip, Legend);
 
 export default function ModemDetails() {
-	const { modem, mapsAPIKey, gpsData, latencyData, throughputData, signalQualityData, obstructionData, usageData, uptimeData } = useLoaderData();
+	const { modem, mapsAPIKey, gpsData = [], latencyData = [], throughputData = [], signalQualityData = [], obstructionData = [], usageData = [], uptimeData = [], errors = {} } = useLoaderData();
 
 	const latencyTimestamps = latencyData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
 	const latencyValues = latencyData.map((entry) => entry[1]);
@@ -155,6 +155,40 @@ export default function ModemDetails() {
 		};
 	}, []);
 
+	// Helper function to render a chart section with error handling
+	const renderChartSection = (title, data, chart, errorKey) => {
+		if (errors[errorKey]) {
+			return (
+				<section className='section chart-wrapper'>
+					<h2>{title}</h2>
+					<div className='error-message'>
+						<span className='material-icons'>error_outline</span>
+						<p>Unable to load {title.toLowerCase()} data</p>
+					</div>
+				</section>
+			);
+		}
+
+		if (!data || data.length === 0) {
+			return (
+				<section className='section chart-wrapper'>
+					<h2>{title}</h2>
+					<div className='no-data-message'>
+						<span className='material-icons'>info_outline</span>
+						<p>No {title.toLowerCase()} data available</p>
+					</div>
+				</section>
+			);
+		}
+
+		return (
+			<section className='section chart-wrapper'>
+				<h2>{title}</h2>
+				{chart}
+			</section>
+		);
+	};
+
 	return (
 		<Layout>
 			<Sidebar>
@@ -200,6 +234,13 @@ export default function ModemDetails() {
 			</Sidebar>
 
 			<main className='content content-full-width'>
+				{errors.general && (
+					<div className='error-banner'>
+						<span className='material-icons'>warning</span>
+						<p>Some data may be unavailable: {errors.general}</p>
+					</div>
+				)}
+
 				{gpsData && gpsData.length > 0 && (
 					<section className='map-wrapper'>
 						<APIProvider apiKey={mapsAPIKey}>
@@ -216,8 +257,9 @@ export default function ModemDetails() {
 					</section>
 				)}
 				<div className='chart-container'>
-					<section className='section chart-wrapper'>
-						<h2>Usage</h2>
+					{renderChartSection(
+						'Usage',
+						usageData,
 						<Bar
 							height='100'
 							width='300'
@@ -236,10 +278,12 @@ export default function ModemDetails() {
 									},
 								},
 							}}
-						/>
-					</section>
-					<section className='section chart-wrapper'>
-						<h2>Signal Quality</h2>
+						/>,
+						'usage'
+					)}
+					{renderChartSection(
+						'Signal Quality',
+						signalQualityData,
 						<Line
 							height='100'
 							width='300'
@@ -255,10 +299,12 @@ export default function ModemDetails() {
 									},
 								},
 							}}
-						/>
-					</section>
-					<section className='section chart-wrapper'>
-						<h2>Throughput</h2>
+						/>,
+						'signalQuality'
+					)}
+					{renderChartSection(
+						'Throughput',
+						throughputData,
 						<Line
 							height='100'
 							width='300'
@@ -277,10 +323,12 @@ export default function ModemDetails() {
 									},
 								},
 							}}
-						/>
-					</section>
-					<section className='section chart-wrapper'>
-						<h2>Latency</h2>
+						/>,
+						'throughput'
+					)}
+					{renderChartSection(
+						'Latency',
+						latencyData,
 						<Line
 							height='100'
 							width='300'
@@ -296,10 +344,12 @@ export default function ModemDetails() {
 									},
 								},
 							}}
-						/>
-					</section>
-					<section className='section chart-wrapper'>
-						<h2>Obstruction</h2>
+						/>,
+						'latency'
+					)}
+					{renderChartSection(
+						'Obstruction',
+						obstructionData,
 						<Line
 							height='100'
 							width='300'
@@ -315,10 +365,12 @@ export default function ModemDetails() {
 									},
 								},
 							}}
-						/>
-					</section>
-					<section className='section chart-wrapper'>
-						<h2>Uptime</h2>
+						/>,
+						'obstruction'
+					)}
+					{renderChartSection(
+						'Uptime',
+						uptimeData,
 						<Line
 							height='100'
 							width='300'
@@ -334,8 +386,9 @@ export default function ModemDetails() {
 									},
 								},
 							}}
-						/>
-					</section>
+						/>,
+						'uptime'
+					)}
 				</div>
 			</main>
 		</Layout>
