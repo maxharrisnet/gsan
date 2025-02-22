@@ -5,14 +5,6 @@ const cache = new Map();
 
 // Add cache configuration
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute in milliseconds
-const MAX_REQUESTS = 30; // Maximum requests per minute
-
-// Track API calls
-const apiCalls = {
-	timestamp: Date.now(),
-	count: 0,
-};
 
 export function getGPSURL(provider) {
 	const baseUrl = 'https://api-compass.speedcast.com/v2.0';
@@ -34,33 +26,18 @@ export const fetchGPS = async (provider, ids, accessToken) => {
 	const url = getGPSURL(provider);
 	const postData = { ids };
 	const cacheKey = `${provider}-${ids.join(',')}`;
-
-	// Check if we're within rate limits
 	const now = Date.now();
-	if (now - apiCalls.timestamp > RATE_LIMIT_WINDOW) {
-		// Reset counter for new window
-		apiCalls.timestamp = now;
-		apiCalls.count = 0;
-	} else if (apiCalls.count >= MAX_REQUESTS) {
-		console.log('🛑 Rate limit prevention - using cached data if available');
-		// Return cached data if available, even if expired
-		if (cache.has(cacheKey)) {
-			return cache.get(cacheKey).data;
-		}
-		throw new Error('Rate limit reached and no cached data available');
-	}
 
-	// Check if valid cached data exists
+	// Check cache first
 	if (cache.has(cacheKey)) {
 		const cachedData = cache.get(cacheKey);
-		if (cachedData.timestamp && now - cachedData.timestamp < CACHE_DURATION) {
-			console.log('💰 Returning cached GPS data');
+		if (now - cachedData.timestamp < CACHE_DURATION) {
+			console.log('💰 Using cached GPS data');
 			return cachedData.data;
 		}
 	}
 
 	try {
-		apiCalls.count++;
 		const response = await axios.post(url, postData, {
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
@@ -68,16 +45,10 @@ export const fetchGPS = async (provider, ids, accessToken) => {
 			},
 		});
 
-		console.log('💰 GPS response:', response.data);
-
 		if (response.status === 200) {
-			// Transform the data to only include the most recent entry for each modem
 			const latestGPSData = Object.entries(response.data).reduce((acc, [modemId, entries]) => {
-				if (!Array.isArray(entries) || entries.length === 0) {
-					return acc;
-				}
+				if (!Array.isArray(entries) || entries.length === 0) return acc;
 
-				// Sort entries by timestamp (descending) and take the first one
 				const sortedEntries = entries.filter((entry) => entry && entry.timestamp).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
 				if (sortedEntries.length > 0) {
@@ -87,29 +58,45 @@ export const fetchGPS = async (provider, ids, accessToken) => {
 				return acc;
 			}, {});
 
-			// Store the transformed data in the cache
 			cache.set(cacheKey, {
 				timestamp: now,
 				data: latestGPSData,
 			});
-			console.log('💾 Caching GPS data');
+
 			return latestGPSData;
-		} else {
-			return { error: `HTTP code ${response.status}` };
 		}
+
+		return { error: `HTTP code ${response.status}` };
 	} catch (error) {
-		if (error.response && error.response.status === 429) {
-			console.error('🏇 Error 429: Rate limit exceeded.');
-			// Return cached data if available, even if expired
+		if (error.response?.status === 429) {
+			console.log('⏳ Rate limited, checking headers...');
+
+			// Get retry time from headers
+			const retryAfter = error.response.headers['retry-after'];
+			const retryDate = new Date(retryAfter);
+			const waitTime = retryDate.getTime() - Date.now();
+
+			console.log(`🕒 Need to wait until: ${retryDate.toISOString()}`);
+
+			// Return cached data if available
 			if (cache.has(cacheKey)) {
-				console.log('🔄 Returning expired cached data due to rate limit');
+				console.log('📦 Returning cached data while rate limited');
 				return cache.get(cacheKey).data;
 			}
+
+			// If no cache, wait and retry once
+			if (waitTime > 0 && waitTime < 10000) {
+				// Only wait if less than 10 seconds
+				console.log(`⌛ Waiting ${waitTime}ms before retry...`);
+				await new Promise((resolve) => setTimeout(resolve, waitTime));
+				return fetchGPS(provider, ids, accessToken);
+			}
+
 			return { error: 'Rate limit exceeded' };
-		} else {
-			console.error('Network Error:', error.message);
-			return { error: 'Network Error' };
 		}
+
+		console.error('🔴 Network Error:', error.message);
+		return { error: 'Network Error' };
 	}
 };
 
