@@ -51,16 +51,15 @@ export async function loader({ params, request }) {
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, BarElement, LineElement, Title, Tooltip, Legend);
 
-// Move chart configuration to a separate file or component
-const chartConfig = {
-	responsive: true,
-	maintainAspectRatio: false,
-	height: 300,
-	animation: { duration: 0 },
-	elements: {
-		point: { radius: 0 },
-		line: { tension: 0.1 },
-	},
+// Add this helper function at the top of the file
+const formatTimestamp = (timestamp) => {
+	return new Date(timestamp * 1000)
+		.toLocaleTimeString('en-US', {
+			hour: 'numeric',
+			minute: '2-digit',
+			hour12: true,
+		})
+		.toUpperCase();
 };
 
 export default function ModemDetails() {
@@ -77,14 +76,19 @@ export default function ModemDetails() {
 
 	// Move useEffect here
 	useEffect(() => {
+		// Capture current ref values
+		const charts = {
+			usage: usageChartRef.current,
+			signal: signalQualityChartRef.current,
+			throughput: throughputChartRef.current,
+			latency: latencyChartRef.current,
+			obstruction: obstructionChartRef.current,
+			uptime: uptimeChartRef.current,
+		};
+
 		return () => {
-			// Cleanup code...
-			if (usageChartRef.current) usageChartRef.current.destroy();
-			if (signalQualityChartRef.current) signalQualityChartRef.current.destroy();
-			if (throughputChartRef.current) throughputChartRef.current.destroy();
-			if (latencyChartRef.current) latencyChartRef.current.destroy();
-			if (obstructionChartRef.current) obstructionChartRef.current.destroy();
-			if (uptimeChartRef.current) uptimeChartRef.current.destroy();
+			// Use captured values in cleanup
+			Object.values(charts).forEach((chart) => chart?.destroy());
 		};
 	}, []);
 
@@ -122,17 +126,20 @@ export default function ModemDetails() {
 		);
 	}
 
-	const latencyTimestamps = latencyData?.map?.((entry) => new Date(entry[0] * 1000).toLocaleTimeString()) || [];
+	// Then update all timestamp formatting:
+	const latencyTimestamps = latencyData?.map?.((entry) => formatTimestamp(entry[0])) || [];
+	const throughputTimestamps = throughputData.map((entry) => formatTimestamp(entry[0]));
+	const signalQualityLabels = signalQualityData.map((entry) => formatTimestamp(entry[0]));
+	const obstructionLabels = obstructionData.map((entry) => formatTimestamp(entry[0]));
+	const uptimeLabels = uptimeData.map((entry) => formatTimestamp(entry[0]));
+
 	const latencyValues = latencyData?.map?.((entry) => entry[1]) || [];
 
-	const throughputTimestamps = throughputData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
 	const throughputDownload = throughputData.map((entry) => entry[1]);
 	const throughputUpload = throughputData.map((entry) => entry[2]);
 
-	const signalQualityLabels = signalQualityData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
 	const signalQualityValues = signalQualityData.map((entry) => entry[1]);
 
-	const obstructionLabels = obstructionData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
 	const obstructionValues = obstructionData.map((entry) => entry[1] * 100);
 
 	// Filter and process usage data for the last 14 days
@@ -156,7 +163,6 @@ export default function ModemDetails() {
 			usageUnlimited.push(day.unlimited ?? 0);
 		});
 	}
-	const uptimeLabels = uptimeData.map((entry) => new Date(entry[0] * 1000).toLocaleTimeString());
 	const uptimeValues = uptimeData.map((entry) => Math.ceil((entry[1] / 86400) * 10) / 10);
 
 	// Set global defaults for Chart.js
@@ -362,7 +368,15 @@ export default function ModemDetails() {
 							width='300'
 							data={{
 								labels: signalQualityLabels,
-								datasets: [{ label: 'Signal Quality (%)', data: signalQualityValues }],
+								datasets: [
+									{
+										label: 'Signal Quality (%)',
+										data: signalQualityValues,
+										fill: true,
+										// backgroundColor: '#000',
+										borderColor: '#000',
+									},
+								],
 							}}
 							options={{
 								scales: {
@@ -384,8 +398,20 @@ export default function ModemDetails() {
 							data={{
 								labels: throughputTimestamps,
 								datasets: [
-									{ label: 'Download (Mbps)', data: throughputDownload },
-									{ label: 'Upload (Mbps)', data: throughputUpload },
+									{
+										label: 'Download (Mbps)',
+										data: throughputDownload,
+										fill: true,
+										backgroundColor: 'rgba(57, 134, 168, 0.2)', // Light blue with opacity
+										borderColor: '#3986a8',
+									},
+									{
+										label: 'Upload (Mbps)',
+										data: throughputUpload,
+										fill: true,
+										backgroundColor: 'rgba(75, 192, 192, 0.2)', // Different color for upload
+										borderColor: '#4bc0c0',
+									},
 								],
 							}}
 							options={{
