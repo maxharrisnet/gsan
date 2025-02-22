@@ -25,10 +25,6 @@ const Header = () => {
 		console.error('Header rendered without UserContext');
 		return null;
 	}
-	const { currentUser } = userContext;
-	const isProvider = currentUser?.role === 'provider';
-	const isGsanPage = path.includes('/gsan') || currentUser?.authType === 'shopify';
-	const providerType = isGsanPage ? 'gsan' : 'sonar';
 
 	return (
 		<header className='header'>
@@ -43,7 +39,10 @@ const Header = () => {
 				</div>
 				<nav className='nav'>
 					<ul className='nav-list'>
-						<li className='nav-item'>
+						<li
+							key='map'
+							className='nav-item'
+						>
 							<NavLink
 								to={`/map`}
 								className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
@@ -51,7 +50,10 @@ const Header = () => {
 								Map
 							</NavLink>
 						</li>
-						<li className='nav-item'>
+						<li
+							key='performance'
+							className='nav-item'
+						>
 							<NavLink
 								to={`/performance`}
 								className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
@@ -59,7 +61,10 @@ const Header = () => {
 								Performance
 							</NavLink>
 						</li>
-						<li className='nav-item'>
+						<li
+							key='reports'
+							className='nav-item'
+						>
 							<NavLink
 								to={`/reports/starlink/usage`}
 								className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}

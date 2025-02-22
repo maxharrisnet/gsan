@@ -185,10 +185,6 @@ a > .section:hover {
 	transition: background-color 0.3s;
 }
 
-.nav-item a:hover {
-	background-color: #e0e0e0;
-}
-
 .nav-link {
 	color: var(--color-text);
 	text-decoration: none;
@@ -199,7 +195,7 @@ a > .section:hover {
 
 .nav-link:hover,
 .nav-link.active {
-	background-color: var(--color-background-hover);
+	background-color: var(--color-background-light);
 	color: var(--color-primary);
 }
 

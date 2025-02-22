@@ -79,10 +79,10 @@ export function ErrorBoundary() {
 						<h1 className='error-heading'>{isRouteErrorResponse(error) ? `${error.status} ${error.statusText}` : 'Oops! Something went wrong'}</h1>
 						<div className='error-message'>{!isProd && <pre className='error-details'>{error.message || JSON.stringify(error, null, 2)}</pre>}</div>
 						<Link
-							to='/auth'
+							to='/map'
 							className='error-button'
 						>
-							Return to Login
+							Return to Dashboard
 						</Link>
 					</div>
 				</div>
