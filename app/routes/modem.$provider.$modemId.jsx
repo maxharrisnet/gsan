@@ -4,7 +4,7 @@ import { loader as modemApiLoader } from './api.modem';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
 import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, BarElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, BarElement, LineElement, Filler, Title, Tooltip, Legend } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import chartStyles from '../styles/charts.css?url';
 import modemStyles from '../styles/modem.css?url';
@@ -49,7 +49,7 @@ export async function loader({ params, request }) {
 	}
 }
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, BarElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, PointElement, BarElement, LineElement, Filler, Title, Tooltip, Legend);
 
 // Add this helper function at the top of the file
 const formatTimestamp = (timestamp) => {
@@ -350,8 +350,8 @@ export default function ModemDetails() {
 							data={{
 								labels: usageLabels,
 								datasets: [
-									{ label: 'Download (GB)', data: usagePriority },
-									{ label: 'Upload (GB)', data: usageUnlimited },
+									{ label: 'Download (GB)', data: usagePriority, fill: true, backgroundColor: '#3986a8', borderColor: '#3986a8', borderWidth: 2, borderJoinStyle: 'round' },
+									{ label: 'Upload (GB)', data: usageUnlimited, fill: true, backgroundColor: '#4bc0c0', borderColor: '#4bc0c0', borderWidth: 2, borderJoinStyle: 'round' },
 								],
 							}}
 							options={{
@@ -378,8 +378,10 @@ export default function ModemDetails() {
 										label: 'Signal Quality (%)',
 										data: signalQualityValues,
 										fill: true,
-										// backgroundColor: '#000',
-										borderColor: '#000',
+										backgroundColor: 'rgba(57, 134, 168, 0.2)',
+										borderColor: '#3986a8',
+										borderWidth: 2,
+										borderJoinStyle: 'round',
 									},
 								],
 							}}
@@ -407,22 +409,26 @@ export default function ModemDetails() {
 										label: 'Download (Mbps)',
 										data: throughputDownload,
 										fill: true,
-										backgroundColor: 'rgba(57, 134, 168, 0.2)', // Light blue with opacity
+										backgroundColor: 'rgba(57, 134, 168, 0.2)',
 										borderColor: '#3986a8',
+										borderWidth: 2,
+										borderJoinStyle: 'round',
 									},
 									{
 										label: 'Upload (Mbps)',
 										data: throughputUpload,
 										fill: true,
-										backgroundColor: 'rgba(75, 192, 192, 0.2)', // Different color for upload
+										backgroundColor: 'rgba(75, 192, 192, 0.2)',
 										borderColor: '#4bc0c0',
+										borderWidth: 2,
+										borderJoinStyle: 'round',
 									},
 								],
 							}}
 							options={{
 								scales: {
 									y: {
-										ticks: { callback: (value) => `${value}Mbps`, stepSize: 20 },
+										ticks: { callback: (value) => `${value}Mbps`, stepSize: 1 },
 										beginAtZero: true,
 									},
 								},
@@ -438,7 +444,7 @@ export default function ModemDetails() {
 							width='300'
 							data={{
 								labels: latencyTimestamps,
-								datasets: [{ label: 'Latency (ms)', data: latencyValues }],
+								datasets: [{ label: 'Latency (ms)', data: latencyValues, fill: true, backgroundColor: 'rgba(57, 134, 168, 0.2)', borderColor: '#3986a8', borderWidth: 2, borderJoinStyle: 'round' }],
 							}}
 							options={{
 								scales: {
@@ -459,7 +465,7 @@ export default function ModemDetails() {
 							width='300'
 							data={{
 								labels: obstructionLabels,
-								datasets: [{ label: 'Obstruction (%)', data: obstructionValues }],
+								datasets: [{ label: 'Obstruction (%)', data: obstructionValues, fill: true, backgroundColor: 'rgba(57, 134, 168, 0.2)', borderColor: '#3986a8', borderWidth: 2, borderJoinStyle: 'round' }],
 							}}
 							options={{
 								scales: {
@@ -480,7 +486,7 @@ export default function ModemDetails() {
 							width='300'
 							data={{
 								labels: uptimeLabels,
-								datasets: [{ label: 'Uptime (%)', data: uptimeValues }],
+								datasets: [{ label: 'Uptime (%)', data: uptimeValues, fill: true, backgroundColor: 'rgba(57, 134, 168, 0.2)', borderColor: '#3986a8', borderWidth: 2, borderJoinStyle: 'round' }],
 							}}
 							options={{
 								scales: {
