@@ -107,7 +107,7 @@ export default function ModemDetails() {
 							className='list-button back-link'
 						>
 							<span className='material-icons'>arrow_back</span>
-							Back to Map
+							<span>Back to Map</span>
 						</Link>
 					</div>
 				</Sidebar>
@@ -167,6 +167,11 @@ export default function ModemDetails() {
 	});
 
 	const uptimeValues = uptimeData.map((entry) => Math.ceil((entry[1] / 86400) * 10) / 10);
+
+	// Calculate total usage
+	const totalUsage = monthlyUsageData.reduce((sum, day) => {
+		return sum + (day.priority || 0) + (day.unlimited || 0);
+	}, 0);
 
 	// Set global defaults for Chart.js
 	ChartJS.defaults.global = {
@@ -353,6 +358,15 @@ export default function ModemDetails() {
 								],
 							}}
 							options={{
+								plugins: {
+									title: {
+										display: true,
+										text: [`Total Usage: ${totalUsage.toFixed(2)} GB`],
+										padding: { bottom: 30 },
+										font: { size: 12 },
+										color: '#666',
+									},
+								},
 								scales: {
 									y: {
 										ticks: { callback: (value) => `${value}GB`, stepSize: 5 },
@@ -447,7 +461,7 @@ export default function ModemDetails() {
 							options={{
 								scales: {
 									y: {
-										ticks: { callback: (value) => `${value}ms`, stepSize: 20 },
+										ticks: { callback: (value) => `${value}ms`, stepSize: 10 },
 										beginAtZero: true,
 									},
 								},
@@ -484,12 +498,12 @@ export default function ModemDetails() {
 							width='300'
 							data={{
 								labels: uptimeLabels,
-								datasets: [{ label: 'Uptime (%)', data: uptimeValues, fill: true, backgroundColor: 'rgba(57, 134, 168, 0.2)', borderColor: '#3986a8', borderWidth: 2, borderJoinStyle: 'round' }],
+								datasets: [{ label: 'Uptime (Days)', data: uptimeValues, fill: true, backgroundColor: 'rgba(57, 134, 168, 0.2)', borderColor: '#3986a8', borderWidth: 2, borderJoinStyle: 'round' }],
 							}}
 							options={{
 								scales: {
 									y: {
-										ticks: { callback: (value) => `${value}%`, stepSize: 20 },
+										ticks: { stepSize: 2 },
 										beginAtZero: true,
 									},
 								},

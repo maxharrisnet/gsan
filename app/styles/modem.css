@@ -50,6 +50,15 @@
 	box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
 }
 
+.chart-wrapper h2 {
+	font-size: var(--font-size-lg);
+	font-weight: 400;
+	background-color: var(--color-background);
+	padding: var(--spacing-base);
+	border-radius: var(--border-radius);
+	margin-bottom: var(--spacing-xxlarge);
+}
+
 /* Status Colors */
 .text-success {
 	color: var(--color-success);
