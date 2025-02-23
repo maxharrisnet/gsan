@@ -1,13 +1,10 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import { createContext, useState, useContext } from 'react';
 
 const UserContext = createContext();
 
 export const UserProvider = ({ children, initialUser, shop }) => {
 	const [currentUser, setCurrentUser] = useState(initialUser);
-
-	// Parse kits from user metafields
 	const userKits = currentUser?.metafields?.kits ? currentUser.metafields.kits.split(',').map((kit) => kit.trim()) : [];
-
 	const isProvider = currentUser?.metafields?.provider === 'true';
 
 	return (

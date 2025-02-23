@@ -18,36 +18,35 @@
 	--border-radius-full: 9999px;
 
 	/* Colors */
-	--color-primary: #000;
-	--color-secondary: #006fbb;
+	--color-primary: #3986a8;
+	--color-secondary: #4bc0c0;
 	--color-background: #f4f6f8;
 	--color-background-light: #e0e0e0;
 	--color-background-dark: #212b36;
 	--color-text: #212b36;
 	--color-text-light: #637381;
 	--color-border: #dfe3e8;
-	--color-success: #4caf50;
-	--color-warning: #ff9800;
-	--color-error: #f44336;
+	--color-success: #4bc08a;
+	--color-warning: #c08a4b;
+	--color-error: #c04b4b;
 
 	/* Original colors */
-	--wifi-green: #4caf50; /* A more vibrant green */
-
-	--monitor-blue: #2196f3; /* A more vibrant blue */
-	--phone-orange: #ff9800; /* A more vibrant orange */
-	--text-black: #212121; /* A slightly darker black */
-	--background-white: #ffffff; /* Keeping the white as is */
+	--wifi-green: #4bc08a;
+	--monitor-blue: #3986a8;
+	--phone-orange: #c08a4b;
+	--text-black: #212121;
+	--background-white: #ffffff;
 
 	/* Lighter colors */
-	--wifi-green-light: #a9d870;
-	--monitor-blue-light: #8bcff0;
-	--phone-orange-light: #f69263;
+	--wifi-green-light: #7dd0aa;
+	--monitor-blue-light: #69a6c8;
+	--phone-orange-light: #d0aa7d;
 	--text-black-light: #666666;
 
 	/* Darker colors */
-	--wifi-green-dark: #618c2e;
-	--monitor-blue-dark: #3986a8;
-	--phone-orange-dark: #c5522b;
+	--wifi-green-dark: #2a906a;
+	--monitor-blue-dark: #196688;
+	--phone-orange-dark: #906a2a;
 	--text-black-dark: #111111;
 
 	/* Shadows */

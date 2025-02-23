@@ -422,7 +422,7 @@ section {
 }
 
 .status-badge.online {
-	background-color: #4caf50;
+	background-color: #4bc08a;
 	color: white;
 }
 
@@ -435,7 +435,7 @@ section {
 .latency-bar {
 	height: 100%;
 	width: 100%;
-	background-color: #4caf50;
+	background-color: #4bc08a;
 	border-radius: 4px;
 	position: relative;
 	cursor: pointer;

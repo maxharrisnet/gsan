@@ -101,7 +101,7 @@ export default function ModemDetails() {
 			<Layout>
 				<Sidebar>
 					<div className='dashboard-sidebar'>
-						<h2 className='select-device-heading'>Select a Device</h2>
+						<h2 className='select-device-heading'>{modem?.name}</h2>
 						<Link
 							to='/map'
 							className='list-button back-link'
@@ -235,7 +235,6 @@ export default function ModemDetails() {
 	ChartJS.defaults.elements.line.borderWidth = 1;
 	ChartJS.defaults.elements.line.fill = true;
 
-	// Helper function to render a chart section with error handling
 	const renderChartSection = (title, data, chart, errorKey) => {
 		if (errors[errorKey]) {
 			return (
@@ -273,7 +272,7 @@ export default function ModemDetails() {
 		<Layout>
 			<Sidebar>
 				<div className='dashboard-sidebar'>
-					<h2 className='select-device-heading'>Select a Device</h2>
+					<h2 className='select-device-heading'>{modem?.name}</h2>
 					<Link
 						to={`/map`}
 						className='list-button back-link'
@@ -360,12 +359,13 @@ export default function ModemDetails() {
 										height='100'
 										width='300'
 										data={{
-											labels: [`Current Usage: ${totalUsageGB} GB`, `Monthly Limit: ${usageLimitGB} GB`],
+											labels: [`Usage: ${totalUsageGB} GB`, `Monthly Limit: ${usageLimitGB} GB`],
 											datasets: [
 												{
 													data: [parseFloat(totalUsageGB), Math.max(parseFloat(usageLimitGB) - parseFloat(totalUsageGB), 0)],
 													backgroundColor: ['#3986a8', '#f3f4f6'],
 													borderWidth: 0,
+													radius: '80%',
 												},
 											],
 										}}
@@ -374,7 +374,7 @@ export default function ModemDetails() {
 											plugins: {
 												legend: {
 													display: true,
-													position: 'bottom',
+													position: 'top',
 													labels: {
 														padding: 20,
 														usePointStyle: true,
@@ -392,8 +392,7 @@ export default function ModemDetails() {
 									/>
 								</div>
 								<div className='usage-disclaimer'>
-									<p>Data usage for current month.</p>
-									<p>Data usage tracking is not immediate and may be delayed by 24 hours or more.</p>
+									<p>Data usage for current month. Data usage tracking is not immediate and may be delayed by 24 hours or more.</p>
 								</div>
 							</div>,
 							'usageOverview'
@@ -413,6 +412,7 @@ export default function ModemDetails() {
 												data: [signalQualityData[signalQualityData.length - 1]?.[1] || 0, 100 - (signalQualityData[signalQualityData.length - 1]?.[1] || 0)],
 												backgroundColor: ['#4bc0c0', '#f3f4f6'],
 												borderWidth: 0,
+												radius: '80%',
 											},
 										],
 									}}
@@ -421,7 +421,7 @@ export default function ModemDetails() {
 										plugins: {
 											legend: {
 												display: true,
-												position: 'bottom',
+												position: 'top',
 												labels: {
 													padding: 20,
 													usePointStyle: true,
