@@ -249,3 +249,34 @@
 	font-size: 0.9rem;
 	margin: 0;
 }
+
+/* Usage Stats Section */
+.usage-stats {
+	margin-bottom: var(--spacing-large);
+}
+
+.usage-numbers {
+	display: flex;
+	justify-content: space-between;
+	margin-bottom: var(--spacing-base);
+	font-weight: 600;
+}
+
+.usage-current {
+	color: var(--color-primary);
+}
+
+.usage-limit {
+	color: var(--color-secondary);
+}
+
+.usage-disclaimer {
+	margin-top: var(--spacing-base);
+	font-size: var(--font-size-small);
+	color: var(--color-text-light);
+	text-align: left;
+}
+
+.usage-disclaimer p {
+	margin: 0 0 var(--spacing-small) 0;
+}

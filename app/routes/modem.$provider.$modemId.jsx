@@ -4,8 +4,8 @@ import { loader as modemApiLoader } from './api.modem';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
 import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, BarElement, LineElement, Filler, Title, Tooltip, Legend } from 'chart.js';
-import { Line, Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, BarElement, LineElement, Filler, Title, Tooltip, Legend, ArcElement } from 'chart.js';
+import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import chartStyles from '../styles/charts.css?url';
 import modemStyles from '../styles/modem.css?url';
 import { useUser } from '../context/UserContext';
@@ -41,7 +41,7 @@ export async function loader({ params, request }) {
 		// Return both sets of data
 		return defer({
 			servicesData: servicesPromise,
-			...modemData, // This spreads all the existing modem data (modem, mapsAPIKey, gpsData, etc.)
+			...modemData,
 		});
 	} catch (error) {
 		console.error('🚨 Error in loader:', error);
@@ -49,7 +49,7 @@ export async function loader({ params, request }) {
 	}
 }
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, BarElement, LineElement, Filler, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, PointElement, BarElement, LineElement, Filler, Title, Tooltip, Legend, ArcElement);
 
 // Update the timestamp formatting function
 const formatTimestamp = (timestamp) => {
@@ -168,10 +168,16 @@ export default function ModemDetails() {
 
 	const uptimeValues = uptimeData.map((entry) => Math.ceil((entry[1] / 86400) * 10) / 10);
 
-	// Calculate total usage
+	// Update the usage calculations to be consistent
 	const totalUsage = monthlyUsageData.reduce((sum, day) => {
-		return sum + (day.priority || 0) + (day.unlimited || 0);
+		return sum + (parseFloat(day.priority) || 0) + (parseFloat(day.unlimited) || 0);
 	}, 0);
+
+	// First, get the usage limit from modem data
+	const usageLimit = modem?.meta?.usageLimit || 0;
+
+	const totalUsageGB = totalUsage.toFixed(2); // Use the same totalUsage value
+	const usageLimitGB = (usageLimit || 0).toFixed(2);
 
 	// Set global defaults for Chart.js
 	ChartJS.defaults.global = {
@@ -347,34 +353,44 @@ export default function ModemDetails() {
 					{renderChartSection(
 						'Usage',
 						usageData,
-						<Bar
-							height='100'
-							width='300'
-							data={{
-								labels: usageLabels,
-								datasets: [
-									{ label: 'Download (GB)', data: usagePriority, fill: true, backgroundColor: '#3986a8', borderColor: '#3986a8', borderWidth: 2, borderJoinStyle: 'round' },
-									{ label: 'Upload (GB)', data: usageUnlimited, fill: true, backgroundColor: '#4bc0c0', borderColor: '#4bc0c0', borderWidth: 2, borderJoinStyle: 'round' },
-								],
-							}}
-							options={{
-								plugins: {
-									title: {
-										display: true,
-										text: [`Total Usage: ${totalUsage.toFixed(2)} GB`],
-										padding: { bottom: 30 },
-										font: { size: 12 },
-										color: '#666',
-									},
-								},
-								scales: {
-									y: {
-										ticks: { callback: (value) => `${value}GB`, stepSize: 5 },
-										beginAtZero: true,
-									},
-								},
-							}}
-						/>,
+						<div className='usage-section'>
+							<div className='usage-stats'>
+								<div className='usage-chart'>
+									<Bar
+										height='100'
+										width='300'
+										data={{
+											labels: usageLabels,
+											datasets: [
+												{ label: 'Download (GB)', data: usagePriority, fill: true, backgroundColor: '#3986a8', borderColor: '#3986a8', borderWidth: 2, borderJoinStyle: 'round' },
+												{ label: 'Upload (GB)', data: usageUnlimited, fill: true, backgroundColor: '#4bc0c0', borderColor: '#4bc0c0', borderWidth: 2, borderJoinStyle: 'round' },
+											],
+										}}
+										options={{
+											plugins: {
+												title: {
+													display: true,
+													text: [`Total Usage: ${totalUsage.toFixed(2)} GB`],
+													padding: { bottom: 30 },
+													font: { size: 12 },
+													color: '#666',
+												},
+											},
+											scales: {
+												y: {
+													ticks: { callback: (value) => `${value}GB`, stepSize: 5 },
+													beginAtZero: true,
+												},
+											},
+										}}
+									/>
+								</div>
+								<div className='usage-disclaimer'>
+									<p>Data usage for current month.</p>
+									<p>Data usage tracking is not immediate and may be delayed by 24 hours or more. Counting shown is for informational purposes only and final overages reflected in monthly invoice are accurate.</p>
+								</div>
+							</div>
+						</div>,
 						'usage'
 					)}
 					{renderChartSection(
@@ -510,6 +526,60 @@ export default function ModemDetails() {
 							}}
 						/>,
 						'uptime'
+					)}
+					{renderChartSection(
+						'Usage Overview',
+						usageData,
+						<div className='usage-section'>
+							<div className='usage-stats'>
+								<div className='usage-chart'>
+									<Doughnut
+										height='100'
+										width='300'
+										data={{
+											labels: [`Current Usage: ${totalUsageGB} GB`, `Monthly Limit: ${usageLimitGB} GB`],
+											datasets: [
+												{
+													data: [parseFloat(totalUsageGB), Math.max(parseFloat(usageLimitGB) - parseFloat(totalUsageGB), 0)],
+													backgroundColor: ['#3986a8', '#f3f4f6'],
+													borderWidth: 0,
+												},
+											],
+										}}
+										options={{
+											cutout: '70%',
+											plugins: {
+												legend: {
+													display: true,
+													position: 'bottom',
+													labels: {
+														padding: 20,
+														usePointStyle: true,
+														pointStyle: 'circle',
+														font: {
+															size: 14,
+														},
+													},
+												},
+												tooltip: {
+													callbacks: {
+														label: (context) => {
+															const label = context.label;
+															return label;
+														},
+													},
+												},
+											},
+										}}
+									/>
+								</div>
+								<div className='usage-disclaimer'>
+									<p>Data usage for current month.</p>
+									<p>Data usage tracking is not immediate and may be delayed by 24 hours or more. Counting shown is for informational purposes only and final overages reflected in monthly invoice are accurate.</p>
+								</div>
+							</div>
+						</div>,
+						'usageOverview'
 					)}
 				</div>
 			</main>
