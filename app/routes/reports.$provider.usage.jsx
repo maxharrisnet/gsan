@@ -53,24 +53,20 @@ const ReportsContent = ({ services }) => {
 			.map((modem) => {
 				const details = modem?.details || {};
 				const data = details?.data || {};
-				const meta = modem?.meta || {};
-
-				// Use the new status field
+				const meta = modem?.details?.meta || {};
 				const status = modem.status || 'offline';
 
 				// Extract data with proper type checking
 				const latencyData = Array.isArray(data?.latency?.data) ? data.latency.data : [];
 				const throughputData = data?.throughput?.data || {};
 				const signalQualityData = Array.isArray(data?.signal?.data) ? data.signal.data : [];
+
+				// Usage Data
 				const usageData = Array.isArray(details?.usage) ? details.usage : [];
-				console.log('🍎 usageData:', usageData);
-				// Calculate totals with safe array operations
 				const totalPriority = usageData.reduce((sum, u) => sum + (Number(u?.priority) || 0), 0).toFixed(2);
-				const totalStandard = usageData.reduce((sum, u) => sum + (Number(u?.standard) || 0), 0).toFixed(2);
-				console.log('🍎 totalPriority:', totalPriority);
-				console.log('🍎 totalStandard:', totalStandard);
-				// Get usage limit with fallback
+				const totalStandard = usageData.reduce((sum, u) => sum + (Number(u?.unlimited) || 0), 0).toFixed(2);
 				const usageLimit = Number(meta?.usageLimit) || 0;
+				console.log('🍎 usageLimit:', usageLimit);
 				const dataOverage = Math.max(0, parseFloat(totalPriority) + parseFloat(totalStandard) - usageLimit).toFixed(2);
 
 				// Calculate averages with safe data access
@@ -100,7 +96,6 @@ const ReportsContent = ({ services }) => {
 
 	console.log('🍎 flattenedData:', flattenedData);
 
-	// Add check for empty data after filtering
 	if (flattenedData.length === 0) {
 		return (
 			<div className='no-data-message'>

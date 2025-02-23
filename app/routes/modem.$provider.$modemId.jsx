@@ -195,16 +195,17 @@ export default function ModemDetails() {
 
 	const uptimeValues = uptimeData.map((entry) => Math.ceil((entry[1] / 86400) * 10) / 10);
 
-	// Update the usage calculations to be consistent
+	// Update the usage calculations to properly parse the usage limit
+	const usageLimit = parseFloat(modem?.meta?.usageLimit) || 0;
 	const totalUsage = monthlyUsageData.reduce((sum, day) => {
 		return sum + (parseFloat(day.priority) || 0) + (parseFloat(day.unlimited) || 0);
 	}, 0);
 
-	// First, get the usage limit from modem data
-	const usageLimit = modem?.meta?.usageLimit || 0;
+	const totalUsageGB = totalUsage.toFixed(2);
+	const usageLimitGB = usageLimit.toFixed(2);
 
-	const totalUsageGB = totalUsage.toFixed(2); // Use the same totalUsage value
-	const usageLimitGB = (usageLimit || 0).toFixed(2);
+	// Add a log to verify the parsed values
+	console.log('🔍 Usage Limit:', usageLimit, 'Total Usage:', totalUsage);
 
 	// Set global defaults for Chart.js
 	ChartJS.defaults.global = {
@@ -374,7 +375,14 @@ export default function ModemDetails() {
 								gestureHandling={'greedy'}
 								disableDefaultUI={true}
 							>
-								<Marker position={mapPosition} />
+								<Marker
+									position={mapPosition}
+									icon={{
+										url: `/assets/images/markers/pin-${modem.status || 'offline'}.svg`,
+										scaledSize: { width: 32, height: 40 },
+										anchor: { x: 16, y: 40 },
+									}}
+								/>
 							</Map>
 						</APIProvider>
 					</section>

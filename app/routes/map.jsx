@@ -37,7 +37,6 @@ export async function loader({ request }) {
 
 		// Fetch both GPS and status data for all modems
 		const [gpsResults, statusResults] = await Promise.all([
-			// Existing GPS fetch
 			Promise.all(
 				Object.entries(modemsByProvider).map(async ([provider, ids]) => {
 					try {
@@ -49,7 +48,7 @@ export async function loader({ request }) {
 					}
 				})
 			),
-			// New status fetch
+
 			Promise.all(
 				Object.entries(modemsByProvider).flatMap(([provider, ids]) =>
 					ids.map(async (modemId) => {
@@ -69,16 +68,13 @@ export async function loader({ request }) {
 			),
 		]);
 
-		// Combine GPS data
 		const gpsData = gpsResults.reduce((acc, { data }) => ({ ...acc, ...data }), {});
 
-		// Create status lookup
 		const statusLookup = statusResults.reduce((acc, { modemId, status }) => {
 			acc[modemId] = status;
 			return acc;
 		}, {});
 
-		// Update services with status information
 		const servicesWithStatus = services.map((service) => ({
 			...service,
 			modems: service.modems?.map((modem) => ({
@@ -105,7 +101,6 @@ export default function Dashboard() {
 	const { userKits } = useUser();
 	const [selectedModem, setSelectedModem] = useState(null);
 
-	// Memoize the filtered and processed modem locations
 	const modemLocations = useMemo(() => {
 		if (!servicesData?.services) return [];
 
@@ -136,14 +131,14 @@ export default function Dashboard() {
 	// Update mapConfig to include North America bounds
 	const mapConfig = useMemo(
 		() => ({
-			center: modemLocations[0]?.position || { lat: 39.8283, lng: -98.5795 }, // Center of US
+			center: modemLocations[0]?.position || { lat: 56.1304, lng: -106.3468 }, // Center of Canada
 			zoom: modemLocations[0]?.position ? 6 : 4,
 			restriction: {
 				latLngBounds: {
-					north: 70, // Northern Canada
-					south: 15, // Southern Mexico
-					west: -170, // Alaska
-					east: -50, // Eastern Canada
+					north: 83.5, // Northern edge of Canadian territory (including Arctic islands)
+					south: 41.7, // Southern edge of Canada
+					west: -141, // Western edge of Canada (Alaska border)
+					east: -52.6, // Eastern edge of Canada (Newfoundland)
 				},
 				strictBounds: true,
 			},
