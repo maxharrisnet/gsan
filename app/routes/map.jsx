@@ -4,6 +4,7 @@ import { useLoaderData, Await, Link } from '@remix-run/react';
 import { Suspense, useState, useEffect, useMemo } from 'react';
 import { fetchServicesAndModemData, getCompassAccessToken } from '../compass.server';
 import { fetchGPS } from './api.gps';
+import { loader as modemApiLoader } from './api.modem';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -20,8 +21,6 @@ export async function loader({ request }) {
 	try {
 		const accessToken = await getCompassAccessToken();
 		const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
-
-		// Get services data first
 		const { services } = await fetchServicesAndModemData();
 
 		// Group modem IDs by provider to minimize GPS API calls
@@ -36,23 +35,62 @@ export async function loader({ request }) {
 			return acc;
 		}, {});
 
-		// Batch GPS requests by provider
-		const gpsData = await Promise.all(
-			Object.entries(modemsByProvider).map(async ([provider, ids]) => {
-				try {
-					const data = await fetchGPS(provider, ids, accessToken);
-					return { provider, data };
-				} catch (error) {
-					console.error(`🚨 GPS fetch error for ${provider}:`, error);
-					return { provider, data: {} };
-				}
-			})
-		);
+		// Fetch both GPS and status data for all modems
+		const [gpsResults, statusResults] = await Promise.all([
+			// Existing GPS fetch
+			Promise.all(
+				Object.entries(modemsByProvider).map(async ([provider, ids]) => {
+					try {
+						const data = await fetchGPS(provider, ids, accessToken);
+						return { provider, data };
+					} catch (error) {
+						console.error(`🚨 GPS fetch error for ${provider}:`, error);
+						return { provider, data: {} };
+					}
+				})
+			),
+			// New status fetch
+			Promise.all(
+				Object.entries(modemsByProvider).flatMap(([provider, ids]) =>
+					ids.map(async (modemId) => {
+						try {
+							const modemResponse = await modemApiLoader({
+								params: { provider, modemId },
+								request,
+							});
+							const data = await modemResponse.json();
+							return { modemId, status: data.status };
+						} catch (error) {
+							console.error(`🔴 Error fetching status for modem ${modemId}:`, error);
+							return { modemId, status: 'offline' };
+						}
+					})
+				)
+			),
+		]);
+
+		// Combine GPS data
+		const gpsData = gpsResults.reduce((acc, { data }) => ({ ...acc, ...data }), {});
+
+		// Create status lookup
+		const statusLookup = statusResults.reduce((acc, { modemId, status }) => {
+			acc[modemId] = status;
+			return acc;
+		}, {});
+
+		// Update services with status information
+		const servicesWithStatus = services.map((service) => ({
+			...service,
+			modems: service.modems?.map((modem) => ({
+				...modem,
+				status: statusLookup[modem.id] || 'offline',
+			})),
+		}));
 
 		return defer({
 			servicesData: {
-				services,
-				gpsData: gpsData.reduce((acc, { data }) => ({ ...acc, ...data }), {}),
+				services: servicesWithStatus,
+				gpsData,
 			},
 			googleMapsApiKey,
 		});
@@ -71,16 +109,18 @@ export default function Dashboard() {
 	const modemLocations = useMemo(() => {
 		if (!servicesData?.services) return [];
 
+		const showAllModems = userKits.includes('ALL');
+
 		return servicesData.services.flatMap((service) =>
 			(service.modems || [])
-				.filter((modem) => userKits.includes(modem.id))
+				.filter((modem) => showAllModems || userKits.includes(modem.id))
 				.map((modem) => {
 					const gpsInfo = servicesData.gpsData?.[modem.id]?.[0];
 					return gpsInfo
 						? {
 								id: modem.id,
 								name: modem.name,
-								status: modem.status,
+								status: modem.status || 'offline',
 								type: modem.type,
 								position: {
 									lat: parseFloat(gpsInfo.lat),
@@ -93,11 +133,20 @@ export default function Dashboard() {
 		);
 	}, [servicesData, userKits]);
 
-	// Memoize map center and zoom
+	// Update mapConfig to include North America bounds
 	const mapConfig = useMemo(
 		() => ({
-			center: modemLocations[0]?.position || { lat: 39.8283, lng: -98.5795 },
-			zoom: modemLocations[0]?.position ? 6 : 2,
+			center: modemLocations[0]?.position || { lat: 39.8283, lng: -98.5795 }, // Center of US
+			zoom: modemLocations[0]?.position ? 6 : 4,
+			restriction: {
+				latLngBounds: {
+					north: 70, // Northern Canada
+					south: 15, // Southern Mexico
+					west: -170, // Alaska
+					east: -50, // Eastern Canada
+				},
+				strictBounds: true,
+			},
 		}),
 		[modemLocations]
 	);
@@ -135,12 +184,13 @@ export default function Dashboard() {
 						<Await resolve={servicesData}>
 							{(resolvedData) => {
 								const { services } = resolvedData;
+								const showAllModems = userKits.includes('ALL');
 
 								// Filter modems based on userKits
 								const filteredServices = services
 									.map((service) => ({
 										...service,
-										modems: service.modems?.filter((modem) => userKits.includes(modem.id)) || [],
+										modems: service.modems?.filter((modem) => showAllModems || userKits.includes(modem.id)) || [],
 									}))
 									.filter((service) => service.modems.length > 0);
 
@@ -158,6 +208,10 @@ export default function Dashboard() {
 														prefetch='intent'
 													>
 														<span className='modem-name'>{modem.name}</span>
+														<span
+															className={`status-indicator ${modem.status || 'offline'}`}
+															title={`Status: ${modem.status || 'offline'}`}
+														/>
 														<span className='modem-chevron material-icons'>chevron_right</span>
 													</Link>
 												</li>
@@ -203,6 +257,8 @@ export default function Dashboard() {
 														defaultZoom={mapConfig.zoom}
 														gestureHandling={'greedy'}
 														disableDefaultUI={false}
+														restriction={mapConfig.restriction}
+														minZoom={3} // Prevent zooming out too far
 													>
 														{modemLocations.map((modem) => (
 															<Marker
@@ -210,7 +266,7 @@ export default function Dashboard() {
 																position={modem.position}
 																title={modem.name}
 																icon={{
-																	url: `/assets/images/markers/pin-online.svg`,
+																	url: `/assets/images/markers/pin-${modem.status || 'offline'}.svg`,
 																	scaledSize: { width: 32, height: 40 },
 																	anchor: { x: 16, y: 40 },
 																}}

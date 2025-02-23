@@ -49,15 +49,14 @@ const ReportsContent = ({ services }) => {
 
 	const flattenedData = services.flatMap((service) =>
 		service.modems
-			.filter((modem) => userKits.includes(modem.id))
+			.filter((modem) => userKits.includes('ALL') || userKits.includes(modem.id))
 			.map((modem) => {
-				// Safely access nested data with null checks
 				const details = modem?.details || {};
-				console.log('🍎 details:', details);
 				const data = details?.data || {};
-				console.log('🍎 data:', data);
 				const meta = modem?.meta || {};
-				console.log('🍎 meta:', meta);
+
+				// Use the new status field
+				const status = modem.status || 'offline';
 
 				// Extract data with proper type checking
 				const latencyData = Array.isArray(data?.latency?.data) ? data.latency.data : [];
@@ -85,7 +84,7 @@ const ReportsContent = ({ services }) => {
 
 				return {
 					Service: service?.name || 'Unknown',
-					Status: details?.status || 'Unknown',
+					Status: status.charAt(0).toUpperCase() + status.slice(1), // Capitalize status
 					Kit: modem?.id || 'Unknown',
 					PriorityData: totalPriority,
 					StandardData: totalStandard,
@@ -193,6 +192,15 @@ const ReportsContent = ({ services }) => {
 									formula: "#value = 'Online'",
 									format: {
 										backgroundColor: '#4bc08a',
+										color: 'white',
+										fontFamily: 'Arial',
+										fontSize: '12px',
+									},
+								},
+								{
+									formula: "#value = 'Offline'",
+									format: {
+										backgroundColor: '#dc3545',
 										color: 'white',
 										fontFamily: 'Arial',
 										fontSize: '12px',

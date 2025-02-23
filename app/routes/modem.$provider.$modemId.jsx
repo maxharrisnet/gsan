@@ -24,15 +24,49 @@ export const links = () => [
 
 export async function loader({ params, request }) {
 	try {
-		// Get modem details from the existing API loader
+		// Get current modem details from the existing API loader
 		const modemDetails = await modemApiLoader({ params, request });
 		const modemData = await modemDetails.json();
 
 		// Fetch services data
 		const servicesPromise = fetchServicesAndModemData()
-			.then(({ services }) => ({
-				services,
-			}))
+			.then(async ({ services }) => {
+				// Get status for all modems
+				const modemStatuses = {};
+
+				// Parallel fetch status for all modems
+				await Promise.all(
+					services.flatMap((service) =>
+						(service.modems || []).map(async (modemItem) => {
+							try {
+								const modemResponse = await modemApiLoader({
+									params: {
+										provider: params.provider,
+										modemId: modemItem.id,
+									},
+									request,
+								});
+								const data = await modemResponse.json();
+								modemStatuses[modemItem.id] = data.status;
+							} catch (error) {
+								console.error(`🔴 Error fetching status for modem ${modemItem.id}:`, error);
+								modemStatuses[modemItem.id] = 'offline';
+							}
+						})
+					)
+				);
+
+				// Update all modems with their status
+				const updatedServices = services.map((service) => ({
+					...service,
+					modems: service.modems?.map((modemItem) => ({
+						...modemItem,
+						status: modemStatuses[modemItem.id] || 'offline',
+					})),
+				}));
+
+				return { services: updatedServices };
+			})
 			.catch((error) => {
 				console.error('🍎 Error fetching services:', error);
 				return { services: [] };
@@ -56,15 +90,15 @@ const formatTimestamp = (timestamp) => {
 	return new Date(timestamp * 1000).toLocaleTimeString('en-US', {
 		hour: 'numeric',
 		minute: '2-digit',
-		hour12: false, // This will use 24-hour format
+		hour12: true,
 	});
 };
 
 export default function ModemDetails() {
-	const { modem = {}, mapsAPIKey, gpsData = [], latencyData = [], throughputData = [], signalQualityData = [], obstructionData = [], usageData = [], uptimeData = [], errors = {}, servicesData } = useLoaderData();
+	const { modem = {}, modemStatus = 'offline', mapsAPIKey, gpsData = [], latencyData = [], throughputData = [], signalQualityData = [], obstructionData = [], usageData = [], uptimeData = [], errors = {}, servicesData } = useLoaderData();
 	const { userKits } = useUser();
-
-	// Move all useRef hooks here
+	console.log('🍎 modem:', modem);
+	console.log('🍎 modemStatus:', modemStatus);
 	const usageChartRef = useRef(null);
 	const signalQualityChartRef = useRef(null);
 	const throughputChartRef = useRef(null);
@@ -72,9 +106,7 @@ export default function ModemDetails() {
 	const obstructionChartRef = useRef(null);
 	const uptimeChartRef = useRef(null);
 
-	// Move useEffect here
 	useEffect(() => {
-		// Capture current ref values
 		const charts = {
 			usage: usageChartRef.current,
 			signal: signalQualityChartRef.current,
@@ -90,10 +122,7 @@ export default function ModemDetails() {
 		};
 	}, []);
 
-	// Check if we have any data at all
 	const hasNoData = !modem?.data && !gpsData.length;
-
-	// Fix map rendering
 	const mapPosition = gpsData?.[0] ? { lat: parseFloat(gpsData[0].lat), lng: parseFloat(gpsData[0].lon) } : { lat: 39.8283, lng: -98.5795 }; // Default to US center
 
 	if (hasNoData) {
@@ -124,7 +153,6 @@ export default function ModemDetails() {
 		);
 	}
 
-	// Then update all timestamp formatting:
 	const latencyTimestamps = latencyData?.map?.((entry) => formatTimestamp(entry[0])) || [];
 	const throughputTimestamps = throughputData.map((entry) => formatTimestamp(entry[0]));
 	const signalQualityLabels = signalQualityData.map((entry) => formatTimestamp(entry[0]));
@@ -140,7 +168,6 @@ export default function ModemDetails() {
 
 	const obstructionValues = obstructionData.map((entry) => entry[1] * 100);
 
-	// Replace the current usage data filtering with this:
 	const currentDate = new Date();
 	const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
 
@@ -286,11 +313,10 @@ export default function ModemDetails() {
 							{(resolvedData) => {
 								const { services } = resolvedData;
 
-								// Filter modems based on userKits
 								const filteredServices = services
 									.map((service) => ({
 										...service,
-										modems: service.modems?.filter((modem) => userKits.includes(modem.id)) || [],
+										modems: service.modems?.filter((modem) => userKits.includes('ALL') || userKits.includes(modem.id)) || [],
 									}))
 									.filter((service) => service.modems.length > 0);
 
@@ -300,14 +326,19 @@ export default function ModemDetails() {
 											service.modems?.map((modemItem) => (
 												<li
 													key={modemItem.id}
-													className={`modem-item ${modemItem.id === modem.id ? 'active' : ''} status-${modemItem.status?.toLowerCase()}`}
+													className={`modem-item ${modemItem.id === modem.id ? 'active' : ''} status-${modemItem.status || 'offline'}`}
 												>
+													{console.log('🍎 modemItem:', modemItem)}
 													<Link
 														className='list-button'
 														to={`/modem/${modemItem.type.toLowerCase()}/${modemItem.id}`}
 														prefetch='intent'
 													>
 														<span className='modem-name'>{modemItem.name}</span>
+														<span
+															className={`status-indicator ${modemItem.status || 'offline'}`}
+															title={`Status: ${modemItem.status || 'offline'}`}
+														/>
 														<span className='modem-chevron material-icons'>chevron_right</span>
 													</Link>
 												</li>

@@ -192,6 +192,22 @@ body .material-icons {
 	color: var(--color-muted);
 }
 
+.list-button > span.status-indicator {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	flex: 0 0 8px;
+}
+
+.status-indicator.online {
+	background-color: var(--color-success);
+}
+
+.status-indicator.offline {
+	background-color: var(--color-error);
+}
+
 /* Buttons */
 
 .button-wrapper {
@@ -227,6 +243,7 @@ button:hover,
 	color: var(--color-text);
 	line-height: 1.2;
 	display: flex;
+	align-items: center;
 	padding: var(--spacing-large) var(--spacing-base);
 	gap: var(--spacing-base);
 	border-bottom: 1px solid var(--color-border);

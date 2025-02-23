@@ -23,20 +23,20 @@ export async function loader({ request }) {
 		const accessToken = await getCompassAccessToken();
 		const servicesPromise = fetchServicesAndModemData()
 			.then(async ({ services }) => {
-				// Filter services to only include modems that match user's kits
+				// If userKits includes 'ALL', return all services without filtering
+				if (userKits.includes('ALL')) {
+					return { services };
+				}
+
+				// Otherwise, filter services as before
 				const filteredServices = services
 					.map((service) => ({
 						...service,
-						modems: service.modems.filter((modem) => {
-							const matches = userKits.includes(modem.id);
-							return matches;
-						}),
+						modems: service.modems.filter((modem) => userKits.includes(modem.id)),
 					}))
-					.filter((service) => service.modems.length > 0); // Remove services with no matching modems
+					.filter((service) => service.modems.length > 0);
 
-				return {
-					services: filteredServices,
-				};
+				return { services: filteredServices };
 			})
 			.catch((error) => {
 				console.error('🍎 Error in services promise chain:', error);

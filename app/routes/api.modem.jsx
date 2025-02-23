@@ -3,6 +3,23 @@ import axios from 'axios';
 import { getCompassAccessToken } from '../compass.server';
 import fetchGPS from './api.gps';
 
+const determineModemStatus = (modemData) => {
+	const hasRecentData = (data) => {
+		if (!Array.isArray(data) || !data.length) return false;
+		const lastTimestamp = data[data.length - 1]?.[0];
+		if (!lastTimestamp) return false;
+		// Check if last data point is within the last hour
+		return Date.now() / 1000 - lastTimestamp < 3600;
+	};
+
+	const latencyData = modemData?.data?.latency?.data || [];
+	const throughputData = modemData?.data?.throughput?.data || [];
+	const signalData = modemData?.data?.signal?.data || [];
+
+	// Modem is considered online if it has recent data in any of these metrics
+	return hasRecentData(latencyData) || hasRecentData(throughputData) || hasRecentData(signalData) ? 'online' : 'offline';
+};
+
 export const loader = async ({ params }) => {
 	const { provider, modemId } = params;
 
@@ -20,6 +37,10 @@ export const loader = async ({ params }) => {
 
 		const modem = modemResponse.data;
 		// console.log('💰 Modem response:', modem);
+
+		const currentStatus = determineModemStatus(modem);
+		modem.status = currentStatus;
+		console.log('💰 Modem status:', currentStatus);
 
 		const latencyData = modem.data.latency.data || [];
 		const throughputData = modem.data.throughput.data || [];
@@ -42,6 +63,7 @@ export const loader = async ({ params }) => {
 			obstructionData,
 			usageData,
 			uptimeData,
+			status: currentStatus,
 		};
 
 		if (!modemDetails) {
