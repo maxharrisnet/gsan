@@ -54,28 +54,42 @@ const ReportsContent = ({ services }) => {
 				const details = modem?.details || {};
 				const data = details?.data || {};
 				const meta = modem?.details?.meta || {};
-				const status = modem.status || 'offline';
-
-				// Extract data with proper type checking
 				const latencyData = Array.isArray(data?.latency?.data) ? data.latency.data : [];
-				const throughputData = data?.throughput?.data || {};
-				const signalQualityData = Array.isArray(data?.signal?.data) ? data.signal.data : [];
+				// Check if there's any recent latency data (within last hour)
+				const hasRecentLatencyData = latencyData.some((dataPoint) => {
+					const timestamp = dataPoint?.[0];
+					console.log('🎯 Timestamp:', timestamp);
+					if (!timestamp) return false;
+					// Convert seconds to milliseconds for JavaScript Date
+					const dataTime = new Date(timestamp * 1000);
+					const oneHourAgo = new Date(Date.now() - 3600000); // 1 hour in milliseconds
+					console.log('🎯 Data time:', dataTime.toISOString());
+					console.log('🎯 One hour ago:', oneHourAgo.toISOString());
+					return dataTime > oneHourAgo;
+				});
+
+				const status = hasRecentLatencyData ? 'online' : 'offline';
+				console.log('🎯 Latency data exists:', !!latencyData.length);
+				console.log('🎯 Has recent data:', hasRecentLatencyData);
+				console.log('🎯 Final status:', status);
 
 				// Usage Data
 				const usageData = Array.isArray(details?.usage) ? details.usage : [];
 				const totalPriority = usageData.reduce((sum, u) => sum + (Number(u?.priority) || 0), 0).toFixed(2);
 				const totalStandard = usageData.reduce((sum, u) => sum + (Number(u?.unlimited) || 0), 0).toFixed(2);
 				const usageLimit = Number(meta?.usageLimit) || 0;
-				console.log('🍎 usageLimit:', usageLimit);
 				const dataOverage = Math.max(0, parseFloat(totalPriority) + parseFloat(totalStandard) - usageLimit).toFixed(2);
 
-				// Calculate averages with safe data access
+				// Latency
 				const avgLatency = calculateAverage(Array.isArray(latencyData) ? latencyData.map((d) => Number(d?.[1]) || 0) : []).toFixed(3);
 
-				const avgDownload = calculateAverage(Object.values(throughputData?.download || {}).map(Number)).toFixed(3);
+				// Throughtput
+				const throughputData = Array.isArray(data?.throughput?.data) ? data.throughput.data : [];
+				const avgDownload = calculateAverage(Array.isArray(throughputData) ? throughputData.map((d) => Number(d?.[1]) || 0) : []).toFixed(3);
+				const avgUpload = calculateAverage(Array.isArray(throughputData) ? throughputData.map((d) => Number(d?.[2]) || 0) : []).toFixed(3);
 
-				const avgUpload = calculateAverage(Object.values(throughputData?.upload || {}).map(Number)).toFixed(3);
-
+				// Signal Quality
+				const signalQualityData = Array.isArray(data?.signal?.data) ? data.signal.data : [];
 				const avgSignal = `${calculateAverage(Array.isArray(signalQualityData) ? signalQualityData.map((d) => Number(d?.[1]) || 0) : []).toFixed(0)}%`;
 
 				return {
