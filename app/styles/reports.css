@@ -1,8 +1,8 @@
 .reports-container {
 	padding: var(--spacing-large);
 	background: white;
-	border-radius: var(--border-radius);
-	box-shadow: var(--shadow-sm);
+	border-radius: var(--border-radius-large);
+	box-shadow: var(--shadow-lg);
 }
 
 .reports-sidebar {

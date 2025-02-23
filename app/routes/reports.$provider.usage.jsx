@@ -1,55 +1,107 @@
-import { useEffect, useState, useRef } from 'react';
-import { useLoaderData, useNavigation } from '@remix-run/react';
+import { defer } from '@remix-run/node';
+import { useEffect, useState, useRef, Suspense } from 'react';
+import { useLoaderData, useNavigation, Await } from '@remix-run/react';
 import { fetchServicesAndModemData } from '../compass.server';
 import Layout from './../components/layout/Layout';
 import reportStyles from '../styles/reports.css?url';
+import { loader as modemApiLoader } from './api.modem';
+import { useUser } from '../context/UserContext';
 
-export const loader = async ({ request }) => {
+export async function loader({ params, request }) {
 	try {
-		console.log('🏈 Loading reports data...');
-		const servicesData = await fetchServicesAndModemData();
-		return { services: servicesData.services };
+		// Get modem details from the existing API loader
+		const modemDetails = await modemApiLoader({ params, request });
+		const modemData = await modemDetails.json();
+
+		// Fetch services data
+		const servicesPromise = fetchServicesAndModemData()
+			.then(({ services }) => ({
+				services,
+			}))
+			.catch((error) => {
+				console.error('🍎 Error fetching services:', error);
+				return { services: [] };
+			});
+
+		// Return both sets of data
+		return defer({
+			servicesData: servicesPromise,
+			...modemData,
+		});
 	} catch (error) {
-		console.error('🚨 Error loading reports:', error);
-		throw new Response('Error loading reports data', { status: 500 });
+		console.error('🚨 Error in loader:', error);
+		throw new Response('Error loading data', { status: 500 });
 	}
-};
+}
 
 const ReportsContent = ({ services }) => {
+	const { userKits } = useUser();
 	const isLoadingRef = useRef(true);
 	const [isClient, setIsClient] = useState(false);
 	const webdatarocksRef = useRef(null);
 
-	const calculateAverage = (arr) => (arr.length > 0 ? arr.reduce((sum, val) => sum + val, 0) / arr.length : 0);
+	const calculateAverage = (arr) => {
+		if (!Array.isArray(arr) || arr.length === 0) return 0;
+		return arr.reduce((sum, val) => sum + val, 0) / arr.length;
+	};
 
 	const flattenedData = services.flatMap((service) =>
-		service.modems.map((modem) => {
-			const latencyData = modem.data?.latency?.data || [];
-			const throughputData = modem.data?.throughput?.data || {};
-			const signalQualityData = modem.data?.signal?.data || [];
-			const usageData = modem.usage || [];
-			const totalPriority = usageData.reduce((sum, u) => sum + (u.priority || 0), 0).toFixed(2);
-			const totalStandard = usageData.reduce((sum, u) => sum + (u.standard || 0), 0).toFixed(2);
-			const usageLimit = modem.details?.meta?.usageLimit || 0;
-			const dataOverage = Math.max(0, parseFloat(totalPriority) + parseFloat(totalStandard) - usageLimit).toFixed(2);
+		service.modems
+			.filter((modem) => userKits.includes(modem.id))
+			.map((modem) => {
+				// Safely access nested data with null checks
+				const details = modem?.details || {};
+				const data = details?.data || {};
+				const meta = details?.meta || {};
 
-			return {
-				Service: service.name,
-				Status: modem.status === 'online' ? 'Online' : 'Offline',
-				Kit: modem.id,
-				PriorityData: totalPriority,
-				StandardData: totalStandard,
-				UsageLimit: usageLimit,
-				DataOverage: dataOverage,
-				AvgLatency: calculateAverage(latencyData.map((d) => d[1])).toFixed(3),
-				AvgDownloadThroughput: calculateAverage(throughputData.download || []).toFixed(3),
-				AvgUploadThroughput: calculateAverage(throughputData.upload || []).toFixed(3),
-				AvgSignalQuality: `${calculateAverage(signalQualityData).toFixed(0)}%`,
-				OptIn: 'No',
-				MobilePlan: 'No',
-			};
-		})
+				// Extract data with proper type checking
+				const latencyData = Array.isArray(data?.latency?.data) ? data.latency.data : [];
+				const throughputData = data?.throughput?.data || {};
+				const signalQualityData = Array.isArray(data?.signal?.data) ? data.signal.data : [];
+				const usageData = Array.isArray(details?.usage) ? details.usage : [];
+
+				// Calculate totals with safe array operations
+				const totalPriority = usageData.reduce((sum, u) => sum + (Number(u?.priority) || 0), 0).toFixed(2);
+
+				const totalStandard = usageData.reduce((sum, u) => sum + (Number(u?.standard) || 0), 0).toFixed(2);
+
+				// Get usage limit with fallback
+				const usageLimit = Number(meta?.usageLimit) || 0;
+				const dataOverage = Math.max(0, parseFloat(totalPriority) + parseFloat(totalStandard) - usageLimit).toFixed(2);
+
+				// Calculate averages with safe data access
+				const avgLatency = calculateAverage(Array.isArray(latencyData) ? latencyData.map((d) => Number(d?.[1]) || 0) : []).toFixed(3);
+
+				const avgDownload = calculateAverage(Object.values(throughputData?.download || {}).map(Number)).toFixed(3);
+
+				const avgUpload = calculateAverage(Object.values(throughputData?.upload || {}).map(Number)).toFixed(3);
+
+				const avgSignal = `${calculateAverage(Array.isArray(signalQualityData) ? signalQualityData.map((d) => Number(d?.[1]) || 0) : []).toFixed(0)}%`;
+
+				return {
+					Service: service?.name || 'Unknown',
+					Status: details?.status || 'Unknown',
+					Kit: modem?.id || 'Unknown',
+					PriorityData: totalPriority,
+					StandardData: totalStandard,
+					UsageLimit: usageLimit,
+					DataOverage: dataOverage,
+					AvgLatency: avgLatency,
+					AvgDownloadThroughput: avgDownload,
+					AvgUploadThroughput: avgUpload,
+					AvgSignalQuality: avgSignal,
+				};
+			})
 	);
+
+	// Add check for empty data after filtering
+	if (flattenedData.length === 0) {
+		return (
+			<div className='no-data-message'>
+				<p>No data available for your assigned kits.</p>
+			</div>
+		);
+	}
 
 	useEffect(() => {
 		setIsClient(true);
@@ -116,7 +168,7 @@ const ReportsContent = ({ services }) => {
 							},
 							slice: {
 								rows: [{ uniqueName: 'Service' }],
-								columns: [{ uniqueName: 'Status' }, { uniqueName: 'Kit' }, { uniqueName: 'PriorityData', caption: 'Priority Data (GB)' }, { uniqueName: 'StandardData', caption: 'Standard Data (GB)' }, { uniqueName: 'UsageLimit', caption: 'Usage Limit (GB)' }, { uniqueName: 'DataOverage', caption: 'Data Overage (GB)' }, { uniqueName: 'AvgLatency', caption: 'Avg Latency (ms)' }, { uniqueName: 'AvgDownloadThroughput', caption: 'Avg Downlink Throughput (Mbps)' }, { uniqueName: 'AvgUploadThroughput', caption: 'Avg Uplink Throughput (Mbps)' }, { uniqueName: 'AvgSignalQuality', caption: 'Avg Signal Quality' }, { uniqueName: 'OptIn', caption: 'Opt In' }, { uniqueName: 'MobilePlan', caption: 'Mobile Plan' }],
+								columns: [{ uniqueName: 'Status' }, { uniqueName: 'Kit' }, { uniqueName: 'PriorityData', caption: 'Priority Data (GB)' }, { uniqueName: 'StandardData', caption: 'Standard Data (GB)' }, { uniqueName: 'UsageLimit', caption: 'Usage Limit (GB)' }, { uniqueName: 'DataOverage', caption: 'Data Overage (GB)' }, { uniqueName: 'AvgLatency', caption: 'Avg Latency (ms)' }, { uniqueName: 'AvgDownloadThroughput', caption: 'Avg Download (Mbps)' }, { uniqueName: 'AvgUploadThroughput', caption: 'Avg Upload (Mbps)' }, { uniqueName: 'AvgSignalQuality', caption: 'Avg Signal Quality' }],
 							},
 							formats: [
 								{
@@ -189,7 +241,7 @@ const ReportsContent = ({ services }) => {
 };
 
 const Reports = () => {
-	const { services } = useLoaderData();
+	const { servicesData } = useLoaderData();
 	const navigation = useNavigation();
 	const [isClient, setIsClient] = useState(false);
 
@@ -208,7 +260,13 @@ const Reports = () => {
 	return (
 		<Layout>
 			<section className='content'>
-				<div className='reports-container'>{isClient && <ReportsContent services={services} />}</div>
+				<div className='reports-container'>
+					{isClient && servicesData && (
+						<Suspense fallback={<div>Loading reports...</div>}>
+							<Await resolve={servicesData}>{(resolvedData) => <ReportsContent services={resolvedData.services} />}</Await>
+						</Suspense>
+					)}
+				</div>
 			</section>
 		</Layout>
 	);

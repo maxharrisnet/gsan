@@ -88,6 +88,7 @@ export const fetchGPS = async (provider, ids, accessToken) => {
 
 			// Update cache storage
 			setSharedGPSData(latestGPSData);
+			console.log('🔍 GPS data fetched and cached');
 			return latestGPSData;
 		}
 
