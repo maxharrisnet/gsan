@@ -55,23 +55,16 @@ const ReportsContent = ({ services }) => {
 				const data = details?.data || {};
 				const meta = modem?.details?.meta || {};
 				const latencyData = Array.isArray(data?.latency?.data) ? data.latency.data : [];
-				// Check if there's any recent latency data (within last hour)
+
 				const hasRecentLatencyData = latencyData.some((dataPoint) => {
 					const timestamp = dataPoint?.[0];
-					console.log('🎯 Timestamp:', timestamp);
 					if (!timestamp) return false;
-					// Convert seconds to milliseconds for JavaScript Date
 					const dataTime = new Date(timestamp * 1000);
-					const oneHourAgo = new Date(Date.now() - 3600000); // 1 hour in milliseconds
-					console.log('🎯 Data time:', dataTime.toISOString());
-					console.log('🎯 One hour ago:', oneHourAgo.toISOString());
+					const oneHourAgo = new Date(Date.now() - 3600000);
 					return dataTime > oneHourAgo;
 				});
 
 				const status = hasRecentLatencyData ? 'online' : 'offline';
-				console.log('🎯 Latency data exists:', !!latencyData.length);
-				console.log('🎯 Has recent data:', hasRecentLatencyData);
-				console.log('🎯 Final status:', status);
 
 				// Usage Data
 				const usageData = Array.isArray(details?.usage) ? details.usage : [];

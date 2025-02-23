@@ -120,7 +120,7 @@ body #wdr-toolbar-wrapper #wdr-toolbar li > a {
 	flex-direction: row;
 	height: auto;
 	gap: var(--spacing-base);
-	background-color: var(--color-white);
+	background-color: var(--color-background);
 	color: var(--color-text);
 	border: 3px solid var(--color-primary);
 	border-radius: var(--border-radius-full);
@@ -129,7 +129,7 @@ body #wdr-toolbar-wrapper #wdr-toolbar li > a {
 }
 
 #wdr-toolbar-wrapper #wdr-toolbar li > a:hover {
-	background-color: var(--color-background);
+	background-color: var(--color-primary);
 }
 
 body #wdr-toolbar-wrapper #wdr-toolbar li > a > div.wdr-svg-icon {
@@ -178,5 +178,5 @@ body #wdr-toolbar-wrapper #wdr-toolbar li > a span,
 }
 
 #wdr-toolbar-wrapper #wdr-toolbar li .wdr-dropdown-content li a:hover {
-	background-color: var(--color-background);
+	background-color: var(--color-primary);
 }
