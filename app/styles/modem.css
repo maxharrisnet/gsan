@@ -56,7 +56,6 @@
 	background-color: var(--color-background);
 	padding: var(--spacing-base);
 	border-radius: var(--border-radius);
-	margin-bottom: var(--spacing-xxlarge);
 }
 
 /* Status Colors */
@@ -279,4 +278,24 @@
 
 .usage-disclaimer p {
 	margin: 0 0 var(--spacing-small) 0;
+}
+
+.overview-charts-container {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 2rem;
+}
+
+.usage-section,
+.signal-quality-section {
+	background: white;
+	border-radius: 8px;
+	padding: 1.5rem;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+	.overview-charts-container {
+		grid-template-columns: 1fr;
+	}
 }

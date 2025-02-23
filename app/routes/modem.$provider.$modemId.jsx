@@ -349,37 +349,43 @@ export default function ModemDetails() {
 						</APIProvider>
 					</section>
 				)}
-				<div className='chart-container'>
-					{renderChartSection(
-						'Usage',
-						usageData,
-						<div className='usage-section'>
+				<section className='chart-container'>
+					<div className='overview-charts-container'>
+						{renderChartSection(
+							'Usage Overview',
+							usageData,
 							<div className='usage-stats'>
 								<div className='usage-chart'>
-									<Bar
+									<Doughnut
 										height='100'
 										width='300'
 										data={{
-											labels: usageLabels,
+											labels: [`Current Usage: ${totalUsageGB} GB`, `Monthly Limit: ${usageLimitGB} GB`],
 											datasets: [
-												{ label: 'Download (GB)', data: usagePriority, fill: true, backgroundColor: '#3986a8', borderColor: '#3986a8', borderWidth: 2, borderJoinStyle: 'round' },
-												{ label: 'Upload (GB)', data: usageUnlimited, fill: true, backgroundColor: '#4bc0c0', borderColor: '#4bc0c0', borderWidth: 2, borderJoinStyle: 'round' },
+												{
+													data: [parseFloat(totalUsageGB), Math.max(parseFloat(usageLimitGB) - parseFloat(totalUsageGB), 0)],
+													backgroundColor: ['#3986a8', '#f3f4f6'],
+													borderWidth: 0,
+												},
 											],
 										}}
 										options={{
+											cutout: '70%',
 											plugins: {
-												title: {
+												legend: {
 													display: true,
-													text: [`Total Usage: ${totalUsage.toFixed(2)} GB`],
-													padding: { bottom: 30 },
-													font: { size: 12 },
-													color: '#666',
+													position: 'bottom',
+													labels: {
+														padding: 20,
+														usePointStyle: true,
+														pointStyle: 'circle',
+														font: { size: 14 },
+													},
 												},
-											},
-											scales: {
-												y: {
-													ticks: { callback: (value) => `${value}GB`, stepSize: 5 },
-													beginAtZero: true,
+												tooltip: {
+													callbacks: {
+														label: (context) => context.label,
+													},
 												},
 											},
 										}}
@@ -387,8 +393,94 @@ export default function ModemDetails() {
 								</div>
 								<div className='usage-disclaimer'>
 									<p>Data usage for current month.</p>
-									<p>Data usage tracking is not immediate and may be delayed by 24 hours or more. Counting shown is for informational purposes only and final overages reflected in monthly invoice are accurate.</p>
+									<p>Data usage tracking is not immediate and may be delayed by 24 hours or more.</p>
 								</div>
+							</div>,
+							'usageOverview'
+						)}
+
+						{renderChartSection(
+							'Current Signal Quality',
+							signalQualityData,
+							<div className='signal-quality-chart'>
+								<Doughnut
+									height='100'
+									width='300'
+									data={{
+										labels: ['Signal Quality', 'Remaining'],
+										datasets: [
+											{
+												data: [signalQualityData[signalQualityData.length - 1]?.[1] || 0, 100 - (signalQualityData[signalQualityData.length - 1]?.[1] || 0)],
+												backgroundColor: ['#4bc0c0', '#f3f4f6'],
+												borderWidth: 0,
+											},
+										],
+									}}
+									options={{
+										cutout: '70%',
+										plugins: {
+											legend: {
+												display: true,
+												position: 'bottom',
+												labels: {
+													padding: 20,
+													usePointStyle: true,
+													pointStyle: 'circle',
+													font: { size: 14 },
+													generateLabels: (chart) => [
+														{
+															text: `Signal Quality: ${signalQualityData[signalQualityData.length - 1]?.[1] || 0}%`,
+															fillStyle: '#4bc0c0',
+															strokeStyle: '#4bc0c0',
+															pointStyle: 'circle',
+															index: 0,
+														},
+													],
+												},
+											},
+										},
+									}}
+								/>
+							</div>,
+							'signalQuality'
+						)}
+					</div>
+					{renderChartSection(
+						'Usage',
+						usageData,
+						<div className='usage-stats'>
+							<div className='usage-chart'>
+								<Bar
+									height='100'
+									width='300'
+									data={{
+										labels: usageLabels,
+										datasets: [
+											{ label: 'Download (GB)', data: usagePriority, fill: true, backgroundColor: '#3986a8', borderColor: '#3986a8', borderWidth: 2, borderJoinStyle: 'round' },
+											{ label: 'Upload (GB)', data: usageUnlimited, fill: true, backgroundColor: '#4bc0c0', borderColor: '#4bc0c0', borderWidth: 2, borderJoinStyle: 'round' },
+										],
+									}}
+									options={{
+										plugins: {
+											title: {
+												display: true,
+												text: [`Total Usage: ${totalUsage.toFixed(2)} GB`],
+												padding: { bottom: 30 },
+												font: { size: 12 },
+												color: '#666',
+											},
+										},
+										scales: {
+											y: {
+												ticks: { callback: (value) => `${value}GB`, stepSize: 5 },
+												beginAtZero: true,
+											},
+										},
+									}}
+								/>
+							</div>
+							<div className='usage-disclaimer'>
+								<p>Data usage tracking is not immediate and may be delayed by 24 hours or more. Counting shown is for informational purposes only and final overages reflected in monthly invoice are accurate.</p>
 							</div>
 						</div>,
 						'usage'
@@ -527,61 +619,7 @@ export default function ModemDetails() {
 						/>,
 						'uptime'
 					)}
-					{renderChartSection(
-						'Usage Overview',
-						usageData,
-						<div className='usage-section'>
-							<div className='usage-stats'>
-								<div className='usage-chart'>
-									<Doughnut
-										height='100'
-										width='300'
-										data={{
-											labels: [`Current Usage: ${totalUsageGB} GB`, `Monthly Limit: ${usageLimitGB} GB`],
-											datasets: [
-												{
-													data: [parseFloat(totalUsageGB), Math.max(parseFloat(usageLimitGB) - parseFloat(totalUsageGB), 0)],
-													backgroundColor: ['#3986a8', '#f3f4f6'],
-													borderWidth: 0,
-												},
-											],
-										}}
-										options={{
-											cutout: '70%',
-											plugins: {
-												legend: {
-													display: true,
-													position: 'bottom',
-													labels: {
-														padding: 20,
-														usePointStyle: true,
-														pointStyle: 'circle',
-														font: {
-															size: 14,
-														},
-													},
-												},
-												tooltip: {
-													callbacks: {
-														label: (context) => {
-															const label = context.label;
-															return label;
-														},
-													},
-												},
-											},
-										}}
-									/>
-								</div>
-								<div className='usage-disclaimer'>
-									<p>Data usage for current month.</p>
-									<p>Data usage tracking is not immediate and may be delayed by 24 hours or more. Counting shown is for informational purposes only and final overages reflected in monthly invoice are accurate.</p>
-								</div>
-							</div>
-						</div>,
-						'usageOverview'
-					)}
-				</div>
+				</section>
 			</main>
 		</Layout>
 	);
