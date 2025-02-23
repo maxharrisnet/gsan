@@ -388,7 +388,7 @@ export default function ModemDetails() {
 								<div className='usage-chart'>
 									<Doughnut
 										height='100'
-										width='300'
+										width='200'
 										data={{
 											labels: [`Usage: ${totalUsageGB} GB`, `Monthly Limit: ${usageLimitGB} GB`],
 											datasets: [

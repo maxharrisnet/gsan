@@ -47,7 +47,8 @@
 	overflow-y: scroll;
 }
 
-.sidebar-content {
+.sidebar-content,
+.empty-sidebar {
 	padding: var(--spacing-large);
 }
 
