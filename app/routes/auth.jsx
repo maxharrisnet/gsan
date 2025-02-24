@@ -1,8 +1,10 @@
-import { Form, useActionData } from '@remix-run/react';
+import { Form, useActionData, redirect } from '@remix-run/react';
 import { authenticateShopifyCustomer } from '../utils/user.server';
 import authenticateSonarUser from '../sonar.server';
 import Layout from '../components/layout/Layout';
 import { json } from '@remix-run/node';
+import { getSession } from '../utils/session.server';
+import { createUserSession } from '../utils/session.server';
 
 export async function action({ request }) {
 	const formData = await request.formData();
@@ -16,7 +18,22 @@ export async function action({ request }) {
 			if (result.error) {
 				return json({ error: result.error });
 			}
-			return result;
+
+			// Get user's kits after successful authentication
+			const session = await getSession(request.headers.get('Cookie'));
+			const userData = session.get('userData');
+			const userKits = userData?.metafields?.kits ? userData.metafields.kits.split(',').map((kit) => kit.trim()) : [];
+
+			// If no kits, redirect to error page
+			if (!userKits.length) {
+				return redirect('/no-kits');
+			}
+
+			// Get first kit ID (excluding 'ALL')
+			const firstKitId = userKits.find((kit) => kit !== 'ALL') || userKits[0];
+
+			// Create session and redirect to modem page
+			return createUserSession(userData, `/modem/starlink/${firstKitId}`);
 		} else if (loginType === 'sonar') {
 			return authenticateSonarUser(formData);
 		}

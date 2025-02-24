@@ -108,7 +108,7 @@ export async function authenticateShopifyCustomer(email, password, request) {
 
 		console.log('✅ Authentication successful, creating session with:', userData);
 
-		return createUserSession(userData, '/map');
+		return createUserSession(userData, '/performance');
 	} catch (error) {
 		console.error('❌ Authentication error:', error);
 		return { error: 'An unexpected error occurred during authentication' };

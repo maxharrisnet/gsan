@@ -130,14 +130,7 @@ export default function ModemDetails() {
 			<Layout>
 				<Sidebar>
 					<div className='dashboard-sidebar'>
-						<h2 className='select-device-heading'>{modem?.name}</h2>
-						<Link
-							to='/map'
-							className='list-button back-link'
-						>
-							<span className='material-icons'>arrow_back</span>
-							<span>Back to Map</span>
-						</Link>
+						<h1 className='select-device-heading'>GSAN</h1>
 					</div>
 				</Sidebar>
 				<main className='content content-full-width'>
@@ -301,13 +294,6 @@ export default function ModemDetails() {
 			<Sidebar>
 				<div className='dashboard-sidebar'>
 					<h2 className='select-device-heading'>{modem?.name}</h2>
-					<Link
-						to={`/map`}
-						className='list-button back-link'
-					>
-						<span className='material-icons'>chevron_left</span>
-						<span>Back to Map</span>
-					</Link>
 
 					<Suspense fallback={<LoadingSpinner />}>
 						<Await resolve={servicesData}>

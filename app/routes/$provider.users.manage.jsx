@@ -10,7 +10,7 @@ export async function loader({ request, params }) {
 
 	// Check if user is authenticated and is a provider
 	if (!userData || userData.role !== 'provider') {
-		return redirect('/map');
+		return redirect('/performance');
 	}
 
 	return json({ provider: provider.toUpperCase() });

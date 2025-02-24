@@ -38,64 +38,24 @@ const Header = () => {
 					</Link>
 				</div>
 				<nav className='nav'>
-					<ul className='nav-list'>
-						<li
-							key='map'
-							className='nav-item'
-						>
-							<NavLink
-								to={`/map`}
-								className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-							>
-								Map
-							</NavLink>
-						</li>
-						<li
-							key='performance'
-							className='nav-item'
-						>
-							<NavLink
-								to={`/performance`}
-								className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-							>
-								Performance
-							</NavLink>
-						</li>
-						<li
-							key='reports'
-							className='nav-item'
-						>
-							<NavLink
-								to={`/reports/starlink/usage`}
-								className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-							>
-								Reports
-							</NavLink>
-						</li>
-					</ul>
 					<div
 						className='user-avatar'
 						ref={dropdownRef}
 					>
 						<button
-							className='avatar-button'
+							className='menu-button'
 							onClick={() => setShowDropdown(!showDropdown)}
 						>
-							<img
-								src='/assets/images/avatar.svg'
-								alt='User Avatar'
-								height='30'
-								width='30'
-							/>
+							<span className='material-icons'>menu</span>
 						</button>
 
 						{showDropdown && (
 							<div className='avatar-dropdown'>
 								<Link
-									to='/profile'
+									to='/reports/starlink/usage'
 									onClick={() => setShowDropdown(false)}
 								>
-									Profile
+									Reports
 								</Link>
 								<Form
 									method='post'

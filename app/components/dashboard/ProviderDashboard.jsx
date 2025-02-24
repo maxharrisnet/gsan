@@ -95,9 +95,7 @@ export default function ProviderDashboard({ userData, services }) {
 				</div>
 				<div className='stat-card'>
 					<h3>Active Alerts</h3>
-					<p className={stats.activeAlerts > 0 ? 'text-warning' : 'text-success'}>
-						{stats.activeAlerts}
-					</p>
+					<p className={stats.activeAlerts > 0 ? 'text-warning' : 'text-success'}>{stats.activeAlerts}</p>
 				</div>
 			</div>
 
@@ -107,7 +105,7 @@ export default function ProviderDashboard({ userData, services }) {
 					<div className='section-header'>
 						<h3>Network Overview</h3>
 						<Link
-							to='/map'
+							to='/performance'
 							className='view-all'
 						>
 							View Full Map
