@@ -2,7 +2,8 @@
 .layout {
 	display: flex;
 	flex-direction: column;
-	min-height: 100vh;
+	height: 100vh;
+	overflow: scroll;
 	background-color: #f0f0f0;
 	font-family: 'Inter', sans-serif;
 	color: #000;

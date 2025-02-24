@@ -402,7 +402,7 @@ export default function ModemDetails() {
 											datasets: [
 												{
 													data: [parseFloat(totalUsageGB), Math.max(parseFloat(usageLimitGB) - parseFloat(totalUsageGB), 0)],
-													backgroundColor: ['#3986a8', '#f3f4f6'],
+												backgroundColor: ['#3986a8', '#f3f4f6'],
 													borderWidth: 0,
 													radius: '80%',
 												},

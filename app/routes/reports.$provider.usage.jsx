@@ -38,7 +38,6 @@ export async function loader({ params, request }) {
 
 const ReportsContent = ({ services }) => {
 	const { userKits } = useUser();
-	const { userKits } = useUser();
 	const isLoadingRef = useRef(true);
 	const [isClient, setIsClient] = useState(false);
 	const webdatarocksRef = useRef(null);
