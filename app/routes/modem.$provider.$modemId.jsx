@@ -97,8 +97,7 @@ const formatTimestamp = (timestamp) => {
 export default function ModemDetails() {
 	const { modem = {}, modemStatus = 'offline', mapsAPIKey, gpsData = [], latencyData = [], throughputData = [], signalQualityData = [], obstructionData = [], usageData = [], uptimeData = [], errors = {}, servicesData } = useLoaderData();
 	const { userKits } = useUser();
-	console.log('🍎 modem:', modem);
-	console.log('🍎 modemStatus:', modemStatus);
+
 	const usageChartRef = useRef(null);
 	const signalQualityChartRef = useRef(null);
 	const throughputChartRef = useRef(null);

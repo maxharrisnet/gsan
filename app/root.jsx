@@ -29,19 +29,10 @@ export const loader = async ({ request }) => {
 	const publicRoutes = ['/auth', '/login', '/'];
 	const isPublicRoute = publicRoutes.includes(url.pathname);
 
-	// Get user's kits if we have userData
-	const userKits = userData?.metafields?.kits ? userData.metafields.kits.split(',').map((kit) => kit.trim()) : [];
-
-	// If we have userData and we're on a public route
+	// If we have userData and we're on a public route, redirect to dashboard
 	if (userData && isPublicRoute) {
-		// Check if user has any kits
-		if (!userKits.length) {
-			return redirect('/no-kits'); // New error route
-		}
-
-		// Get first kit ID (excluding 'ALL')
-		const firstKitId = userKits.find((kit) => kit !== 'ALL') || userKits[0];
-		return redirect(`/modem/starlink/${firstKitId}`);
+		console.log('👉 Authenticated user on public route, redirecting to map');
+		return redirect('/map');
 	}
 
 	// If we don't have userData and we're not on a public route, redirect to auth
@@ -88,7 +79,7 @@ export function ErrorBoundary() {
 						<h1 className='error-heading'>{isRouteErrorResponse(error) ? `${error.status} ${error.statusText}` : 'Oops! Something went wrong'}</h1>
 						<div className='error-message'>{!isProd && <pre className='error-details'>{error.message || JSON.stringify(error, null, 2)}</pre>}</div>
 						<Link
-							to='/performance'
+							to='/map'
 							className='error-button'
 						>
 							Return to Dashboard
