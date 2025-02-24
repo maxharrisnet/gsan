@@ -329,6 +329,7 @@ export default function ModemDetails() {
 													key={modemItem.id}
 													className={`modem-item ${modemItem.id === modem.id ? 'active' : ''} status-${modemItem.status || 'offline'}`}
 												>
+													{console.log('🍎 modemItem:', modemItem)}
 													<Link
 														className='list-button'
 														to={`/modem/${modemItem.type.toLowerCase()}/${modemItem.id}`}
@@ -347,7 +348,7 @@ export default function ModemDetails() {
 									</ul>
 								) : (
 									<div className='empty-sidebar'>
-										<p>No modems found on your account</p>
+										<p>No modems found in your kits</p>
 									</div>
 								);
 							}}

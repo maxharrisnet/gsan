@@ -38,16 +38,8 @@ export const loader = async ({ params }) => {
 				headers: { Authorization: `Bearer ${accessToken}` },
 			});
 
-			const modem = modemResponse.data || {};
-
-			modem.data = modem.data || {
-				latency: { data: [] },
-				throughput: { data: [] },
-				signal: { data: [] },
-				obstruction: { data: [] },
-				uptime: { data: [] },
-			};
-			modem.usage = modem.usage || [];
+			const modem = modemResponse.data;
+			// console.log('💰 Modem response:', modem);
 
 			const currentStatus = determineModemStatus(modem);
 			modem.status = currentStatus;

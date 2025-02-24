@@ -55,47 +55,38 @@ export async function loader({ request }) {
 			}, {})
 		);
 
-		// First get the status of all modems
-		const statusResults = await Promise.all(
-			Object.entries(modemsByProvider).flatMap(([provider, ids]) =>
-				ids.map(async (modemId) => {
+		// Fetch both GPS and status data for all modems
+		const [gpsResults, statusResults] = await Promise.all([
+			Promise.all(
+				Object.entries(modemsByProvider).map(async ([provider, ids]) => {
 					try {
-						const modemResponse = await modemApiLoader({
-							params: { provider, modemId },
-							request,
-						});
-						const data = await modemResponse.json();
-						return { provider, modemId, status: data.status };
+						const data = await fetchGPS(provider, ids, accessToken);
+						return { provider, data };
 					} catch (error) {
-						console.error(`🔴 Error fetching status for modem ${modemId}:`, error);
-						return { provider, modemId, status: 'offline' };
+						console.error(`🚨 GPS fetch error for ${provider}:`, error);
+						return { provider, data: {} };
 					}
 				})
-			)
-		);
+			),
 
-		// Group online modems by provider
-		const onlineModemsByProvider = statusResults.reduce((acc, { provider, modemId, status }) => {
-			if (status === 'online') {
-				acc[provider] = acc[provider] || [];
-				acc[provider].push(modemId);
-			}
-			return acc;
-		}, {});
-
-		// Only fetch GPS for online modems
-		const gpsResults = await Promise.all(
-			Object.entries(onlineModemsByProvider).map(async ([provider, ids]) => {
-				if (ids.length === 0) return { provider, data: {} };
-				try {
-					const data = await fetchGPS(provider, ids, accessToken);
-					return { provider, data };
-				} catch (error) {
-					console.error(`🚨 GPS fetch error for ${provider}:`, error);
-					return { provider, data: {} };
-				}
-			})
-		);
+			Promise.all(
+				Object.entries(modemsByProvider).flatMap(([provider, ids]) =>
+					ids.map(async (modemId) => {
+						try {
+							const modemResponse = await modemApiLoader({
+								params: { provider, modemId },
+								request,
+							});
+							const data = await modemResponse.json();
+							return { modemId, status: data.status };
+						} catch (error) {
+							console.error(`🔴 Error fetching status for modem ${modemId}:`, error);
+							return { modemId, status: 'offline' };
+						}
+					})
+				)
+			),
+		]);
 
 		const gpsData = gpsResults.reduce((acc, { data }) => ({ ...acc, ...data }), {});
 
@@ -132,12 +123,13 @@ export async function loader({ request }) {
 
 export default function Dashboard() {
 	const { servicesData, googleMapsApiKey } = useLoaderData();
-	const { userKits, isLoading: isUserLoading } = useUser();
+	const { userKits } = useUser();
 	const [selectedModem, setSelectedModem] = useState(null);
 	const [isMapLoaded, setIsMapLoaded] = useState(false);
 
 	const modemLocations = useMemo(() => {
-		if (!servicesData?.services || !userKits) return [];
+		if (!servicesData?.services) return [];
+
 		const showAllModems = userKits.includes('ALL');
 
 		return servicesData.services.flatMap((service) =>
@@ -162,6 +154,7 @@ export default function Dashboard() {
 		);
 	}, [servicesData, userKits]);
 
+	// Update mapConfig to include North America bounds
 	const mapConfig = useMemo(
 		() => ({
 			center: modemLocations[0]?.position || { lat: 56.1304, lng: -106.3468 }, // Center of Canada
@@ -179,6 +172,7 @@ export default function Dashboard() {
 		[modemLocations]
 	);
 
+	// Handle GPS data caching on the client side
 	useEffect(() => {
 		const handleGPSData = async (resolvedData) => {
 			if (resolvedData?.gpsData) {
@@ -203,14 +197,6 @@ export default function Dashboard() {
 		}
 	}, [servicesData]);
 
-	if (isUserLoading) {
-		return (
-			<Layout>
-				<LoadingSpinner />
-			</Layout>
-		);
-	}
-
 	return (
 		<Layout>
 			<Sidebar>
@@ -218,12 +204,10 @@ export default function Dashboard() {
 					<Suspense fallback={<LoadingSpinner />}>
 						<Await resolve={servicesData}>
 							{(resolvedData) => {
-								if (!resolvedData || !userKits) {
-									return <LoadingSpinner />;
-								}
 								const { services } = resolvedData;
 								const showAllModems = userKits.includes('ALL');
 
+								// Filter modems based on userKits
 								const filteredServices = services
 									.map((service) => ({
 										...service,
@@ -257,7 +241,7 @@ export default function Dashboard() {
 									</ul>
 								) : (
 									<div className='empty-sidebar'>
-										<p>No modems found on your account</p>
+										<p>No modems found in your kits</p>
 									</div>
 								);
 							}}
@@ -276,10 +260,7 @@ export default function Dashboard() {
 							</div>
 						}
 					>
-						{(resolvedData) => {
-							if (!resolvedData || !userKits) {
-								return <LoadingSpinner />;
-							}
+						{(resolvedData) => (
 							// Progressive loading of components
 							<>
 								{!isMapLoaded && <LoadingSpinner />}
@@ -326,8 +307,8 @@ export default function Dashboard() {
 										)}
 									</Map>
 								</APIProvider>
-							</>;
-						}}
+							</>
+						)}
 					</Await>
 				</Suspense>
 			</main>
