@@ -52,4 +52,18 @@ export function setCache(key, value) {
     value,
     expiry: Date.now() + CACHE_DURATION
   });
-} 
+}
+
+export const getCachedData = async (key, fetchFn) => {
+  const cached = cache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data;
+  }
+
+  const data = await fetchFn();
+  cache.set(key, {
+    timestamp: Date.now(),
+    data
+  });
+  return data;
+}; 

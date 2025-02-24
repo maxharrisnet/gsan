@@ -17,23 +17,43 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 
 export const links = () => [{ rel: 'stylesheet', href: dashboardStyles }];
 
+// Add retry logic for data fetching
+const fetchWithRetry = async (fn, retries = 3, delay = 1000) => {
+	try {
+		return await fn();
+	} catch (error) {
+		if (retries > 0) {
+			await new Promise((resolve) => setTimeout(resolve, delay));
+			return fetchWithRetry(fn, retries - 1, delay * 1.5);
+		}
+		throw error;
+	}
+};
+
 export async function loader({ request }) {
 	try {
 		const accessToken = await getCompassAccessToken();
 		const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
-		const { services } = await fetchServicesAndModemData();
+
+		// Wrap critical data fetches with retry logic
+		const servicesPromise = fetchWithRetry(async () => {
+			const { services } = await fetchServicesAndModemData();
+			return services;
+		});
 
 		// Group modem IDs by provider to minimize GPS API calls
-		const modemsByProvider = services.reduce((acc, service) => {
-			(service.modems || []).forEach((modem) => {
-				if (modem.type) {
-					const provider = modem.type.toLowerCase();
-					acc[provider] = acc[provider] || [];
-					acc[provider].push(modem.id);
-				}
-			});
-			return acc;
-		}, {});
+		const modemsByProvider = await servicesPromise.then((services) =>
+			services.reduce((acc, service) => {
+				(service.modems || []).forEach((modem) => {
+					if (modem.type) {
+						const provider = modem.type.toLowerCase();
+						acc[provider] = acc[provider] || [];
+						acc[provider].push(modem.id);
+					}
+				});
+				return acc;
+			}, {})
+		);
 
 		// Fetch both GPS and status data for all modems
 		const [gpsResults, statusResults] = await Promise.all([
@@ -75,24 +95,29 @@ export async function loader({ request }) {
 			return acc;
 		}, {});
 
-		const servicesWithStatus = services.map((service) => ({
-			...service,
-			modems: service.modems?.map((modem) => ({
-				...modem,
-				status: statusLookup[modem.id] || 'offline',
-			})),
-		}));
+		const servicesWithStatus = await servicesPromise.then((services) =>
+			services.map((service) => ({
+				...service,
+				modems: service.modems?.map((modem) => ({
+					...modem,
+					status: statusLookup[modem.id] || 'offline',
+				})),
+			}))
+		);
 
 		return defer({
 			servicesData: {
 				services: servicesWithStatus,
-				gpsData,
+				gpsData: gpsData,
 			},
 			googleMapsApiKey,
 		});
 	} catch (error) {
 		console.error('🚨 Error in loader:', error);
-		throw new Response('Error loading dashboard data', { status: 500 });
+		throw new Response('Error loading dashboard data', {
+			status: 500,
+			statusText: error.message,
+		});
 	}
 }
 
@@ -100,6 +125,7 @@ export default function Dashboard() {
 	const { servicesData, googleMapsApiKey } = useLoaderData();
 	const { userKits } = useUser();
 	const [selectedModem, setSelectedModem] = useState(null);
+	const [isMapLoaded, setIsMapLoaded] = useState(false);
 
 	const modemLocations = useMemo(() => {
 		if (!servicesData?.services) return [];
@@ -227,78 +253,62 @@ export default function Dashboard() {
 				<Suspense fallback={<LoadingSpinner />}>
 					<Await
 						resolve={servicesData}
-						errorElement={<div className='error-container'>Error loading dashboard data</div>}
+						errorElement={
+							<div className='error-container'>
+								<h3>Error loading dashboard data</h3>
+								<button onClick={() => window.location.reload()}>Retry Loading</button>
+							</div>
+						}
 					>
-						{(resolvedData) => {
-							const { services, gpsData } = resolvedData;
+						{(resolvedData) => (
+							// Progressive loading of components
+							<>
+								{!isMapLoaded && <LoadingSpinner />}
+								<APIProvider apiKey={googleMapsApiKey}>
+									<Map
+										onLoad={() => setIsMapLoaded(true)}
+										{...mapConfig}
+									>
+										{modemLocations.map((modem) => (
+											<Marker
+												key={modem.id}
+												position={modem.position}
+												title={modem.name}
+												icon={{
+													url: `/assets/images/markers/pin-${modem.status || 'offline'}.svg`,
+													scaledSize: { width: 32, height: 40 },
+													anchor: { x: 16, y: 40 },
+												}}
+												onClick={() => setSelectedModem(modem)}
+											/>
+										))}
 
-							if (!services || !Array.isArray(services) || services.length === 0) {
-								return (
-									<div className='empty-state card'>
-										<h3>No Services Available</h3>
-										<p>No active services found for this account.</p>
-									</div>
-								);
-							}
-
-							return (
-								<div className=''>
-									{modemLocations.length > 0 && (
-										<section className='map-section'>
-											<div className='map-container'>
-												<APIProvider apiKey={googleMapsApiKey}>
-													<Map
-														defaultCenter={mapConfig.center}
-														defaultZoom={mapConfig.zoom}
-														gestureHandling={'greedy'}
-														disableDefaultUI={false}
-														restriction={mapConfig.restriction}
-														minZoom={3} // Prevent zooming out too far
-													>
-														{modemLocations.map((modem) => (
-															<Marker
-																key={modem.id}
-																position={modem.position}
-																title={modem.name}
-																icon={{
-																	url: `/assets/images/markers/pin-${modem.status || 'offline'}.svg`,
-																	scaledSize: { width: 32, height: 40 },
-																	anchor: { x: 16, y: 40 },
-																}}
-																onClick={() => setSelectedModem(modem)}
-															/>
-														))}
-
-														{selectedModem && (
-															<InfoWindow
-																position={selectedModem.position}
-																onCloseClick={() => setSelectedModem(null)}
-															>
-																<div className='info-window'>
-																	<h3>{selectedModem.name}</h3>
-																	<p>Status: {selectedModem.status}</p>
-																	<p>Lat: {selectedModem.position.lat.toFixed(6)}</p>
-																	<p>Lng: {selectedModem.position.lng.toFixed(6)}</p>
-																	{selectedModem.type && (
-																		<Link
-																			to={`/modem/${selectedModem.type.toLowerCase()}/${selectedModem.id}`}
-																			className='info-window-link'
-																		>
-																			<span className='modem-name'>{selectedModem.name.toUpperCase()}</span>
-																			<span className='modem-chevron material-icons'>chevron_right</span>
-																		</Link>
-																	)}
-																</div>
-															</InfoWindow>
-														)}
-													</Map>
-												</APIProvider>
-											</div>
-										</section>
-									)}
-								</div>
-							);
-						}}
+										{selectedModem && (
+											<InfoWindow
+												position={selectedModem.position}
+												onCloseClick={() => setSelectedModem(null)}
+											>
+												<div className='info-window'>
+													<h3>{selectedModem.name}</h3>
+													<p>Status: {selectedModem.status}</p>
+													<p>Lat: {selectedModem.position.lat.toFixed(6)}</p>
+													<p>Lng: {selectedModem.position.lng.toFixed(6)}</p>
+													{selectedModem.type && (
+														<Link
+															to={`/modem/${selectedModem.type.toLowerCase()}/${selectedModem.id}`}
+															className='info-window-link'
+														>
+															<span className='modem-name'>{selectedModem.name.toUpperCase()}</span>
+															<span className='modem-chevron material-icons'>chevron_right</span>
+														</Link>
+													)}
+												</div>
+											</InfoWindow>
+										)}
+									</Map>
+								</APIProvider>
+							</>
+						)}
 					</Await>
 				</Suspense>
 			</main>
