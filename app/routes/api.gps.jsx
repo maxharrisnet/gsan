@@ -45,6 +45,8 @@ export const fetchGPS = async (provider, ids, accessToken) => {
 			},
 		});
 
+		console.log('💰 GPS response:', response.data);
+
 		if (response.status === 200) {
 			const latestGPSData = Object.entries(response.data).reduce((acc, [modemId, entries]) => {
 				if (!Array.isArray(entries) || entries.length === 0) return acc;
