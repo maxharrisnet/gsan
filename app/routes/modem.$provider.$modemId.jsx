@@ -302,7 +302,14 @@ export default function ModemDetails() {
 								const filteredServices = services
 									.map((service) => ({
 										...service,
-										modems: service.modems?.filter((modem) => userKits.includes('ALL') || userKits.includes(modem.id)) || [],
+										modems:
+											service.modems?.filter((modem) => {
+												// If userKits includes 'ALL', show all modems
+												if (userKits.includes('ALL')) return true;
+
+												// Check if the modem ID exists in the userKits array
+												return userKits.some((kit) => kit === modem.id);
+											}) || [],
 									}))
 									.filter((service) => service.modems.length > 0);
 
