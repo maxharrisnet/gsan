@@ -30,3 +30,12 @@ model Session {
   collaborator  Boolean?  @default(false)
   emailVerified Boolean?  @default(false)
 }
+
+model Cache {
+    key       String   @id
+    value     String  
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([updatedAt])
+}

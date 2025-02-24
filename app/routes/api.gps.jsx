@@ -1,25 +1,31 @@
 import { json } from '@remix-run/node';
 import axios from 'axios';
+import { PrismaClient } from '@prisma/client';
 
-const cache = new Map();
+let prismaClient;
+
+// This is needed because in development we don't want to restart
+// the server with every change, but we want to make sure we don't
+// create a new connection to the DB with every change either.
+if (process.env.NODE_ENV === 'production') {
+	prismaClient = new PrismaClient();
+} else {
+	if (!global.__db) {
+		global.__db = new PrismaClient();
+	}
+	prismaClient = global.__db;
+}
+
+export { prismaClient };
 
 // Add cache configuration
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 export function getGPSURL(provider) {
 	const baseUrl = 'https://api-compass.speedcast.com/v2.0';
-	switch (encodeURI(provider.toLowerCase())) {
-		case 'starlink':
-			return `${baseUrl}/starlinkgps`;
-		case 'idirect':
-			return `${baseUrl}/idirectgps`;
-		case 'newtec':
-			return `${baseUrl}/newtecgps`;
-		case 'oneweb':
-			return `${baseUrl}/oneweb`; // TODO: Test, fix with terminalId (see docs)
-		default:
-			return null;
-	}
+	const url = encodeURI(provider.toLowerCase()) === 'starlink' ? `${baseUrl}/starlinkgps` : `${baseUrl}/${provider.toLowerCase()}gps`;
+
+	return url;
 }
 
 export const fetchGPS = async (provider, ids, accessToken) => {

@@ -189,6 +189,8 @@ export default function Dashboard() {
 									}))
 									.filter((service) => service.modems.length > 0);
 
+								console.log('🔍 Filtered Services:', filteredServices);
+
 								return filteredServices.length > 0 ? (
 									<ul className='modem-list'>
 										{filteredServices.flatMap((service) =>
@@ -231,6 +233,7 @@ export default function Dashboard() {
 					>
 						{(resolvedData) => {
 							const { services, gpsData } = resolvedData;
+							console.log('🗺️ Map Page GPS Data:', gpsData);
 
 							if (!services || !Array.isArray(services) || services.length === 0) {
 								return (
@@ -242,10 +245,12 @@ export default function Dashboard() {
 							}
 
 							return (
-								<div className=''>
+								<div className='map-wrapper'>
 									{modemLocations.length > 0 && (
 										<section className='map-section'>
 											<div className='map-container'>
+												{console.log(`Google Maps API Key:`, googleMapsApiKey)}
+
 												<APIProvider apiKey={googleMapsApiKey}>
 													<Map
 														defaultCenter={mapConfig.center}
@@ -276,16 +281,17 @@ export default function Dashboard() {
 															>
 																<div className='info-window'>
 																	<h3>{selectedModem.name}</h3>
-																	<p>Status: {selectedModem.status}</p>
-																	<p>Lat: {selectedModem.position.lat.toFixed(6)}</p>
-																	<p>Lng: {selectedModem.position.lng.toFixed(6)}</p>
+																	<p className={`status status-${selectedModem.status?.toLowerCase()}`}>Status: {selectedModem.status}</p>
+																	<p>
+																		Coordinates: {selectedModem.position.lat.toFixed(6)}, {selectedModem.position.lng.toFixed(6)}
+																	</p>
 																	{selectedModem.type && (
 																		<Link
 																			to={`/modem/${selectedModem.type.toLowerCase()}/${selectedModem.id}`}
 																			className='info-window-link'
 																		>
-																			<span className='modem-name'>{selectedModem.name.toUpperCase()}</span>
-																			<span className='modem-chevron material-icons'>chevron_right</span>
+																			View Details
+																			<span className='material-icons'>chevron_right</span>
 																		</Link>
 																	)}
 																</div>
