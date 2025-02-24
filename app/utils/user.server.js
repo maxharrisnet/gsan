@@ -108,7 +108,15 @@ export async function authenticateShopifyCustomer(email, password, request) {
 
 		console.log('✅ Authentication successful, creating session with:', userData);
 
-		return createUserSession(userData, '/map');
+		const kits = (userData.metafields.kits = userData.metafields.kits.split(',').map((kit) => kit.trim()));
+		console.log('Show me your kits!', kits);
+		if (kits.length === 0) {
+			return createUserSession(userData, '/no-kits');
+		}
+
+		const firstKitId = kits.find((kit) => kit !== 'ALL') || kits[0];
+
+		return createUserSession(userData, `/modem/starlink/${firstKitId}`);
 	} catch (error) {
 		console.error('❌ Authentication error:', error);
 		return { error: 'An unexpected error occurred during authentication' };

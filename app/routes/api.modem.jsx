@@ -43,7 +43,7 @@ export const loader = async ({ params }) => {
 
 			const currentStatus = determineModemStatus(modem);
 			modem.status = currentStatus;
-			console.log('💰 Modem status:', currentStatus);
+			// console.log('💰 Modem status:', currentStatus);
 
 			const latencyData = modem.data.latency.data || [];
 			const throughputData = modem.data.throughput.data || [];
