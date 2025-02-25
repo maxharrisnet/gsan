@@ -317,19 +317,29 @@ export default function ModemDetails() {
 													key={modemItem.id}
 													className={`modem-item ${modemItem.id === modem.id ? 'active' : ''} status-${modemItem.status || 'offline'}`}
 												>
-													<Link
-														className='list-button'
-														to={`/modem/${modemItem.type.toLowerCase()}/${modemItem.id}`}
-														prefetch='intent'
-													>
-														<span className='modem-name'>{modemItem.name}</span>
-														{console.log('🔍 Modem Item:', modemItem).details.data}
-														<span
-															className={`status-indicator ${modemItem.status || 'offline'}`}
-															title={`Status: ${modemItem.status || 'offline'}`}
-														/>
-														<span className='modem-chevron material-icons'>chevron_right</span>
-													</Link>
+													{modemItem.details?.data?.latency ? (
+														<Link
+															className='list-button'
+															to={`/modem/${modemItem.type.toLowerCase()}/${modemItem.id}`}
+															prefetch='intent'
+														>
+															<span className='modem-name'>{modemItem.name}</span>
+															<span
+																className='status-indicator online'
+																title='Status: online'
+															/>
+															<span className='modem-chevron material-icons'>chevron_right</span>
+														</Link>
+													) : (
+														<div className='list-button disabled'>
+															<span className='modem-name'>{modemItem.name}</span>
+															<span
+																className='status-indicator offline'
+																title='Status: offline'
+															/>
+															<span className='modem-chevron material-icons'>block</span>
+														</div>
+													)}
 												</li>
 											))
 										)}
