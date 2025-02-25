@@ -43,7 +43,6 @@ export const loader = async ({ params }) => {
 
 			const currentStatus = determineModemStatus(modem);
 			modem.status = currentStatus;
-			// console.log('💰 Modem status:', currentStatus);
 
 			const latencyData = modem.data.latency.data || [];
 			const throughputData = modem.data.throughput.data || [];
@@ -51,15 +50,11 @@ export const loader = async ({ params }) => {
 			const obstructionData = modem.data.obstruction.data || [];
 			const usageData = modem.usage || [];
 			const uptimeData = modem.data.uptime.data || [];
-
 			const mapsAPIKey = process.env.GOOGLE_MAPS_API_KEY;
-			const gpsResponse = await fetchGPS(provider, [modemId], accessToken);
-			const gpsData = gpsResponse[modemId] || {};
 
 			const modemDetails = {
 				modem,
 				mapsAPIKey,
-				gpsData,
 				latencyData,
 				throughputData,
 				signalQualityData,
