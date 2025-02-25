@@ -1,8 +1,12 @@
 {
+  "buildCommand": "remix build",
+  "devCommand": "remix dev",
+  "framework": "remix",
+  "installCommand": "npm install",
   "functions": {
-    "app/**/*.jsx": {
-      "memory": 1024,
-      "maxDuration": 10
+    "api/**/*.js": {
+      "memory": 3072,
+      "maxDuration": 60
     }
   },
   "headers": [
@@ -11,9 +15,60 @@
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
+          "value": "public, max-age=31536000, must-revalidate"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
         }
       ]
     }
-  ]
+  ],
+  "redirects": [
+    {
+      "source": "/old-path",
+      "destination": "/new-path",
+      "permanent": true
+    }
+  ],
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "regions": [
+    "iad1",
+    "sfo1",
+    "hnd1"
+  ],
+  "github": {
+    "silent": true,
+    "autoAlias": true
+  }
 }

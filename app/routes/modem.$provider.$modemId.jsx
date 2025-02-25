@@ -294,26 +294,40 @@ export default function ModemDetails() {
 				<div className='dashboard-sidebar'>
 					<h2 className='select-device-heading'>{modem?.name}</h2>
 
-					<Suspense fallback={<LoadingSpinner />}>
-						<Await resolve={servicesData}>
+					<Suspense
+						fallback={
+							<div className='loading-container'>
+								<LoadingSpinner />
+							</div>
+						}
+					>
+						<Await
+							resolve={servicesData}
+							errorElement={
+								<div className='error-sidebar'>
+									<span className='material-icons'>error_outline</span>
+									<p>Failed to load devices</p>
+								</div>
+							}
+						>
 							{(resolvedData) => {
-								const { services } = resolvedData;
+								if (!resolvedData?.services?.length) {
+									return (
+										<div className='empty-sidebar'>
+											<p>No modems found in your kits</p>
+										</div>
+									);
+								}
 
+								const { services } = resolvedData;
 								const filteredServices = services
 									.map((service) => ({
 										...service,
-										modems:
-											service.modems?.filter((modem) => {
-												// If userKits includes 'ALL', show all modems
-												if (userKits.includes('ALL')) return true;
-
-												// Check if the modem ID exists in the userKits array
-												return userKits.some((kit) => kit === modem.id);
-											}) || [],
+										modems: service.modems?.filter((modem) => userKits.includes('ALL') || userKits.some((kit) => kit === modem.id)) || [],
 									}))
 									.filter((service) => service.modems.length > 0);
 
-								return filteredServices.length > 0 ? (
+								return (
 									<ul className='modem-list'>
 										{filteredServices.flatMap((service) =>
 											service.modems?.map((modemItem) => (
@@ -321,7 +335,6 @@ export default function ModemDetails() {
 													key={modemItem.id}
 													className={`modem-item ${modemItem.id === modem.id ? 'active' : ''} status-${modemItem.status || 'offline'}`}
 												>
-													{console.log('🍎 modemItem:', modemItem)}
 													<Link
 														className='list-button'
 														to={`/modem/${modemItem.type.toLowerCase()}/${modemItem.id}`}
@@ -338,10 +351,6 @@ export default function ModemDetails() {
 											))
 										)}
 									</ul>
-								) : (
-									<div className='empty-sidebar'>
-										<p>No modems found in your kits</p>
-									</div>
 								);
 							}}
 						</Await>
