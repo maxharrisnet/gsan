@@ -118,13 +118,21 @@ export async function authenticateShopifyCustomer(email, password, request) {
 		if (kits.includes('ALL')) {
 			try {
 				const { services } = await fetchServicesAndModemData();
-				// Get the first actual kit ID from the services
-				const firstAvailableKit = services.flatMap((service) => service.modems.map((modem) => modem.id))[0];
-
-				if (!firstAvailableKit) {
+				// Ensure we await and properly handle the services data
+				if (!services || services.length === 0) {
+					console.error('🚫 No services found');
 					return createUserSession(userData, '/no-kits');
 				}
 
+				// Get the first available kit ID from the services
+				const firstAvailableKit = services.flatMap((service) => service.modems?.map((modem) => modem.id)).filter(Boolean)[0];
+
+				if (!firstAvailableKit) {
+					console.error('🚫 No available kits found in services');
+					return createUserSession(userData, '/no-kits');
+				}
+
+				console.log('🎯 Selected first available kit:', firstAvailableKit);
 				return createUserSession(userData, `/modem/starlink/${firstAvailableKit}`);
 			} catch (error) {
 				console.error('❌ Error fetching services for ALL kits:', error);
