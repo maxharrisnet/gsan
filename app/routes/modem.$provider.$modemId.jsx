@@ -1,6 +1,6 @@
 import { useEffect, useRef, Suspense } from 'react';
 import { useLoaderData, Link, Await, useRouteError, isRouteErrorResponse } from '@remix-run/react';
-import { loader as modemApiLoader } from './api.modem';
+import { loader as modemApiLoader } from '../api/api.modem';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
 import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
@@ -28,10 +28,8 @@ export async function loader({ params, request }) {
 		const modemDetails = await modemApiLoader({ params, request });
 		const modemData = await modemDetails.json();
 
-		// Fetch services data
 		const servicesPromise = fetchServicesAndModemData()
 			.then(async ({ services }) => {
-				// Get status for all modems
 				const modemStatuses = {};
 
 				// Parallel fetch status for all modems

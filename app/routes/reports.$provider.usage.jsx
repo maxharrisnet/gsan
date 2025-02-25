@@ -4,7 +4,7 @@ import { useLoaderData, useNavigation, Await } from '@remix-run/react';
 import { fetchServicesAndModemData } from '../compass.server';
 import Layout from './../components/layout/Layout';
 import reportStyles from '../styles/reports.css?url';
-import { loader as modemApiLoader } from './api.modem';
+import { loader as modemApiLoader } from '../api/api.modem';
 import { useUser } from '../context/UserContext';
 
 export async function loader({ params, request }) {
