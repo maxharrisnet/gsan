@@ -132,7 +132,7 @@ export default function ModemDetails() {
 						<h1 className='select-device-heading'>GSAN</h1>
 					</div>
 				</Sidebar>
-				<main className='content content-full-width'>
+				<main className='content content-full-width qqq'>
 					<div className='error-banner card'>
 						<span className='material-icons'>error_outline</span>
 						<div>
@@ -349,7 +349,7 @@ export default function ModemDetails() {
 				</div>
 			</Sidebar>
 
-			<main className='content content-full-width'>
+			<main className='content content-full-width xxx'>
 				{!modem?.data && (
 					<div className='error-banner card'>
 						<span className='material-icons'>warning</span>
@@ -662,7 +662,7 @@ export function ErrorBoundary() {
 
 	return (
 		<Layout>
-			<main className='content content-full-width'>
+			<main className='content content-full-width www'>
 				<div className='error-banner card'>
 					<span className='material-icons'>{isRouteErrorResponse(error) ? 'error_outline' : 'warning'}</span>
 					<div className='error-content'>

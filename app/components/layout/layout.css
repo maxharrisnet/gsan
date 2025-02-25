@@ -48,6 +48,7 @@
 .sidebar-content,
 .empty-sidebar {
 	padding: var(--spacing-large);
+	position: relative;
 }
 
 /* Main Content */
@@ -57,6 +58,7 @@
 	padding: var(--spacing-xlarge);
 	background-color: var(--color-background);
 	overflow: hidden;
+	position: relative;
 	gap: var(--spacing-large);
 }
 
@@ -65,6 +67,7 @@
 	padding: 0;
 	height: 100vh;
 	overflow: scroll;
+	max-width: 100%;
 }
 
 .content-centered {
@@ -265,6 +268,7 @@ a > .section:hover {
 	padding: 1rem;
 	border-top: 1px solid var(--color-border);
 	text-align: center;
+	font-size: var(--font-size-sm);
 }
 
 /* Map Container */
