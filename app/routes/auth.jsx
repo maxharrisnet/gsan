@@ -34,7 +34,6 @@ export default function Auth() {
 	return (
 		<Layout>
 			<div className='container'>
-				<h1>GSAN Customer Portal</h1>
 				<div className='content-centered'>
 					<img
 						src='/assets/images/GSAN-logo.png'

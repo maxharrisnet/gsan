@@ -26,7 +26,7 @@ export async function loader({ params, request }) {
 	try {
 		// Get current modem details from the existing API loader
 		const modemDetails = await modemApiLoader({ params, request });
-		const modemData = await modemDetails.json();
+		const data = await modemDetails.json();
 
 		const servicesPromise = fetchServicesAndModemData()
 			.then(async ({ services }) => {
@@ -66,14 +66,14 @@ export async function loader({ params, request }) {
 				return { services: updatedServices };
 			})
 			.catch((error) => {
-				console.error('🍎 Error fetching services:', error);
+				console.error('🍎 Error fetching modem:', error);
 				return { services: [] };
 			});
 
 		// Return both sets of data
 		return defer({
 			servicesData: servicesPromise,
-			...modemData,
+			...data,
 		});
 	} catch (error) {
 		console.error('🚨 Error in loader:', error);
@@ -93,7 +93,7 @@ const formatTimestamp = (timestamp) => {
 };
 
 export default function ModemDetails() {
-	const { modem = {}, mapsAPIKey, gpsData = [], latencyData = [], throughputData = [], signalQualityData = [], obstructionData = [], usageData = [], uptimeData = [], errors = {}, servicesData } = useLoaderData();
+	const { error, details, modem = {}, mapsAPIKey, gpsData = [], latencyData = [], throughputData = [], signalQualityData = [], obstructionData = [], usageData = [], uptimeData = [], servicesData } = useLoaderData();
 	const { userKits } = useUser();
 
 	const usageChartRef = useRef(null);
@@ -122,7 +122,7 @@ export default function ModemDetails() {
 	const hasNoData = !modem?.data && !gpsData.length;
 	const mapPosition = gpsData?.[0] ? { lat: parseFloat(gpsData[0].lat), lng: parseFloat(gpsData[0].lon) } : { lat: 39.8283, lng: -98.5795 }; // Default to US center
 
-	if (hasNoData) {
+	if (error) {
 		return (
 			<Layout>
 				<Sidebar>
@@ -134,8 +134,24 @@ export default function ModemDetails() {
 					<div className='error-banner card'>
 						<span className='material-icons'>error_outline</span>
 						<div>
-							<p className='error-message'>No data available for this modem</p>
-							<p className='error-details'>The modem may be offline or there might be connectivity issues</p>
+							<h2>Error Loading Modem Data</h2>
+							<p>{details.message}</p>
+							<div className='error-actions'>
+								<button
+									onClick={() => window.location.reload()}
+									className='retry-button'
+								>
+									<span className='material-icons'>refresh</span>
+									Retry
+								</button>
+								<Link
+									to='/map'
+									className='return-button'
+								>
+									<span className='material-icons'>map</span>
+									Return to Map
+								</Link>
+							</div>
 						</div>
 					</div>
 				</main>
@@ -253,7 +269,7 @@ export default function ModemDetails() {
 	ChartJS.defaults.elements.line.fill = true;
 
 	const renderChartSection = (title, data, chart, errorKey) => {
-		if (errors[errorKey]) {
+		if (error && errorKey === 'usageOverview') {
 			return (
 				<section className='section chart-wrapper'>
 					<h2>{title}</h2>

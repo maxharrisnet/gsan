@@ -34,7 +34,7 @@ export const loader = async () => {
 
 		return { services: servicesWithModemDetails };
 	} catch (error) {
-		console.error('Error fetching performance data:', error);
+		console.error('Error fetching services data:', error);
 		throw new Response('Internal Server Error 🤔', { status: 500 });
 	}
 };
