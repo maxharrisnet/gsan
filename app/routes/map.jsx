@@ -207,7 +207,6 @@ export default function Dashboard() {
 								const { services } = resolvedData;
 								const showAllModems = userKits.includes('ALL');
 
-								// Filter modems based on userKits
 								const filteredServices = services
 									.map((service) => ({
 										...service,

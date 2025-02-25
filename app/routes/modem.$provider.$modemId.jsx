@@ -1,5 +1,5 @@
 import { useEffect, useRef, Suspense } from 'react';
-import { useLoaderData, Link, Await } from '@remix-run/react';
+import { useLoaderData, Link, Await, useRouteError, isRouteErrorResponse } from '@remix-run/react';
 import { loader as modemApiLoader } from './api.modem';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
@@ -95,7 +95,7 @@ const formatTimestamp = (timestamp) => {
 };
 
 export default function ModemDetails() {
-	const { modem = {}, modemStatus = 'offline', mapsAPIKey, gpsData = [], latencyData = [], throughputData = [], signalQualityData = [], obstructionData = [], usageData = [], uptimeData = [], errors = {}, servicesData } = useLoaderData();
+	const { modem = {}, mapsAPIKey, gpsData = [], latencyData = [], throughputData = [], signalQualityData = [], obstructionData = [], usageData = [], uptimeData = [], errors = {}, servicesData } = useLoaderData();
 	const { userKits } = useUser();
 
 	const usageChartRef = useRef(null);
@@ -651,6 +651,47 @@ export default function ModemDetails() {
 						'uptime'
 					)}
 				</section>
+			</main>
+		</Layout>
+	);
+}
+
+export function ErrorBoundary() {
+	const error = useRouteError();
+	const isProd = process.env.NODE_ENV === 'production';
+
+	return (
+		<Layout>
+			<main className='content content-full-width'>
+				<div className='error-banner card'>
+					<span className='material-icons'>{isRouteErrorResponse(error) ? 'error_outline' : 'warning'}</span>
+					<div className='error-content'>
+						<h2 className='error-title'>{isRouteErrorResponse(error) ? `Error ${error.status}: ${error.statusText}` : 'Unable to Load Modem Data'}</h2>
+						<p className='error-message'>{isRouteErrorResponse(error) ? error.data : 'There was a problem loading the modem details. Please try again later.'}</p>
+						{!isProd && (
+							<details className='error-details'>
+								<summary>Technical Details</summary>
+								<pre>{error.message || JSON.stringify(error, null, 2)}</pre>
+							</details>
+						)}
+						<div className='error-actions'>
+							<button
+								onClick={() => window.location.reload()}
+								className='retry-button'
+							>
+								<span className='material-icons'>refresh</span>
+								Retry
+							</button>
+							<Link
+								to='/map'
+								className='return-button'
+							>
+								<span className='material-icons'>map</span>
+								Return to Map
+							</Link>
+						</div>
+					</div>
+				</div>
 			</main>
 		</Layout>
 	);

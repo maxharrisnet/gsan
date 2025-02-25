@@ -1,4 +1,5 @@
 import { getSession, createUserSession } from './session.server';
+import { fetchServicesAndModemData } from '../compass.server';
 
 // Helper for Storefront API
 const fetchStorefrontApi = async ({ shop, storefrontAccessToken, query, variables }) => {
@@ -108,14 +109,31 @@ export async function authenticateShopifyCustomer(email, password, request) {
 
 		console.log('✅ Authentication successful, creating session with:', userData);
 
-		const kits = (userData.metafields.kits = userData.metafields.kits.split(',').map((kit) => kit.trim()));
-		console.log('Show me your kits!', kits);
+		const kits = userData.metafields.kits.split(',').map((kit) => kit.trim());
 		if (kits.length === 0) {
 			return createUserSession(userData, '/no-kits');
 		}
 
-		const firstKitId = kits.find((kit) => kit !== 'ALL') || kits[0];
+		// If kits includes 'ALL', fetch all available kits from the API
+		if (kits.includes('ALL')) {
+			try {
+				const { services } = await fetchServicesAndModemData();
+				// Get the first actual kit ID from the services
+				const firstAvailableKit = services.flatMap((service) => service.modems.map((modem) => modem.id))[0];
 
+				if (!firstAvailableKit) {
+					return createUserSession(userData, '/no-kits');
+				}
+
+				return createUserSession(userData, `/modem/starlink/${firstAvailableKit}`);
+			} catch (error) {
+				console.error('❌ Error fetching services for ALL kits:', error);
+				return { error: 'Failed to fetch available kits' };
+			}
+		}
+
+		// For non-ALL cases, use the first kit from the user's list
+		const firstKitId = kits[0];
 		return createUserSession(userData, `/modem/starlink/${firstKitId}`);
 	} catch (error) {
 		console.error('❌ Authentication error:', error);
