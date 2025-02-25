@@ -292,7 +292,7 @@ export default function ModemDetails() {
 		<Layout>
 			<Sidebar>
 				<div className='dashboard-sidebar'>
-					<h2 className='select-device-heading'>{modem?.name}</h2>
+					<h2 className='select-device-heading'>Select a Modem</h2>
 
 					<Suspense
 						fallback={
