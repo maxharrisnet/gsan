@@ -208,6 +208,11 @@ body .material-icons {
 	background-color: var(--color-error);
 }
 
+.error {
+	color: var(--color-error);
+	padding: var(--spacing-large);
+}
+
 /* Buttons */
 
 .button-wrapper {

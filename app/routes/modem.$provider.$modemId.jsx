@@ -197,7 +197,6 @@ export default function ModemDetails() {
 	const usageLimitGB = usageLimit.toFixed(2);
 
 	// Add a log to verify the parsed values
-	console.log('🔍 Usage Limit:', usageLimit, 'Total Usage:', totalUsage);
 
 	// Set global defaults for Chart.js
 	ChartJS.defaults.global = {
