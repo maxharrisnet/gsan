@@ -367,14 +367,16 @@ export default function ModemDetails() {
 								gestureHandling={'greedy'}
 								disableDefaultUI={true}
 							>
-								<Marker
-									position={mapPosition}
-									icon={{
-										url: `/assets/images/markers/pin-${modem.status || 'offline'}.svg`,
-										scaledSize: { width: 32, height: 40 },
-										anchor: { x: 16, y: 40 },
-									}}
-								/>
+								{gpsData?.length > 0 && (
+									<Marker
+										position={mapPosition}
+										icon={{
+											url: `/assets/images/markers/pin-${modem.status || 'offline'}.svg`,
+											scaledSize: { width: 32, height: 40 },
+											anchor: { x: 16, y: 40 },
+										}}
+									/>
+								)}
 							</Map>
 						</APIProvider>
 					</section>
