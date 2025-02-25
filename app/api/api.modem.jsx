@@ -1,7 +1,6 @@
 import { json } from '@remix-run/node';
 import axios from 'axios';
 import { getCompassAccessToken } from '../compass.server';
-import fetchGPS from './api.gps';
 import { getCachedData } from '../utils/cache.server';
 
 const determineModemStatus = (modemData) => {
@@ -53,13 +52,9 @@ export const loader = async ({ params }) => {
 			const uptimeData = modem.data.uptime.data || [];
 
 			const mapsAPIKey = process.env.GOOGLE_MAPS_API_KEY;
-			const gpsResponse = await fetchGPS(provider, [modemId], accessToken);
-			const gpsData = gpsResponse[modemId] || {};
-
 			const modemDetails = {
 				modem,
 				mapsAPIKey,
-				gpsData,
 				latencyData,
 				throughputData,
 				signalQualityData,
@@ -73,7 +68,11 @@ export const loader = async ({ params }) => {
 				return json({ error: 'No data available for modem 🦤' }, { status: 404 });
 			}
 
-			return modemDetails;
+			return json(modemDetails, {
+				headers: {
+					'Cache-Control': 'max-age=300, stale-while-revalidate=3600',
+				},
+			});
 		});
 
 		return json(cachedData);
