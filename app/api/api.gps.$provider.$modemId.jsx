@@ -1,20 +1,22 @@
-import { json } from '@remix-run/node';
 import { getCompassAccessToken } from '../compass.server';
-import axios from 'axios';
+import { fetchGPS } from './api.gps';
 
 export async function loader({ params }) {
+	const { provider, modemId } = params;
+	const accessToken = await getCompassAccessToken();
+
 	try {
-		const accessToken = await getCompassAccessToken();
-		const { provider, modemId } = params;
+		const gpsData = await fetchGPS(provider, [modemId], accessToken);
 
-		const gpsUrl = `https://api-compass.speedcast.com/v2.0/starlinkgps/`;
-		const response = await axios.get(gpsUrl, {
-			headers: { Authorization: `Bearer ${accessToken}` },
-		});
-
-		return json({ gpsData: response.data });
+		return (
+			gpsData,
+			{
+				headers: {
+					'Cache-Control': 'max-age=300, stale-while-revalidate=3600',
+				},
+			}
+		);
 	} catch (error) {
-		console.error('🌍 Error fetching GPS data:', error);
-		return json({ gpsData: [] }, { status: 500 });
+		return { error: 'Failed to load GPS data' }, { status: 500 };
 	}
 }

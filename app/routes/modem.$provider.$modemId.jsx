@@ -1,5 +1,5 @@
 import { useEffect, useRef, Suspense } from 'react';
-import { useLoaderData, Link, Await, useRouteError, isRouteErrorResponse } from '@remix-run/react';
+import { useLoaderData, useFetcher, Link, Await, useRouteError, isRouteErrorResponse } from '@remix-run/react';
 import { loader as modemApiLoader } from '../api/api.modem';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
@@ -13,6 +13,10 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { defer } from '@remix-run/node';
 import { fetchServicesAndModemData } from '../compass.server';
 
+console.log('🔍 Modem API Loader:', modemApiLoader);
+
+// const loader = modemApiLoader;
+
 export const links = () => [
 	{ rel: 'stylesheet', href: chartStyles },
 	{ rel: 'stylesheet', href: modemStyles },
@@ -24,42 +28,24 @@ export const links = () => [
 
 export async function loader({ params, request }) {
 	try {
-		// Get current modem details from the existing API loader
+		console.log('🔍 Loader params:', params);
+
 		const modemDetails = await modemApiLoader({ params, request });
 		const data = await modemDetails.json();
 
+		console.log('📡 Modem API response:', data);
+
 		const servicesPromise = fetchServicesAndModemData()
 			.then(async ({ services }) => {
-				const modemStatuses = {};
+				console.log('🌐 Services data:', services);
 
-				// Parallel fetch status for all modems
-				await Promise.all(
-					services.flatMap((service) =>
-						(service.modems || []).map(async (modemItem) => {
-							try {
-								const modemResponse = await modemApiLoader({
-									params: {
-										provider: params.provider,
-										modemId: modemItem.id,
-									},
-									request,
-								});
-								const data = await modemResponse.json();
-								modemStatuses[modemItem.id] = data.status;
-							} catch (error) {
-								console.error(`🔴 Error fetching status for modem ${modemItem.id}:`, error);
-								modemStatuses[modemItem.id] = 'offline';
-							}
-						})
-					)
-				);
-
-				// Update all modems with their status
+				// Update all modems with their status - use existing status if available
 				const updatedServices = services.map((service) => ({
 					...service,
 					modems: service.modems?.map((modemItem) => ({
 						...modemItem,
-						status: modemStatuses[modemItem.id] || 'offline',
+						// Use existing status from modemItem if available, otherwise default to 'offline'
+						status: modemItem.status || 'offline',
 					})),
 				}));
 
@@ -70,20 +56,34 @@ export async function loader({ params, request }) {
 				return { services: [] };
 			});
 
-		// Return both sets of data
+		console.log('Loader Modem:', data.modem);
+
 		return defer({
 			servicesData: servicesPromise,
-			...data,
+			modem: data.modem,
+			details: data.details,
+			latencyData: data.latencyData || [],
+			throughputData: data.throughputData || [],
+			signalQualityData: data.signalQualityData || [],
+			obstructionData: data.obstructionData || [],
+			usageData: data.usageData || [],
+			uptimeData: data.uptimeData || [],
+			mapsAPIKey: data.mapsAPIKey,
+			error: null,
 		});
 	} catch (error) {
 		console.error('🚨 Error in loader:', error);
-		throw new Response('Error loading data', { status: 500 });
+		return {
+			error: true,
+			details: {
+				message: error.message || 'Failed to load modem data',
+			},
+		};
 	}
 }
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, BarElement, LineElement, Filler, Title, Tooltip, Legend, ArcElement);
 
-// Update the timestamp formatting function
 const formatTimestamp = (timestamp) => {
 	return new Date(timestamp * 1000).toLocaleTimeString('en-US', {
 		hour: 'numeric',
@@ -93,7 +93,12 @@ const formatTimestamp = (timestamp) => {
 };
 
 export default function ModemDetails() {
-	const { error, details, modem = {}, mapsAPIKey, gpsData = [], latencyData = [], throughputData = [], signalQualityData = [], obstructionData = [], usageData = [], uptimeData = [], servicesData } = useLoaderData();
+	const loaderData = useLoaderData();
+
+	console.log('🎯 Component loader data:', loaderData);
+
+	const { error, details, modem = {}, mapsAPIKey, latencyData = [], throughputData = [], signalQualityData = [], obstructionData = [], usageData = [], uptimeData = [], servicesData } = loaderData;
+	const gpsFetcher = useFetcher();
 	const { userKits } = useUser();
 
 	const usageChartRef = useRef(null);
@@ -119,6 +124,16 @@ export default function ModemDetails() {
 		};
 	}, []);
 
+	console.log('The modem:', modem);
+
+	useEffect(() => {
+		// Fetch GPS data after component mounts
+		if (gpsFetcher.state === 'idle' && !gpsFetcher.data) {
+			gpsFetcher.load(`/api/gps/${modem.provider}/${modem.id}`);
+		}
+	}, [gpsFetcher, modem?.provider, modem?.id]);
+
+	const gpsData = gpsFetcher.data?.[modem?.id] || [];
 	const hasNoData = !modem?.data && !gpsData.length;
 	const mapPosition = gpsData?.[0] ? { lat: parseFloat(gpsData[0].lat), lng: parseFloat(gpsData[0].lon) } : { lat: 39.8283, lng: -98.5795 }; // Default to US center
 
