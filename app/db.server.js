@@ -1,11 +1,25 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 
-if (process.env.NODE_ENV !== "production") {
-  if (!global.prisma) {
-    global.prisma = new PrismaClient();
-  }
+const prisma = new PrismaClient({
+	log: ['query', 'error', 'warn'],
+});
+
+// Test the connection
+async function testConnection() {
+	try {
+		// Try a simple query
+		await prisma.$queryRaw`SELECT NOW()`;
+		console.log('✅ Database connection successful');
+	} catch (error) {
+		console.error('🔴 Database connection error:', {
+			message: error.message,
+			code: error.code,
+			meta: error.meta,
+		});
+		throw error;
+	}
 }
 
-const prisma = global.prisma || new PrismaClient();
+testConnection().catch(console.error);
 
-export default prisma;
+export { prisma };
