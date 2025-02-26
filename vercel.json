@@ -1,0 +1,21 @@
+{
+  "functions": {
+    "app/routes/**/*": {
+      "maxDuration": 60,
+      "maxMemory": 1024
+    },
+    "app/api/**/*": {
+      "maxDuration": 60,
+      "maxMemory": 1024
+    }
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "app/entry.server.jsx"
+    }
+  ],
+  "buildCommand": "npm run build",
+  "outputDirectory": "public/build",
+  "framework": "remix"
+}
