@@ -22,3 +22,5 @@ database.sqlite
 # Ignore shopify files created during app dev
 .shopify/*
 .shopify.lock
+
+user-accounts.md
