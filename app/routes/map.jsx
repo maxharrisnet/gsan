@@ -4,7 +4,6 @@ import { useLoaderData, Await, Link } from '@remix-run/react';
 import { Suspense, useState, useEffect, useMemo } from 'react';
 import { fetchServicesAndModemData, getCompassAccessToken } from '../compass.server';
 import { fetchGPS } from '../api/api.gps';
-import { loader as modemApiLoader } from '../api/api.modem';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -12,6 +11,7 @@ import { APIProvider, Map, Marker, InfoWindow } from '@vis.gl/react-google-maps'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import dashboardStyles from '../styles/performance.css?url';
 import { useUser } from '../context/UserContext';
+import ClientOnly from '../components/ClientOnly';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -307,49 +307,51 @@ export default function Dashboard() {
 							// Progressive loading of components
 							<>
 								{!isMapLoaded && <LoadingSpinner />}
-								<APIProvider apiKey={googleMapsApiKey}>
-									<Map
-										onLoad={() => setIsMapLoaded(true)}
-										{...mapConfig}
-									>
-										{modemLocations.map((modem) => (
-											<Marker
-												key={modem.id}
-												position={modem.position}
-												title={modem.name}
-												icon={{
-													url: `/assets/images/markers/pin-${modem.status || 'offline'}.svg`,
-													scaledSize: { width: 32, height: 40 },
-													anchor: { x: 16, y: 40 },
-												}}
-												onClick={() => setSelectedModem(modem)}
-											/>
-										))}
+								<ClientOnly fallback={<LoadingSpinner />}>
+									<APIProvider apiKey={googleMapsApiKey}>
+										<Map
+											onLoad={() => setIsMapLoaded(true)}
+											{...mapConfig}
+										>
+											{modemLocations.map((modem) => (
+												<Marker
+													key={modem.id}
+													position={modem.position}
+													title={modem.name}
+													icon={{
+														url: `/assets/images/markers/pin-${modem.status || 'offline'}.svg`,
+														scaledSize: { width: 32, height: 40 },
+														anchor: { x: 16, y: 40 },
+													}}
+													onClick={() => setSelectedModem(modem)}
+												/>
+											))}
 
-										{selectedModem && (
-											<InfoWindow
-												position={selectedModem.position}
-												onCloseClick={() => setSelectedModem(null)}
-											>
-												<div className='info-window'>
-													<h3>{selectedModem.name}</h3>
-													<p>Status: {selectedModem.status}</p>
-													<p>Lat: {selectedModem.position.lat.toFixed(6)}</p>
-													<p>Lng: {selectedModem.position.lng.toFixed(6)}</p>
-													{selectedModem.type && (
-														<Link
-															to={`/modem/${selectedModem.type.toLowerCase()}/${selectedModem.id}`}
-															className='info-window-link'
-														>
-															<span className='modem-name'>{selectedModem.name.toUpperCase()}</span>
-															<span className='modem-chevron material-icons'>chevron_right</span>
-														</Link>
-													)}
-												</div>
-											</InfoWindow>
-										)}
-									</Map>
-								</APIProvider>
+											{selectedModem && (
+												<InfoWindow
+													position={selectedModem.position}
+													onCloseClick={() => setSelectedModem(null)}
+												>
+													<div className='info-window'>
+														<h3>{selectedModem.name}</h3>
+														<p>Status: {selectedModem.status}</p>
+														<p>Lat: {selectedModem.position.lat.toFixed(6)}</p>
+														<p>Lng: {selectedModem.position.lng.toFixed(6)}</p>
+														{selectedModem.type && (
+															<Link
+																to={`/modem/${selectedModem.type.toLowerCase()}/${selectedModem.id}`}
+																className='info-window-link'
+															>
+																<span className='modem-name'>{selectedModem.name.toUpperCase()}</span>
+																<span className='modem-chevron material-icons'>chevron_right</span>
+															</Link>
+														)}
+													</div>
+												</InfoWindow>
+											)}
+										</Map>
+									</APIProvider>
+								</ClientOnly>
 							</>
 						)}
 					</Await>

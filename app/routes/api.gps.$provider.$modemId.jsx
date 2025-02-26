@@ -6,7 +6,6 @@ import axios from 'axios';
 
 export async function loader({ params }) {
 	try {
-		const accessToken = await getCompassAccessToken();
 		const { provider, modemId } = params;
 
 		// First check if we have recent data in the database
@@ -19,6 +18,7 @@ export async function loader({ params }) {
 			}
 		}
 
+		const accessToken = await getCompassAccessToken();
 		const url = getGPSURL(provider);
 		if (!url) {
 			return json({ error: 'Invalid provider' }, { status: 400 });
@@ -43,8 +43,6 @@ export async function loader({ params }) {
 
 				if (sortedEntries.length > 0) {
 					const latestEntry = sortedEntries[0];
-
-					// Save to database
 					await upsertModemGPS({
 						modemId,
 						provider,
@@ -55,41 +53,31 @@ export async function loader({ params }) {
 
 					acc[modemId] = [latestEntry];
 				}
-
 				return acc;
 			}, {});
 
 			return json(latestGPSData);
 		}
 
-		return json({ error: `HTTP code ${response.status}` }, { status: response.status });
+		throw new Error(`HTTP code ${response.status}`);
 	} catch (error) {
-		console.error('🌍 Error fetching GPS data:', error);
-
+		// If rate limited, return cached data if available
 		if (error.response?.status === 429) {
-			const retryAfter = error.response.headers['retry-after'];
-
-			// On rate limit, try to return cached data from database
 			const cachedData = await getLatestModemGPS(params.modemId, params.provider);
 			if (cachedData) {
+				console.log('📦 Rate limited - using cached GPS data');
 				return json({ [params.modemId]: [cachedData] });
 			}
 
 			return json(
-				{
-					error: 'Rate limit exceeded',
-					retryAfter,
-					message: 'Please try again later',
-				},
+				{ error: 'Rate limit exceeded' },
 				{
 					status: 429,
-					headers: {
-						'Retry-After': retryAfter,
-					},
+					headers: { 'Retry-After': error.response.headers['retry-after'] || '60' },
 				}
 			);
 		}
 
-		return json({ error: 'Network Error' }, { status: 500 });
+		return json({ error: 'Failed to fetch GPS data' }, { status: 500 });
 	}
 }
