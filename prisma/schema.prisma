@@ -33,13 +33,15 @@ model Session {
 }
 
 model ModemGPS {
-  id         String   @id @default(cuid())
-  modemId    String
-  provider   String
-  latitude   Float?
-  longitude  Float?
-  timestamp  DateTime
-  updatedAt  DateTime @updatedAt
-  
+  id        String   @id @default(cuid())
+  modemId   String
+  provider  String
+  latitude  Float
+  longitude Float
+  timestamp DateTime
+  updated   DateTime @default(now())
+
   @@unique([modemId, provider])
+  @@index([modemId])
+  @@index([provider])
 }

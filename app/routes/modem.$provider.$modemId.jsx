@@ -1,4 +1,4 @@
-import { useEffect, useRef, Suspense } from 'react';
+import { useEffect, useRef, Suspense, useMemo } from 'react';
 import { useLoaderData, useFetcher, Link, Await, useRouteError, isRouteErrorResponse } from '@remix-run/react';
 import { loader as modemApiLoader } from '../api/api.modem';
 import Layout from '../components/layout/Layout';
@@ -133,16 +133,81 @@ export default function ModemDetails() {
 	}, []);
 
 	useEffect(() => {
-		// Fetch GPS data after component mounts
 		if (gpsFetcher.state === 'idle' && !gpsFetcher.data) {
-			console.log('🔍 Fetching GPS data for modem:', modem.id);
-			gpsFetcher.load(`/api/gps/starlink/${modem.id}`);
-		}
-	}, [gpsFetcher, modem?.provider, modem?.id]);
+			console.log('🔍 Initializing GPS fetch for modems:', userKits);
 
-	const gpsData = gpsFetcher.data?.[modem?.id] || [];
-	const hasNoData = !modem?.data && !gpsData.length;
-	const mapPosition = gpsData?.[0] ? { lat: parseFloat(gpsData[0].lat), lng: parseFloat(gpsData[0].lon) } : { lat: 39.8283, lng: -98.5795 }; // Default to US center
+			try {
+				if (!userKits?.length) {
+					console.warn('⚠️ No user kits available');
+					return;
+				}
+
+				const kitIds = userKits.includes('ALL') ? 'all' : userKits.join(',');
+
+				gpsFetcher.load(`/api/gps/${modem.type.toLowerCase()}/${kitIds}`);
+			} catch (error) {
+				console.error('🚨 Error initiating GPS fetch:', error);
+			}
+		}
+	}, [gpsFetcher, userKits, modem.type.toLowerCase()]);
+
+	// Improve GPS data handling for map
+	const gpsData = useMemo(() => {
+		try {
+			if (!gpsFetcher.data || !modem?.id) return null;
+
+			const modemGPS = gpsFetcher.data[modem.id];
+			if (!Array.isArray(modemGPS) || !modemGPS.length) return null;
+
+			const latest = modemGPS[0];
+			if (!latest?.lat || !latest?.lon) return null;
+
+			return {
+				lat: parseFloat(latest.lat),
+				lng: parseFloat(latest.lon),
+				timestamp: latest.timestamp,
+			};
+		} catch (error) {
+			console.error('🚨 Error processing GPS data:', error);
+			return null;
+		}
+	}, [gpsFetcher.data, modem?.id]);
+
+	// Default to US center if no GPS data
+	const mapPosition = gpsData || { lat: 39.8283, lng: -98.5795 };
+
+	// Render map section only if we have valid GPS data
+	const renderMap = () => {
+		if (!mapsAPIKey) {
+			console.warn('⚠️ Missing Maps API key');
+			return null;
+		}
+
+		return (
+			<section className='map-wrapper'>
+				<APIProvider apiKey={mapsAPIKey}>
+					<Map
+						style={{ width: '100%', height: '60vh' }}
+						defaultCenter={mapPosition}
+						defaultZoom={8}
+						gestureHandling={'greedy'}
+						disableDefaultUI={true}
+					>
+						{gpsData && (
+							<Marker
+								position={mapPosition}
+								icon={{
+									url: `/assets/images/markers/pin-${modem.status || 'offline'}.svg`,
+									scaledSize: { width: 32, height: 40 },
+									anchor: { x: 16, y: 40 },
+								}}
+							/>
+						)}
+					</Map>
+				</APIProvider>
+			</section>
+		);
+	};
 
 	if (error) {
 		return (
@@ -355,10 +420,11 @@ export default function ModemDetails() {
 								}
 
 								const { services } = resolvedData;
+								// If userKits includes 'ALL', don't filter modems
 								const filteredServices = services
 									.map((service) => ({
 										...service,
-										modems: service.modems?.filter((modem) => userKits.includes('ALL') || userKits.some((kit) => kit === modem.id)) || [],
+										modems: userKits.includes('ALL') ? service.modems : service.modems?.filter((modem) => userKits.some((kit) => kit === modem.id)) || [],
 									}))
 									.filter((service) => service.modems.length > 0);
 
@@ -412,30 +478,7 @@ export default function ModemDetails() {
 					</div>
 				)}
 
-				{gpsData?.length > 0 && (
-					<section className='map-wrapper'>
-						<APIProvider apiKey={mapsAPIKey}>
-							<Map
-								style={{ width: '100%', height: '60vh' }}
-								defaultCenter={mapPosition}
-								defaultZoom={8}
-								gestureHandling={'greedy'}
-								disableDefaultUI={true}
-							>
-								{gpsData?.length > 0 && (
-									<Marker
-										position={mapPosition}
-										icon={{
-											url: `/assets/images/markers/pin-${modem.status || 'offline'}.svg`,
-											scaledSize: { width: 32, height: 40 },
-											anchor: { x: 16, y: 40 },
-										}}
-									/>
-								)}
-							</Map>
-						</APIProvider>
-					</section>
-				)}
+				{renderMap()}
 				<section className='chart-container'>
 					<div className='overview-charts-container'>
 						{renderChartSection(
