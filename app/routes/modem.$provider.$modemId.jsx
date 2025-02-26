@@ -25,18 +25,71 @@ export const links = () => [
 export async function loader({ params, request }) {
 	try {
 		const modemDetails = await modemApiLoader({ params, request });
+
+		// Handle non-200 responses
+		if (!modemDetails.ok) {
+			console.warn('⚠️ Modem API returned non-200 status:', modemDetails.status);
+			return defer({
+				error: true,
+				details: { message: 'Modem data unavailable' },
+				modem: { id: params.modemId, type: params.provider },
+				latencyData: [],
+				throughputData: [],
+				signalQualityData: [],
+				obstructionData: [],
+				usageData: [],
+				uptimeData: [],
+			});
+		}
+
 		const data = await modemDetails.json();
+
+		// If data is undefined or null, return a structured response
+		if (!data || !data.modem) {
+			console.warn('⚠️ No modem data available for:', params.modemId);
+			return defer({
+				error: true,
+				details: { message: 'No modem data available' },
+				modem: { id: params.modemId, type: params.provider },
+				latencyData: [],
+				throughputData: [],
+				signalQualityData: [],
+				obstructionData: [],
+				usageData: [],
+				uptimeData: [],
+			});
+		}
 
 		const servicesPromise = fetchServicesAndModemData();
 
-		// Return both sets of data
+		// Return both sets of data with default empty arrays for missing data
 		return defer({
 			servicesData: servicesPromise,
-			...data,
+			error: data.error || false,
+			details: data.details || {},
+			modem: data.modem,
+			mapsAPIKey: data.mapsAPIKey,
+			latencyData: data.latencyData || [],
+			throughputData: data.throughputData || [],
+			signalQualityData: data.signalQualityData || [],
+			obstructionData: data.obstructionData || [],
+			usageData: data.usageData || [],
+			uptimeData: data.uptimeData || [],
 		});
 	} catch (error) {
 		console.error('🚨 Error in loader:', error);
-		throw new Response('Error loading data', { status: 500 });
+		// Return a structured error response instead of throwing
+		return defer({
+			error: true,
+			details: { message: 'Error loading modem data' },
+			modem: { id: params.modemId, type: params.provider },
+			latencyData: [],
+			throughputData: [],
+			signalQualityData: [],
+			obstructionData: [],
+			usageData: [],
+			uptimeData: [],
+		});
 	}
 }
 
