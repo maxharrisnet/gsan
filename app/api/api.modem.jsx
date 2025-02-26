@@ -34,54 +34,100 @@ export const loader = async ({ params }) => {
 			const accessToken = await getCompassAccessToken();
 			const modemDetailsURL = `https://api-compass.speedcast.com/v2.0/${encodeURIComponent(provider.toLowerCase())}/${modemId}`;
 
-			const modemResponse = await axios.get(modemDetailsURL, {
-				headers: { Authorization: `Bearer ${accessToken}` },
-			});
+			try {
+				const modemResponse = await axios.get(modemDetailsURL, {
+					headers: { Authorization: `Bearer ${accessToken}` },
+				});
 
-			const modem = modemResponse.data;
-			// console.log('💰 Modem response:', modem);
+				const modem = modemResponse.data;
 
-			const currentStatus = determineModemStatus(modem);
-			modem.status = currentStatus;
-			// console.log('💰 Modem status:', currentStatus);
+				// Handle empty or invalid modem data
+				if (!modem || !modem.data) {
+					return {
+						status: 'offline',
+						error: 'No modem data available',
+						modem: {
+							data: {
+								latency: { data: [] },
+								throughput: { data: [] },
+								signal: { data: [] },
+								obstruction: { data: [] },
+								uptime: { data: [] },
+							},
+							usage: [],
+						},
+						latencyData: [],
+						throughputData: [],
+						signalQualityData: [],
+						obstructionData: [],
+						usageData: [],
+						uptimeData: [],
+						gpsData: {},
+					};
+				}
 
-			const latencyData = modem.data.latency.data || [];
-			const throughputData = modem.data.throughput.data || [];
-			const signalQualityData = modem.data.signal.data || [];
-			const obstructionData = modem.data.obstruction.data || [];
-			const usageData = modem.usage || [];
-			const uptimeData = modem.data.uptime.data || [];
+				const currentStatus = determineModemStatus(modem);
+				modem.status = currentStatus;
 
-			const mapsAPIKey = process.env.GOOGLE_MAPS_API_KEY;
-			const gpsResponse = await fetchGPS(provider, [modemId], accessToken);
-			const gpsData = gpsResponse[modemId] || {};
+				// Safely extract data with fallbacks
+				const latencyData = modem.data?.latency?.data || [];
+				const throughputData = modem.data?.throughput?.data || [];
+				const signalQualityData = modem.data?.signal?.data || [];
+				const obstructionData = modem.data?.obstruction?.data || [];
+				const usageData = modem.usage || [];
+				const uptimeData = modem.data?.uptime?.data || [];
 
-			const modemDetails = {
-				modem,
-				mapsAPIKey,
-				gpsData,
-				latencyData,
-				throughputData,
-				signalQualityData,
-				obstructionData,
-				usageData,
-				uptimeData,
-				status: currentStatus,
-			};
+				const mapsAPIKey = process.env.GOOGLE_MAPS_API_KEY;
 
-			if (!modemDetails) {
-				return json({ error: 'No data available for modem 🦤' }, { status: 404 });
+				// Handle GPS data separately to prevent entire request failure
+				let gpsData = {};
+				try {
+					const gpsResponse = await fetchGPS(provider, [modemId], accessToken);
+					gpsData = gpsResponse[modemId] || {};
+				} catch (gpsError) {
+					console.warn('⚠️ Error fetching GPS data:', gpsError);
+					// Continue with empty GPS data
+				}
+
+				return {
+					modem,
+					mapsAPIKey,
+					gpsData,
+					latencyData,
+					throughputData,
+					signalQualityData,
+					obstructionData,
+					usageData,
+					uptimeData,
+					status: currentStatus,
+				};
+			} catch (modemError) {
+				if (modemError.response?.status === 404) {
+					return {
+						status: 'not_found',
+						error: 'Modem not found',
+						modem: null,
+					};
+				}
+				throw modemError; // Re-throw other errors
 			}
-
-			return modemDetails;
 		});
 
 		return json(cachedData);
 	} catch (error) {
 		console.error('🔴 Error fetching modem details:', error);
-		throw new Response('Error loading modem data', {
-			status: error.response?.status || 500,
-			statusText: error.message,
-		});
+
+		// Return a structured error response instead of throwing
+		return json(
+			{
+				status: 'error',
+				error: error.message,
+				details: error.response?.data || 'Unknown error occurred',
+				modem: null,
+			},
+			{
+				status: error.response?.status || 500,
+			}
+		);
 	}
 };
