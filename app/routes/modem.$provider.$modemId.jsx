@@ -29,37 +29,14 @@ export async function loader({ params, request }) {
 		const data = await modemDetails.json();
 
 		const servicesPromise = fetchServicesAndModemData()
-			.then(async ({ services }) => {
-				const modemStatuses = {};
-
-				// Parallel fetch status for all modems
-				await Promise.all(
-					services.flatMap((service) =>
-						(service.modems || []).map(async (modemItem) => {
-							try {
-								const modemResponse = await modemApiLoader({
-									params: {
-										provider: params.provider,
-										modemId: modemItem.id,
-									},
-									request,
-								});
-								const data = await modemResponse.json();
-								modemStatuses[modemItem.id] = data.status;
-							} catch (error) {
-								console.error(`🔴 Error fetching status for modem ${modemItem.id}:`, error);
-								modemStatuses[modemItem.id] = 'offline';
-							}
-						})
-					)
-				);
-
-				// Update all modems with their status
+			.then(({ services }) => {
+				// Update services to determine status based on latency data
 				const updatedServices = services.map((service) => ({
 					...service,
 					modems: service.modems?.map((modemItem) => ({
 						...modemItem,
-						status: modemStatuses[modemItem.id] || 'offline',
+						// Modem is online if it has latency data
+						status: modemItem.details?.data?.latency ? 'online' : 'offline',
 					})),
 				}));
 
@@ -144,6 +121,7 @@ export default function ModemDetails() {
 									<span className='material-icons'>refresh</span>
 									Retry
 								</button>
+
 								<Link
 									to='/map'
 									className='return-button'
@@ -348,18 +326,29 @@ export default function ModemDetails() {
 													key={modemItem.id}
 													className={`modem-item ${modemItem.id === modem.id ? 'active' : ''} status-${modemItem.status || 'offline'}`}
 												>
-													<Link
-														className='list-button'
-														to={`/modem/${modemItem.type.toLowerCase()}/${modemItem.id}`}
-														prefetch='intent'
-													>
-														<span className='modem-name'>{modemItem.name}</span>
-														<span
-															className={`status-indicator ${modemItem.status || 'offline'}`}
-															title={`Status: ${modemItem.status || 'offline'}`}
-														/>
-														<span className='modem-chevron material-icons'>chevron_right</span>
-													</Link>
+													{modemItem.details?.data?.latency ? (
+														<Link
+															className='list-button'
+															to={`/modem/${modemItem.type.toLowerCase()}/${modemItem.id}`}
+															prefetch='intent'
+														>
+															<span className='modem-name'>{modemItem.name}</span>
+															<span
+																className='status-indicator online'
+																title='Status: online'
+															/>
+															<span className='modem-chevron material-icons'>chevron_right</span>
+														</Link>
+													) : (
+														<div className='list-button disabled'>
+															<span className='modem-name'>{modemItem.name}</span>
+															<span
+																className='status-indicator offline'
+																title='Status: offline'
+															/>
+															<span className='modem-chevron material-icons'>block</span>
+														</div>
+													)}
 												</li>
 											))
 										)}
