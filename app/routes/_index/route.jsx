@@ -8,8 +8,8 @@ export default function App() {
 			<main className='content content-centered'>
 				<div className='logo-wrapper'>
 					<img
-						src='/assets/images/GSAN-logo.png'
-						alt='GSAN Logo'
+						src='/assets/images/switch-logo.png'
+						alt='Switch Logo'
 						className='logo'
 					/>
 				</div>

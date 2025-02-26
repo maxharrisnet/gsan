@@ -104,7 +104,7 @@ export default function ModemDetails() {
 			<Layout>
 				<Sidebar>
 					<div className='dashboard-sidebar'>
-						<h1 className='select-device-heading'>GSAN</h1>
+						<h1 className='select-device-heading'>Switch</h1>
 					</div>
 				</Sidebar>
 				<main className='content content-full-width qqq'>
@@ -700,7 +700,7 @@ export function ErrorBoundary() {
 								className='return-button'
 							>
 								<span className='material-icons'>map</span>
-							Return to Map
+								Return to Map
 							</Link>
 						</div>
 					</div>

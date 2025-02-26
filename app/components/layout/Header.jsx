@@ -32,8 +32,8 @@ const Header = () => {
 				<div className='logo'>
 					<Link to='/'>
 						<img
-							src='/assets/images/GSAN-logo.png'
-							alt='GSAN Logo'
+							src='/assets/images/switch-logo.png'
+							alt='Switch Logo'
 						/>
 					</Link>
 				</div>

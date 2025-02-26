@@ -36,14 +36,14 @@ export default function Auth() {
 			<div className='container'>
 				<div className='content-centered'>
 					<img
-						src='/assets/images/GSAN-logo.png'
-						alt='GSAN Logo'
+						src='/assets/images/switch-logo.png'
+						alt='Switch Logo'
 						className='login-logo'
 					/>
 					<Form method='post'>
 						<div className='form-group'>
 							<select name='loginType'>
-								<option value='shopify'>GSAN Customer</option>
+								<option value='shopify'>Switch Customer</option>
 								<option value='sonar'>Sonar User</option>
 							</select>
 							<input

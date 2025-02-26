@@ -116,7 +116,7 @@ export default function Customers() {
 									value={params.provider}
 									onChange={(e) => (window.location.href = `/${e.target.value}/customers`)}
 								>
-									<option value='gsan'>GSAN</option>
+									<option value='gsan'>Switch</option>
 									<option value='sonar'>SONAR</option>
 								</select>
 							</div>
