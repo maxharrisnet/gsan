@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "prisma generate && remix build",
-    "vercel-build": "prisma generate && prisma db push --force-reset && remix build",
+    "vercel-build": "prisma generate && remix vite:build && cp -r ./public ./build/client",
     "dev": "shopify app dev",
     "config:link": "shopify app config link",
     "generate": "shopify app generate",
@@ -59,6 +59,7 @@
     "@types/node": "^22.2.0",
     "@types/react": "^18.2.31",
     "@types/react-dom": "^18.2.14",
+    "@vercel/remix": "^2.15.3",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-react": "^7.37.4",
