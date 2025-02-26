@@ -20,7 +20,7 @@ export const UserProvider = ({ children, initialUser, shop }) => {
 		</UserContext.Provider>
 	);
 };
-
+//Test
 export const useUser = () => {
 	const context = useContext(UserContext);
 	if (!context) {
