@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function QuickStats({ stats }) {
 	return (
 		<div className='quick-stats'>

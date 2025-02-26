@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from '@remix-run/react';
 import QuickStats from './QuickStats';
 import ModemCard from './ModemCard';

@@ -1,4 +1,3 @@
-import React from 'react';
 import QuickStats from './QuickStats';
 import ModemCard from './ModemCard';
 import AlertList from './AlertList';

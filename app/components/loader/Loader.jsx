@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from 'react';
 import styles from './styles.module.css'; // Assuming you have a CSS file for styling
 
 const Loader = () => {
