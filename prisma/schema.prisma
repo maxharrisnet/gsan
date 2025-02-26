@@ -22,7 +22,7 @@ model Session {
   expires        DateTime?
   accessToken    String
   userId         BigInt?
-  onlineAccessInfo Json?   @default("{}")
+  onlineAccessInfo String  @default("{}")
   firstName      String?
   lastName       String?
   email          String?
