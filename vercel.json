@@ -1,16 +1,12 @@
 {
+  "buildCommand": "npm run vercel-build",
+  "devCommand": "npm run dev",
+  "framework": "remix",
+  "installCommand": "npm install",
+  "outputDirectory": "build/client",
   "functions": {
     "app/api/*": {
       "maxDuration": 60
     }
-  },
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "app/entry.server.jsx"
-    }
-  ],
-  "buildCommand": "npm run build",
-  "outputDirectory": "public/build",
-  "framework": "remix"
+  }
 }
