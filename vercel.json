@@ -1,0 +1,11 @@
+{
+  "buildCommand": "npm run vercel-build",
+  "framework": "remix",
+  "outputDirectory": "public/build",
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "app/entry.server.jsx"
+    }
+  ]
+}

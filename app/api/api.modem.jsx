@@ -109,7 +109,7 @@ export const loader = async ({ params }) => {
 						modem: null,
 					};
 				}
-				throw modemError; // Re-throw other errors
+				throw modemError;
 			}
 		});
 

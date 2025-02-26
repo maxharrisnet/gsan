@@ -700,7 +700,7 @@ export function ErrorBoundary() {
 								className='return-button'
 							>
 								<span className='material-icons'>map</span>
-								Return to Map
+							Return to Map
 							</Link>
 						</div>
 					</div>
