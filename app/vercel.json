@@ -1,10 +1,10 @@
 {
   "functions": {
-    "app/routes/**/*": {
+    "app/routes/*": {
       "maxDuration": 60,
       "maxMemory": 1024
     },
-    "app/api/**/*": {
+    "app/api/*": {
       "maxDuration": 60,
       "maxMemory": 1024
     }
