@@ -17,7 +17,7 @@ export const UserProvider = ({ children, initialUser, shop }) => {
 			}}
 		>
 			{children}
-		</UserContext.Provider>
+	</UserContext.Provider>
 	);
 };
 //Test
