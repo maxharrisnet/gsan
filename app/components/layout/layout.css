@@ -34,6 +34,7 @@
 	flex-flow: column;
 	max-width: 100%;
 	margin: 0 auto;
+	justify-content: center;
 }
 
 /* Sidebar */
@@ -77,6 +78,7 @@
 .content-centered {
 	display: grid;
 	place-items: center;
+	gap: var(--spacing-large);
 	max-width: 600px;
 	width: 100%;
 	margin: var(--spacing-large) auto;

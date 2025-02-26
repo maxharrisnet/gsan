@@ -6,7 +6,7 @@ export default function App() {
 	return (
 		<Layout>
 			<div className='container'>
-				<main className='content content-centered'>
+				<main className='content-centered'>
 					<div className='logo-wrapper'>
 						<img
 							src='/assets/images/switch-logo.png'
