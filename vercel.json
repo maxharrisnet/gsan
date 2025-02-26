@@ -1,9 +1,6 @@
 {
   "functions": {
-    "app/routes/**/*": {
-      "maxDuration": 60
-    },
-    "app/api/**/*": {
+    "api/**/*": {
       "maxDuration": 60
     }
   },
