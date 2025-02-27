@@ -121,14 +121,6 @@ export default function ModemDetails() {
 									<span className='material-icons'>refresh</span>
 									Retry
 								</button>
-
-								<Link
-									to='/map'
-									className='return-button'
-								>
-									<span className='material-icons'>map</span>
-									Return to Map
-								</Link>
 							</div>
 						</div>
 					</div>
@@ -695,13 +687,6 @@ export function ErrorBoundary() {
 								<span className='material-icons'>refresh</span>
 								Retry
 							</button>
-							<Link
-								to='/map'
-								className='return-button'
-							>
-								<span className='material-icons'>map</span>
-								Return to Map
-							</Link>
 						</div>
 					</div>
 				</div>
