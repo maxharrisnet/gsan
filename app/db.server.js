@@ -4,7 +4,7 @@ const prisma = new PrismaClient({
 	log: ['query', 'error', 'warn'],
 });
 
-// Test the connection
+// Test the connection!
 async function testConnection() {
 	try {
 		// Try a simple query
