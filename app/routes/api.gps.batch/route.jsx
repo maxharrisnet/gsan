@@ -6,29 +6,63 @@ import axios from 'axios';
 import { PrismaClient } from '@prisma/client';
 console.log('🔄 Route module loaded');
 
-// Initialize Prisma with extended timeouts
+// Initialize Prisma with basic configuration
 const prisma = new PrismaClient({
-	datasources: {
-		db: {
-			url: process.env.DATABASE_URL,
-		},
-	},
-	log: ['error', 'warn'],
+	log: [
+		{ level: 'warn', emit: 'event' },
+		{ level: 'error', emit: 'event' },
+		{ level: 'info', emit: 'event' },
+	],
 });
 
-// Add connection management
+// Add logging listeners
+prisma.$on('error', (e) => {
+	console.error('💥 Prisma Error:', e);
+});
+
+prisma.$on('warn', (e) => {
+	console.warn('⚠️ Prisma Warning:', e);
+});
+
+prisma.$on('info', (e) => {
+	console.log('ℹ️ Prisma Info:', e);
+});
+
+// Improve connection management
 let isConnected = false;
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000;
 
 const connectDB = async () => {
-	try {
-		if (!isConnected) {
-			await prisma.$connect();
-			isConnected = true;
-			console.log('📡 Database connected successfully');
+	let retries = 0;
+	while (retries < MAX_RETRIES) {
+		try {
+			if (!isConnected) {
+				await prisma.$connect();
+				isConnected = true;
+				console.log('📡 Database connected successfully');
+				return;
+			}
+			return;
+		} catch (error) {
+			retries++;
+			console.error(`💥 Database connection error (attempt ${retries}/${MAX_RETRIES}):`, error);
+			if (retries === MAX_RETRIES) throw error;
+			await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY * retries));
 		}
-	} catch (error) {
-		console.error('💥 Database connection error:', error);
-		throw error;
+	}
+};
+
+// Add cleanup function
+const disconnectDB = async () => {
+	if (isConnected) {
+		try {
+			await prisma.$disconnect();
+			isConnected = false;
+			console.log('👋 Database disconnected successfully');
+		} catch (error) {
+			console.error('💥 Error disconnecting from database:', error);
+		}
 	}
 };
 
@@ -183,10 +217,6 @@ export async function loader({ request }) {
 			{ status: 500 }
 		);
 	} finally {
-		// Disconnect from database
-		if (isConnected) {
-			await prisma.$disconnect();
-			isConnected = false;
-		}
+		await disconnectDB();
 	}
 }
