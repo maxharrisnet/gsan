@@ -96,7 +96,6 @@ export default function ModemDetails() {
 		};
 	}, []);
 
-	const hasNoData = !modem?.data && !gpsData.length;
 	const mapPosition = gpsData?.[0] ? { lat: parseFloat(gpsData[0].lat), lng: parseFloat(gpsData[0].lon) } : { lat: 39.8283, lng: -98.5795 }; // Default to US center
 
 	if (error) {

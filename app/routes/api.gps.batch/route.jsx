@@ -3,83 +3,70 @@ import { getCompassAccessToken, fetchServicesAndModemData } from '../../compass.
 import { getGPSURL } from '../../api/api.gps';
 import { upsertModemGPS } from '../../models/modem.server';
 import axios from 'axios';
+import { PrismaClient } from '@prisma/client';
+console.log('🔄 Route module loaded');
+
+const prisma = new PrismaClient();
 
 export async function loader({ request }) {
-	const authHeader = request.headers.get('Authorization');
-	const cronSecret = process.env.CRON_SECRET;
-
-	if (!cronSecret) {
-		console.error('🔴 CRON_SECRET environment variable is not set');
-		return json({ error: 'Server configuration error' }, { status: 500 });
-	}
-
-	if (authHeader !== `Bearer ${cronSecret}`) {
-		console.warn('🚫 Unauthorized cron job attempt');
-		return json({ error: 'Unauthorized' }, { status: 401 });
-	}
-
 	try {
-		// Get services data with proper error handling
-		const servicesData = await fetchServicesAndModemData()
-			.then(({ services }) => {
-				if (!services || !Array.isArray(services)) {
-					throw new Error('Invalid services data received');
-				}
-				return services;
-			})
-			.catch((error) => {
-				console.error('🔴 Error fetching services:', error);
-				throw error;
-			});
+		// Log the start of the request
+		console.log('🚀 Starting GPS batch update');
 
-		console.log('📡 Services received:', servicesData.length);
+		// Verify authorization
+		const authHeader = request.headers.get('Authorization');
+		console.log('🔑 Auth header present:', !!authHeader);
 
-		// Process modems with type validation and enhanced logging
-		const modems = servicesData.flatMap((service) => {
-			if (!service?.modems || !Array.isArray(service.modems)) {
-				console.warn('⚠️ Invalid modems array for service:', service.name);
-				return [];
-			}
-
-			return service.modems
-				.filter((modem) => {
-					if (!modem?.id || !modem?.type) {
-						console.warn('⚠️ Modem missing ID or type:', modem);
-						return false;
-					}
-					return true;
-				})
-				.map((modem) => ({
-					id: modem.id,
-					provider: modem.type.toLowerCase(),
-				}));
-		});
-
-		console.log('🔢 Total valid modems found:', modems.length);
-
-		if (!modems.length) {
-			console.warn('⚠️ No valid modems found after processing services');
-			return json(
-				{
-					success: false,
-					error: 'No valid modems found',
-				},
-				{ status: 404 }
-			);
+		if (!authHeader || !authHeader.startsWith('Bearer ')) {
+			console.error('❌ Missing or invalid Authorization header');
+			return json({ success: false, error: 'Unauthorized' }, { status: 401 });
 		}
 
-		// Group modems by provider
-		const modemsByProvider = modems.reduce((acc, modem) => {
-			acc[modem.provider] = acc[modem.provider] || [];
-			acc[modem.provider].push(modem.id);
+		const token = authHeader.split(' ')[1];
+		if (token !== process.env.CRON_SECRET) {
+			console.error('❌ Invalid token');
+			return json({ success: false, error: 'Invalid token' }, { status: 401 });
+		}
+
+		// Test database connection
+		try {
+			await prisma.$connect();
+			console.log('📡 Database connected successfully');
+		} catch (dbError) {
+			console.error('💥 Database connection error:', dbError);
+			return json({ success: false, error: 'Database connection failed' }, { status: 500 });
+		}
+
+		// Log each step of the process
+		console.log('🔍 Fetching services data...');
+		const { services } = await fetchServicesAndModemData();
+		console.log('📦 Services fetched:', services?.length || 0);
+
+		// Process modems using the same pattern as map.jsx
+		const modemsByProvider = services.reduce((acc, service) => {
+			if (!service.modems) return acc;
+
+			service.modems.forEach((modem) => {
+				if (modem?.id && modem?.type) {
+					const provider = modem.type.toLowerCase();
+					acc[provider] = acc[provider] || [];
+					acc[provider].push(modem.id);
+				}
+			});
 			return acc;
 		}, {});
+
+		if (Object.keys(modemsByProvider).length === 0) {
+			console.warn('⚠️ No valid modems found in services');
+			return json({ success: false, error: 'No valid modems found' }, { status: 404 });
+		}
 
 		const results = [];
 
 		// Process each provider's modems
 		for (const [provider, modemIds] of Object.entries(modemsByProvider)) {
 			const accessToken = await getCompassAccessToken();
+			console.log('🔑 Access token retrieved for provider:', provider);
 			const url = getGPSURL(provider);
 
 			if (!url) {
@@ -147,11 +134,19 @@ export async function loader({ request }) {
 			results,
 		});
 	} catch (error) {
-		console.error('🚨 Batch GPS update failed:', error);
+		// Log the full error details
+		console.error('💥 Unhandled error in GPS batch update:', {
+			message: error.message,
+			stack: error.stack,
+			name: error.name,
+			data: error.response?.data,
+		});
+
 		return json(
 			{
 				success: false,
 				error: error.message,
+				errorType: error.name,
 			},
 			{ status: 500 }
 		);
