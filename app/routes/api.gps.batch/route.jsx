@@ -6,22 +6,14 @@ import axios from 'axios';
 import { PrismaClient } from '@prisma/client';
 console.log('🔄 Route module loaded');
 
-// Initialize Prisma with extended timeouts and connection limits
+// Initialize Prisma with extended timeouts
 const prisma = new PrismaClient({
 	datasources: {
 		db: {
 			url: process.env.DATABASE_URL,
 		},
 	},
-	// Add connection pool configuration
-	connection: {
-		pool: {
-			min: 0,
-			max: 5,
-			idleTimeoutMillis: 30000,
-			acquireTimeoutMillis: 30000,
-		},
-	},
+	log: ['error', 'warn'],
 });
 
 // Add connection management
