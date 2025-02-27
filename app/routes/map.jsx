@@ -354,49 +354,53 @@ export default function Dashboard() {
 						{(resolvedData) => (
 							// Progressive loading of components
 							<>
-								{!isMapLoaded && <LoadingSpinner />}
+								<div className={`map-loading ${isMapLoaded ? 'hidden' : ''}`}>
+									<LoadingSpinner />
+								</div>
 								<APIProvider apiKey={googleMapsApiKey}>
-									<Map
-										onLoad={() => setIsMapLoaded(true)}
-										{...mapConfig}
-									>
-										{modemLocations.map((modem) => (
-											<Marker
-												key={modem.id}
-												position={modem.position}
-												title={modem.name}
-												icon={{
-													url: `/assets/images/markers/pin-${modem.status || 'offline'}.svg`,
-													scaledSize: { width: 32, height: 40 },
-													anchor: { x: 16, y: 40 },
-												}}
-												onClick={() => setSelectedModem(modem)}
-											/>
-										))}
+									<div className='map-container'>
+										<Map
+											onLoad={() => setIsMapLoaded(true)}
+											{...mapConfig}
+										>
+											{modemLocations.map((modem) => (
+												<Marker
+													key={modem.id}
+													position={modem.position}
+													title={modem.name}
+													icon={{
+														url: `/assets/images/markers/pin-${modem.status || 'offline'}.svg`,
+														scaledSize: { width: 32, height: 40 },
+														anchor: { x: 16, y: 40 },
+													}}
+													onClick={() => setSelectedModem(modem)}
+												/>
+											))}
 
-										{selectedModem && (
-											<InfoWindow
-												position={selectedModem.position}
-												onCloseClick={() => setSelectedModem(null)}
-											>
-												<div className='info-window'>
-													<h3>{selectedModem.name}</h3>
-													<p>Status: {selectedModem.status}</p>
-													<p>Lat: {selectedModem.position.lat.toFixed(6)}</p>
-													<p>Lng: {selectedModem.position.lng.toFixed(6)}</p>
-													{selectedModem.type && (
-														<Link
-															to={`/modem/${selectedModem.type.toLowerCase()}/${selectedModem.id}`}
-															className='info-window-link'
-														>
-															<span className='modem-name'>{selectedModem.name.toUpperCase()}</span>
-															<span className='modem-chevron material-icons'>chevron_right</span>
-														</Link>
-													)}
-												</div>
-											</InfoWindow>
-										)}
-									</Map>
+											{selectedModem && (
+												<InfoWindow
+													position={selectedModem.position}
+													onCloseClick={() => setSelectedModem(null)}
+												>
+													<div className='info-window'>
+														<h3>{selectedModem.name}</h3>
+														<p>Status: {selectedModem.status}</p>
+														<p>Lat: {selectedModem.position.lat.toFixed(6)}</p>
+														<p>Lng: {selectedModem.position.lng.toFixed(6)}</p>
+														{selectedModem.type && (
+															<Link
+																to={`/modem/${selectedModem.type.toLowerCase()}/${selectedModem.id}`}
+																className='info-window-link'
+															>
+																<span className='modem-name'>{selectedModem.name.toUpperCase()}</span>
+																<span className='modem-chevron material-icons'>chevron_right</span>
+															</Link>
+														)}
+													</div>
+												</InfoWindow>
+											)}
+										</Map>
+									</div>
 								</APIProvider>
 							</>
 						)}

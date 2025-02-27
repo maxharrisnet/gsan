@@ -167,12 +167,6 @@ a > .section:hover {
 	width: auto;
 }
 
-.login-logo {
-	margin-bottom: var(--spacing-xlarge);
-	width: 280px;
-	height: auto;
-}
-
 /* Navigation */
 .nav {
 	display: flex;
@@ -276,14 +270,26 @@ a > .section:hover {
 	padding: 1rem;
 	border-top: 1px solid var(--color-border);
 	text-align: center;
-	font-size: var(--font-size-sm);
+	font-size: var(--font-size-small);
 }
 
 /* Map Container */
 .map-container {
 	width: 100%;
-	z-index: 30;
+	z-index: 22;
 	position: relative;
+}
+
+.map-loading {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	z-index: 10;
+}
+
+.map-loading.hidden {
+	display: none;
 }
 
 /* Add to your existing nav styles */
