@@ -99,6 +99,17 @@ export async function loader({ request }) {
 					}
 				);
 
+				// Add rate limit handling
+				if (response.status === 429) {
+					console.warn('🕒 Rate limit reached for provider:', provider);
+					results.push({
+						provider,
+						status: 'rate_limited',
+						message: 'Rate limit reached, will retry in next scheduled run',
+					});
+					continue;
+				}
+
 				// Save GPS data for each modem
 				for (const [modemId, entries] of Object.entries(response.data)) {
 					if (!Array.isArray(entries) || !entries.length) continue;
