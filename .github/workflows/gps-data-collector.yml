@@ -1,0 +1,39 @@
+name: GPS Data Collection
+
+on:
+  schedule:
+    - cron: '0 */2 * * *' # Runs every 2 hours
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  collect-gps:
+    name: Collect GPS Data
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Start Collection
+        run: |
+          echo "🛰️ Starting GPS collection at $(date)"
+
+      - name: Call GPS Batch Endpoint
+        run: |
+          response=$(curl -s -w "\n%{http_code}" \
+            -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            "${{ secrets.APP_URL }}/api/gps/batch")
+
+          status_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "📡 Status: $status_code"
+          echo "📦 Response: $body"
+
+          if [ "$status_code" -ge 400 ]; then
+            echo "❌ Failed with status $status_code"
+            exit 1
+          fi
+
+      - name: Log Completion
+        if: always()
+        run: echo "✅ Collection finished at $(date)"
