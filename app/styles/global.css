@@ -351,6 +351,14 @@ select:focus {
 	animation: spin 1s linear infinite;
 }
 
+.modem-item.status-offline .modem-name {
+	opacity: 0.5;
+}
+
+.modem-item.status-offline:hover {
+	cursor: not-allowed;
+}
+
 /* Responsive container widths */
 @media (min-width: 640px) {
 	.container {
