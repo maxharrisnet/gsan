@@ -1,26 +1,22 @@
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient({
-	log: ['query', 'error', 'warn'],
-});
+const prisma = new PrismaClient();
 
 // Test the connection!
 async function testConnection() {
 	try {
-		// Try a simple query
-		await prisma.$queryRaw`SELECT NOW()`;
-		console.log('✅ Database connection successful');
+		await prisma.$connect();
+		console.log('🟢 Database connection successful');
+		return true;
 	} catch (error) {
-		console.error('🔴 Database connection error:', {
-			message: error.message,
-			code: error.code,
-			meta: error.meta,
-		});
-		throw error;
+		console.error('🔴 Database connection failed:', error);
+		return false;
 	}
 }
 
 testConnection().catch(console.error);
 
+// Export the prisma instance as default and named export
+export { prisma };
 export default prisma;
 export { testConnection };

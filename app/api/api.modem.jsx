@@ -66,34 +66,51 @@ export const loader = async ({ params }) => {
 					};
 				}
 
-			const currentStatus = determineModemStatus(modem);
-			modem.status = currentStatus;
+				const currentStatus = determineModemStatus(modem);
+				modem.status = currentStatus;
 
-			const latencyData = modem.data.latency.data || [];
-			const throughputData = modem.data.throughput.data || [];
-			const signalQualityData = modem.data.signal.data || [];
-			const obstructionData = modem.data.obstruction.data || [];
-			const usageData = modem.usage || [];
-			const uptimeData = modem.data.uptime.data || [];
-			const mapsAPIKey = process.env.GOOGLE_MAPS_API_KEY;
+				const latencyData = modem.data.latency.data || [];
+				const throughputData = modem.data.throughput.data || [];
+				const signalQualityData = modem.data.signal.data || [];
+				const obstructionData = modem.data.obstruction.data || [];
+				const usageData = modem.usage || [];
+				const uptimeData = modem.data.uptime.data || [];
+				const mapsAPIKey = process.env.GOOGLE_MAPS_API_KEY;
 
-			const modemDetails = {
-				modem,
-				mapsAPIKey,
-				latencyData,
-				throughputData,
-				signalQualityData,
-				obstructionData,
-				usageData,
-				uptimeData,
-				status: currentStatus,
-			};
+				const modemDetails = {
+					modem,
+					mapsAPIKey,
+					latencyData,
+					throughputData,
+					signalQualityData,
+					obstructionData,
+					usageData,
+					uptimeData,
+					status: currentStatus,
+				};
 
-			if (!modemDetails) {
-				return json({ error: 'No data available for modem 🦤' }, { status: 404 });
+				if (!modemDetails) {
+					return json({ error: 'No data available for modem 🦤' }, { status: 404 });
+				}
+
+				return modemDetails;
+			} catch (error) {
+				console.error('🔴 Error in modem request:', error);
+				return {
+					status: 'offline',
+					error: 'Failed to fetch modem data',
+					modem: {
+						data: {
+							latency: { data: [] },
+							throughput: { data: [] },
+							signal: { data: [] },
+							obstruction: { data: [] },
+							uptime: { data: [] },
+						},
+						usage: [],
+					},
+				};
 			}
-
-			return modemDetails;
 		});
 
 		return json(cachedData);
