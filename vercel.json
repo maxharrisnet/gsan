@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/gps/batch",
-      "schedule": "*/5 * * * *",
+      "schedule": "0 0 * * *",
       "headers": {
         "Authorization": "Bearer @CRON_SECRET"
       }
