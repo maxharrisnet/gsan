@@ -23,4 +23,5 @@ async function testConnection() {
 testConnection().catch(console.error);
 
 export default prisma;
+export { prisma };
 export { testConnection };
