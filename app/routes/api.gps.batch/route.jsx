@@ -6,10 +6,75 @@ import axios from 'axios';
 import { PrismaClient } from '@prisma/client';
 console.log('🔄 Route module loaded');
 
-const prisma = new PrismaClient();
+// Initialize Prisma with extended timeouts and connection limits
+const prisma = new PrismaClient({
+	datasources: {
+		db: {
+			url: process.env.DATABASE_URL,
+		},
+	},
+	// Add connection pool configuration
+	connection: {
+		pool: {
+			min: 0,
+			max: 5,
+			idleTimeoutMillis: 30000,
+			acquireTimeoutMillis: 30000,
+		},
+	},
+});
+
+// Add connection management
+let isConnected = false;
+
+const connectDB = async () => {
+	try {
+		if (!isConnected) {
+			await prisma.$connect();
+			isConnected = true;
+			console.log('📡 Database connected successfully');
+		}
+	} catch (error) {
+		console.error('💥 Database connection error:', error);
+		throw error;
+	}
+};
+
+// Add retry logic with reasonable timeouts for cron
+const fetchWithRetry = async (fn, retries = 2, initialDelay = 1000) => {
+	const MAX_DELAY = 10000; // Maximum 10 second delay
+	let lastError;
+
+	for (let attempt = 1; attempt <= retries; attempt++) {
+		try {
+			return await fn();
+		} catch (error) {
+			lastError = error;
+
+			// Check specifically for rate limit error
+			if (error.response?.status === 429) {
+				const retryAfter = error.response.headers['retry-after'];
+				// Cap the delay at MAX_DELAY
+				const delayMs = Math.min(retryAfter ? retryAfter * 1000 : initialDelay * Math.pow(2, attempt - 1), MAX_DELAY);
+				console.log(`🕒 Rate limited. Waiting ${delayMs / 1000}s before retry ${attempt}/${retries}`);
+				await new Promise((resolve) => setTimeout(resolve, delayMs));
+				continue;
+			}
+
+			throw error;
+		}
+	}
+
+	// If we've exhausted retries, log it for monitoring
+	console.warn('⚠️ Rate limit retries exhausted, will try again next cron run');
+	throw lastError;
+};
 
 export async function loader({ request }) {
 	try {
+		// Connect to database first
+		await connectDB();
+
 		// Log the start of the request
 		console.log('🚀 Starting GPS batch update');
 
@@ -26,15 +91,6 @@ export async function loader({ request }) {
 		if (token !== process.env.CRON_SECRET) {
 			console.error('❌ Invalid token');
 			return json({ success: false, error: 'Invalid token' }, { status: 401 });
-		}
-
-		// Test database connection
-		try {
-			await prisma.$connect();
-			console.log('📡 Database connected successfully');
-		} catch (dbError) {
-			console.error('💥 Database connection error:', dbError);
-			return json({ success: false, error: 'Database connection failed' }, { status: 500 });
 		}
 
 		// Log each step of the process
@@ -75,27 +131,18 @@ export async function loader({ request }) {
 			}
 
 			try {
-				const response = await axios.post(
-					url,
-					{ ids: modemIds },
-					{
-						headers: {
-							Authorization: `Bearer ${accessToken}`,
-							'Content-Type': 'application/json',
-						},
-					}
-				);
-
-				// Add rate limit handling
-				if (response.status === 429) {
-					console.warn('🕒 Rate limit reached for provider:', provider);
-					results.push({
-						provider,
-						status: 'rate_limited',
-						message: 'Rate limit reached, will retry in next scheduled run',
-					});
-					continue;
-				}
+				const response = await fetchWithRetry(async () => {
+					return await axios.post(
+						url,
+						{ ids: modemIds },
+						{
+							headers: {
+								Authorization: `Bearer ${accessToken}`,
+								'Content-Type': 'application/json',
+							},
+						}
+					);
+				});
 
 				// Save GPS data for each modem
 				for (const [modemId, entries] of Object.entries(response.data)) {
@@ -134,14 +181,7 @@ export async function loader({ request }) {
 			results,
 		});
 	} catch (error) {
-		// Log the full error details
-		console.error('💥 Unhandled error in GPS batch update:', {
-			message: error.message,
-			stack: error.stack,
-			name: error.name,
-			data: error.response?.data,
-		});
-
+		console.error('💥 Unhandled error:', error);
 		return json(
 			{
 				success: false,
@@ -150,5 +190,11 @@ export async function loader({ request }) {
 			},
 			{ status: 500 }
 		);
+	} finally {
+		// Disconnect from database
+		if (isConnected) {
+			await prisma.$disconnect();
+			isConnected = false;
+		}
 	}
 }

@@ -11,6 +11,9 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  connectionTimeoutMillis = 30000  // 30 seconds
+  poolTimeout            = 30000   // 30 seconds
+  connectionLimit        = 5       // Increase from default 1
 }
 
 model Session {
