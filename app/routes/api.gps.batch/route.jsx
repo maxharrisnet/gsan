@@ -96,6 +96,16 @@ const fetchWithRetry = async (fn, retries = 2, initialDelay = 1000) => {
 	throw lastError;
 };
 
+// Add URL normalization helper
+const normalizeUrl = (base, path) => {
+	// Remove trailing slash from base
+	const cleanBase = base.replace(/\/+$/, '');
+	// Remove leading slash from path
+	const cleanPath = path.replace(/^\/+/, '');
+	// Join with single slash
+	return `${cleanBase}/${cleanPath}`;
+};
+
 export async function loader({ request }) {
 	try {
 		// Connect to database first
@@ -149,12 +159,14 @@ export async function loader({ request }) {
 		for (const [provider, modemIds] of Object.entries(modemsByProvider)) {
 			const accessToken = await getCompassAccessToken();
 			console.log('🔑 Access token retrieved for provider:', provider);
-			const url = getGPSURL(provider);
+			const url = normalizeUrl(process.env.APP_URL, getGPSURL(provider));
 
 			if (!url) {
 				console.warn(`⚠️ No GPS URL for provider: ${provider}`);
 				continue;
 			}
+
+			console.log('🔗 Constructed URL:', url); // Log to verify the URL
 
 			try {
 				const response = await fetchWithRetry(async () => {
