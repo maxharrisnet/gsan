@@ -1,37 +1,39 @@
-name: GPS Data Collector
+name: GPS Data Collection
 
 on:
   schedule:
-    # Run every 7 minutes
-    - cron: '*/7 * * * *'
+    - cron: '0 */2 * * *' # Runs every 2 hours
   workflow_dispatch: # Allows manual triggering
 
 jobs:
-  collect-gps-data:
+  collect-gps:
+    name: Collect GPS Data
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Generate Prisma Client
-        run: npx prisma generate
-
-      - name: Call GPS Batch API
+      - name: Start Collection
         run: |
-          curl -X GET "${{ secrets.APP_URL }}/api/gps/batch" \
-          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.DIRECT_URL }}
-          COMPASS_CLIENT_ID: ${{ secrets.COMPASS_CLIENT_ID }}
-          COMPASS_CLIENT_SECRET: ${{ secrets.COMPASS_CLIENT_SECRET }}
+          echo "🛰️ Starting GPS collection at $(date)"
+
+      - name: Call GPS Batch Endpoint
+        run: |
+          response=$(curl -s -w "\n%{http_code}" \
+            -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            "${{ secrets.APP_URL }}/api/gps/batch")
+
+          status_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "📡 Status: $status_code"
+          echo "📦 Response: $body"
+
+          if [ "$status_code" -ge 400 ]; then
+            echo "❌ Failed with status $status_code"
+            exit 1
+          fi
+
+      - name: Log Completion
+        if: always()
+        run: echo "✅ Collection finished at $(date)"
