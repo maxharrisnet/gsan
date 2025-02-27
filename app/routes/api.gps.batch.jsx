@@ -5,7 +5,21 @@ import { upsertModemGPS } from '../models/modem.server';
 import { fetchServicesAndModemData } from '../compass.server';
 import axios from 'axios';
 
-export async function loader() {
+export async function loader({ request }) {
+	// Check for CRON_SECRET in Authorization header
+	const authHeader = request.headers.get('Authorization');
+	const cronSecret = process.env.CRON_SECRET;
+
+	if (!cronSecret) {
+		console.error('🔴 CRON_SECRET environment variable is not set');
+		return json({ error: 'Server configuration error' }, { status: 500 });
+	}
+
+	if (authHeader !== `Bearer ${cronSecret}`) {
+		console.warn('🚫 Unauthorized cron job attempt');
+		return json({ error: 'Unauthorized' }, { status: 401 });
+	}
+
 	try {
 		// Get all modems from services
 		const { services } = await fetchServicesAndModemData();
