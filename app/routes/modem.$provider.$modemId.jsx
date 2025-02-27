@@ -99,13 +99,7 @@ export default function ModemDetails() {
 
 	useEffect(() => {
 		if (modem?.id && !gpsFetcher.data) {
-			gpsFetcher.submit(
-				{ modemIds: modem.id },
-				{
-					method: 'get',
-					action: `/api/gps/query?modemIds=${modem.id}`,
-				}
-			);
+			gpsFetcher.load(`/api/gps/query?modemIds=${modem.id}`);
 		}
 	}, [modem?.id, gpsFetcher]);
 
@@ -113,27 +107,52 @@ export default function ModemDetails() {
 		data: gpsFetcher.data,
 		state: gpsFetcher.state,
 		modemId: modem?.id,
+		isLoading: gpsFetcher.state === 'loading',
+		hasError: gpsFetcher.data?.error,
+		timestamp: gpsFetcher.data?.data?.[modem.id]?.[0]?.timestamp,
+		date: new Date(gpsFetcher.data?.data?.[modem.id]?.[0]?.timestamp * 1000),
 	});
 
 	const mapPosition = useMemo(() => {
 		try {
-			if (gpsFetcher.data?.data?.[modem.id]?.[0]) {
-				const gpsInfo = gpsFetcher.data.data[modem.id][0];
-				const lat = parseFloat(gpsInfo.lat);
-				const lng = parseFloat(gpsInfo.lon);
-
-				// Validate coordinates
-				if (!isNaN(lat) && !isNaN(lng)) {
-					return { lat, lng };
-				}
+			if (gpsFetcher.state === 'loading') {
+				console.log('🌍 GPS data is loading...');
+				return { lat: 56.1304, lng: -106.3468 }; // Default Canada center
 			}
-			// Fall back to default position if no valid GPS data
-			return { lat: 56.1304, lng: -106.3468 }; // Default to Canada's center
+
+			if (!gpsFetcher.data || gpsFetcher.data?.error) {
+				console.warn('⚠️ No GPS data available:', gpsFetcher.data?.error || 'Data not found');
+				return { lat: 56.1304, lng: -106.3468 }; // Default Canada center
+			}
+
+			const gpsData = gpsFetcher.data?.data?.[modem.id]?.[0];
+
+			if (!gpsData) {
+				console.warn('⚠️ No GPS entries found for modem:', modem.id);
+				return { lat: 56.1304, lng: -106.3468 }; // Default Canada center
+			}
+
+			const lat = parseFloat(gpsData.lat);
+			const lng = parseFloat(gpsData.lon);
+			const timestamp = new Date(gpsData.timestamp * 1000);
+			const isStale = Date.now() - timestamp > 1800000; // 30 minutes
+
+			if (isStale) {
+				console.warn('⚠️ GPS data is stale. Last update:', timestamp.toLocaleString());
+			}
+
+			if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+				console.log('📍 Valid GPS coordinates found:', { lat, lng, timestamp: timestamp.toLocaleString() });
+				return { lat, lng };
+			}
+
+			console.warn('⚠️ Invalid GPS coordinates:', { lat, lng });
+			return { lat: 56.1304, lng: -106.3468 }; // Default Canada center
 		} catch (error) {
-			console.error('🚨 Error parsing GPS coordinates:', error);
-			return { lat: 56.1304, lng: -106.3468 }; // Default to Canada's center
+			console.error('🚨 Error processing GPS data:', error);
+			return { lat: 56.1304, lng: -106.3468 }; // Default Canada center
 		}
-	}, [gpsFetcher.data, modem?.id]);
+	}, [gpsFetcher.data, gpsFetcher.state, modem?.id]);
 
 	if (error) {
 		return (
@@ -401,20 +420,38 @@ export default function ModemDetails() {
 						<APIProvider apiKey={mapsAPIKey}>
 							<Map
 								style={{ width: '100%', height: '60vh' }}
-								defaultCenter={mapPosition}
-								defaultZoom={8}
+								center={gpsFetcher.data?.data?.[modem.id]?.[0] ? mapPosition : { lat: 56.1304, lng: -106.3468 }}
+								zoom={8}
 								gestureHandling={'greedy'}
 								disableDefaultUI={true}
 							>
-								{mapPosition && (
-									<Marker
-										position={mapPosition}
-										icon={{
-											url: `/assets/images/markers/pin-${modem.status || 'offline'}.svg`,
-											scaledSize: { width: 32, height: 40 },
-											anchor: { x: 16, y: 40 },
-										}}
-									/>
+								{gpsFetcher.state === 'loading' && (
+									<div className="map-loading-overlay">
+										<LoadingSpinner />
+										<p>Loading GPS data...</p>
+									</div>
+								)}
+								
+								{/* Only show marker when we have GPS data and not loading */}
+								{gpsFetcher.state !== 'loading' && gpsFetcher.data?.data?.[modem.id]?.[0] && (
+									<>
+										{/* Show warning banner for stale data */}
+										{Date.now() - new Date(gpsFetcher.data.data[modem.id][0].timestamp * 1000) > 1800000 && (
+											<div className='warning-banner'>
+												<span className='material-icons'>warning</span>
+												<p>GPS data may be outdated. Last update: {new Date(gpsFetcher.data.data[modem.id][0].timestamp * 1000).toLocaleString()}</p>
+											</div>
+										)}
+										
+										<Marker
+											position={mapPosition}
+											icon={{
+												url: `/assets/images/markers/pin-${Date.now() - new Date(gpsFetcher.data.data[modem.id][0].timestamp * 1000) > 1800000 ? 'stale' : modem.status || 'offline'}.svg`,
+												scaledSize: { width: 32, height: 40 },
+												anchor: { x: 16, y: 40 },
+											}}
+										/>
+									</>
 								)}
 							</Map>
 						</APIProvider>
