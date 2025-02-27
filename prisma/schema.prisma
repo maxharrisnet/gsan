@@ -39,10 +39,7 @@ model ModemGPS {
   latitude  Float
   longitude Float
   timestamp DateTime
-  updatedAt DateTime @default(now()) @updatedAt
 
-  @@unique([modemId, provider], name: "modemId_provider")
+  @@unique([modemId, provider])
   @@index([timestamp])
-  @@index([modemId])
-  @@index([provider])
 }

@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/gps/batch",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+} 
