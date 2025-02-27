@@ -1,5 +1,5 @@
-import { useEffect, useRef, Suspense } from 'react';
-import { useLoaderData, Link, Await, useRouteError, isRouteErrorResponse } from '@remix-run/react';
+import { useEffect, useRef, Suspense, useMemo } from 'react';
+import { useLoaderData, Link, Await, useRouteError, isRouteErrorResponse, useFetcher } from '@remix-run/react';
 import { loader as modemApiLoader } from '../api/api.modem';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
@@ -70,8 +70,9 @@ const formatTimestamp = (timestamp) => {
 };
 
 export default function ModemDetails() {
-	const { error, details, modem = {}, mapsAPIKey, gpsData = [], latencyData = [], throughputData = [], signalQualityData = [], obstructionData = [], usageData = [], uptimeData = [], servicesData } = useLoaderData();
+	const { error, details, modem = {}, mapsAPIKey, latencyData = [], throughputData = [], signalQualityData = [], obstructionData = [], usageData = [], uptimeData = [], servicesData } = useLoaderData();
 	const { userKits } = useUser();
+	const gpsFetcher = useFetcher();
 
 	const usageChartRef = useRef(null);
 	const signalQualityChartRef = useRef(null);
@@ -96,7 +97,43 @@ export default function ModemDetails() {
 		};
 	}, []);
 
-	const mapPosition = gpsData?.[0] ? { lat: parseFloat(gpsData[0].lat), lng: parseFloat(gpsData[0].lon) } : { lat: 39.8283, lng: -98.5795 }; // Default to US center
+	useEffect(() => {
+		if (modem?.id && !gpsFetcher.data) {
+			gpsFetcher.submit(
+				{ modemIds: modem.id },
+				{
+					method: 'get',
+					action: `/api/gps/query?modemIds=${modem.id}`,
+				}
+			);
+		}
+	}, [modem?.id, gpsFetcher]);
+
+	console.log('🌍 GPS Fetcher State:', {
+		data: gpsFetcher.data,
+		state: gpsFetcher.state,
+		modemId: modem?.id,
+	});
+
+	const mapPosition = useMemo(() => {
+		try {
+			if (gpsFetcher.data?.data?.[modem.id]?.[0]) {
+				const gpsInfo = gpsFetcher.data.data[modem.id][0];
+				const lat = parseFloat(gpsInfo.lat);
+				const lng = parseFloat(gpsInfo.lon);
+
+				// Validate coordinates
+				if (!isNaN(lat) && !isNaN(lng)) {
+					return { lat, lng };
+				}
+			}
+			// Fall back to default position if no valid GPS data
+			return { lat: 56.1304, lng: -106.3468 }; // Default to Canada's center
+		} catch (error) {
+			console.error('🚨 Error parsing GPS coordinates:', error);
+			return { lat: 56.1304, lng: -106.3468 }; // Default to Canada's center
+		}
+	}, [gpsFetcher.data, modem?.id]);
 
 	if (error) {
 		return (
@@ -359,7 +396,7 @@ export default function ModemDetails() {
 					</div>
 				)}
 
-				{gpsData?.length > 0 && (
+				{mapPosition && (
 					<section className='map-wrapper'>
 						<APIProvider apiKey={mapsAPIKey}>
 							<Map
@@ -369,7 +406,7 @@ export default function ModemDetails() {
 								gestureHandling={'greedy'}
 								disableDefaultUI={true}
 							>
-								{gpsData?.length > 0 && (
+								{mapPosition && (
 									<Marker
 										position={mapPosition}
 										icon={{

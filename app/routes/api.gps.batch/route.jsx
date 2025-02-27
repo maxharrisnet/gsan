@@ -159,8 +159,11 @@ export async function loader({ request }) {
 					);
 				});
 
+				console.log('🔍 GPS Response:', response);
+
 				// Save GPS data for each modem
 				for (const [modemId, entries] of Object.entries(response.data)) {
+					console.log('🔍 GPS Database Entries:', entries);
 					if (!Array.isArray(entries) || !entries.length) continue;
 
 					const latestEntry = entries[0];

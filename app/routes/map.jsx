@@ -1,6 +1,6 @@
 // app/routes/performance.jsx
 import { defer } from '@remix-run/node';
-import { useLoaderData, Await, Link } from '@remix-run/react';
+import { useLoaderData, Await, Link, useFetcher } from '@remix-run/react';
 import { Suspense, useState, useEffect, useMemo } from 'react';
 import { fetchServicesAndModemData, getCompassAccessToken } from '../compass.server';
 import { fetchGPS } from '../api/api.gps';
@@ -205,30 +205,35 @@ export default function Dashboard() {
 	const { userKits } = useUser();
 	const [selectedModem, setSelectedModem] = useState(null);
 	const [isMapLoaded, setIsMapLoaded] = useState(false);
+	const gpsFetcher = useFetcher();
 
-	// Handle critical errors
-	if (error) {
-		return (
-			<Layout>
-				<div className='error-container'>
-					<h2>Error Loading Map</h2>
-					<p>{servicesData?.message || 'An unexpected error occurred'}</p>
-					<button onClick={() => window.location.reload()}>Retry Loading</button>
-				</div>
-			</Layout>
-		);
-	}
+	// Use effect to fetch GPS data when services are loaded
+	useEffect(() => {
+		if (servicesData instanceof Promise) {
+			servicesData.then((data) => {
+				const modemIds = data.services
+					.flatMap((service) => service.modems || [])
+					.filter((modem) => userKits.includes('ALL') || userKits.includes(modem.id))
+					.map((modem) => modem.id);
+
+				if (modemIds.length > 0) {
+					gpsFetcher.load(`/api/gps/query?modemIds=${modemIds.join(',')}`);
+				}
+			});
+		}
+	}, [servicesData, userKits, gpsFetcher]);
 
 	const modemLocations = useMemo(() => {
-		if (!servicesData?.services) return [];
+		if (!servicesData?.services || !gpsFetcher.data?.data) return [];
 
 		const showAllModems = userKits.includes('ALL');
+		const gpsData = gpsFetcher.data.data;
 
 		return servicesData.services.flatMap((service) =>
 			(service.modems || [])
 				.filter((modem) => showAllModems || userKits.includes(modem.id))
 				.map((modem) => {
-					const gpsInfo = servicesData.gpsData?.[modem.id]?.[0];
+					const gpsInfo = gpsData[modem.id]?.[0];
 					return gpsInfo
 						? {
 								id: modem.id,
@@ -244,7 +249,7 @@ export default function Dashboard() {
 				})
 				.filter(Boolean)
 		);
-	}, [servicesData, userKits]);
+	}, [servicesData, gpsFetcher.data, userKits]);
 
 	// Update mapConfig to include North America bounds
 	const mapConfig = useMemo(
@@ -264,30 +269,18 @@ export default function Dashboard() {
 		[modemLocations]
 	);
 
-	// Handle GPS data caching on the client side
-	useEffect(() => {
-		const handleGPSData = async (resolvedData) => {
-			if (resolvedData?.gpsData) {
-				try {
-					localStorage.setItem(
-						'shared_gps_cache',
-						JSON.stringify({
-							timestamp: Date.now(),
-							data: resolvedData.gpsData,
-						})
-					);
-					console.log('📱 GPS data cached in localStorage');
-				} catch (error) {
-					console.error('🚨 Error caching GPS data:', error);
-				}
-			}
-		};
-
-		// Subscribe to when data is resolved
-		if (servicesData instanceof Promise) {
-			servicesData.then(handleGPSData);
-		}
-	}, [servicesData]);
+	// Handle critical errors
+	if (error) {
+		return (
+			<Layout>
+				<div className='error-container'>
+					<h2>Error Loading Map</h2>
+					<p>{servicesData?.message || 'An unexpected error occurred'}</p>
+					<button onClick={() => window.location.reload()}>Retry Loading</button>
+				</div>
+			</Layout>
+		);
+	}
 
 	return (
 		<Layout>
