@@ -44,6 +44,19 @@ export const loader = async ({ request }) => {
 	return { userData };
 };
 
+export function meta() {
+	return [
+		{ charset: 'utf-8' },
+		{ title: 'Switch Customer Portal' },
+		{ name: 'description', content: 'Monitor and manage your satellite internet connections.' },
+		{ name: 'viewport', content: 'width=device-width,initial-scale=1,viewport-fit=cover' },
+		// Add any default meta tags here
+		{ name: 'theme-color', content: '#3986a8' },
+		{ name: 'apple-mobile-web-app-capable', content: 'yes' },
+		{ name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+	];
+}
+
 export default function Root() {
 	const { userData } = useLoaderData();
 	return (

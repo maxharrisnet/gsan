@@ -426,12 +426,12 @@ export default function ModemDetails() {
 								disableDefaultUI={true}
 							>
 								{gpsFetcher.state === 'loading' && (
-									<div className="map-loading-overlay">
+									<div className='map-loading-overlay'>
 										<LoadingSpinner />
 										<p>Loading GPS data...</p>
 									</div>
 								)}
-								
+
 								{/* Only show marker when we have GPS data and not loading */}
 								{gpsFetcher.state !== 'loading' && gpsFetcher.data?.data?.[modem.id]?.[0] && (
 									<>
@@ -442,7 +442,7 @@ export default function ModemDetails() {
 												<p>GPS data may be outdated. Last update: {new Date(gpsFetcher.data.data[modem.id][0].timestamp * 1000).toLocaleString()}</p>
 											</div>
 										)}
-										
+
 										<Marker
 											position={mapPosition}
 											icon={{
