@@ -133,7 +133,6 @@ export async function loader({ request }) {
 		// Process each provider's modems
 		for (const [provider, modemIds] of Object.entries(modemsByProvider)) {
 			const accessToken = await getCompassAccessToken();
-			console.log('🔑 Access token retrieved for provider:', provider);
 			const url = getGPSURL(provider);
 
 			if (!url) {

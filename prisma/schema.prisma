@@ -31,3 +31,16 @@ model Session {
   collaborator  Boolean?  @default(false)
   emailVerified Boolean?  @default(false)
 }
+
+model ModemGPS {
+    modemId   String
+    provider  String
+    latitude  Float
+    longitude Float
+    timestamp DateTime
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@id([modemId, provider])
+    @@map("modem_gps")
+}
