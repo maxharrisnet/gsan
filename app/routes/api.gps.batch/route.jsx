@@ -5,7 +5,6 @@ import { upsertModemGPS } from '../../models/modem.server';
 import axios from 'axios';
 
 export async function loader({ request }) {
-	// Check for CRON_SECRET in Authorization header
 	const authHeader = request.headers.get('Authorization');
 	const cronSecret = process.env.CRON_SECRET;
 
@@ -20,18 +19,56 @@ export async function loader({ request }) {
 	}
 
 	try {
-		// Get all modems from services
-		const { services } = await fetchServicesAndModemData();
-		const modems = services.flatMap((service) =>
-			service.modems.map((modem) => ({
-				id: modem.id,
-				provider: service.type.toLowerCase(),
-			}))
-		);
+		// Get services data with proper error handling
+		const servicesData = await fetchServicesAndModemData()
+			.then(({ services }) => {
+				if (!services || !Array.isArray(services)) {
+					throw new Error('Invalid services data received');
+				}
+				return services;
+			})
+			.catch((error) => {
+				console.error('🔴 Error fetching services:', error);
+				throw error;
+			});
 
-		console.log('🛰️ Fetching GPS data for modems:', modems.length);
+		console.log('📡 Services received:', servicesData.length);
 
-		// Group modems by provider to batch requests
+		// Process modems with type validation and enhanced logging
+		const modems = servicesData.flatMap((service) => {
+			if (!service?.modems || !Array.isArray(service.modems)) {
+				console.warn('⚠️ Invalid modems array for service:', service.name);
+				return [];
+			}
+
+			return service.modems
+				.filter((modem) => {
+					if (!modem?.id || !modem?.type) {
+						console.warn('⚠️ Modem missing ID or type:', modem);
+						return false;
+					}
+					return true;
+				})
+				.map((modem) => ({
+					id: modem.id,
+					provider: modem.type.toLowerCase(),
+				}));
+		});
+
+		console.log('🔢 Total valid modems found:', modems.length);
+
+		if (!modems.length) {
+			console.warn('⚠️ No valid modems found after processing services');
+			return json(
+				{
+					success: false,
+					error: 'No valid modems found',
+				},
+				{ status: 404 }
+			);
+		}
+
+		// Group modems by provider
 		const modemsByProvider = modems.reduce((acc, modem) => {
 			acc[modem.provider] = acc[modem.provider] || [];
 			acc[modem.provider].push(modem.id);
@@ -62,7 +99,7 @@ export async function loader({ request }) {
 					}
 				);
 
-				// Process and save GPS data
+				// Save GPS data for each modem
 				for (const [modemId, entries] of Object.entries(response.data)) {
 					if (!Array.isArray(entries) || !entries.length) continue;
 
@@ -100,6 +137,12 @@ export async function loader({ request }) {
 		});
 	} catch (error) {
 		console.error('🚨 Batch GPS update failed:', error);
-		return json({ success: false, error: error.message }, { status: 500 });
+		return json(
+			{
+				success: false,
+				error: error.message,
+			},
+			{ status: 500 }
+		);
 	}
 }
