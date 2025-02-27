@@ -1,7 +1,7 @@
 import { json } from '@remix-run/node';
-import { getCompassAccessToken, fetchServicesAndModemData } from '../compass.server';
-import { getGPSURL } from '../api/api.gps';
-import { upsertModemGPS } from '../models/modem.server';
+import { getCompassAccessToken, fetchServicesAndModemData } from '../../compass.server';
+import { getGPSURL } from '../../api/api.gps';
+import { upsertModemGPS } from '../../models/modem.server';
 import axios from 'axios';
 
 export async function loader({ request }) {

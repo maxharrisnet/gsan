@@ -11,29 +11,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Start Collection
+      - name: Check Environment
         run: |
-          echo "🛰️ Starting GPS collection at $(date)"
+          echo "🔍 Checking configuration..."
+          echo "APP_URL is set: ${{ secrets.APP_URL != '' }}"
+          echo "CRON_SECRET is set: ${{ secrets.CRON_SECRET != '' }}"
+          echo "Target URL: ${{ secrets.APP_URL }}/api/gps/batch"
 
       - name: Call GPS Batch Endpoint
         run: |
-          response=$(curl -s -w "\n%{http_code}" \
+          echo "🚀 Making API request..."
+
+          # Make request and capture full output
+          RESPONSE=$(curl -v -s -w "\n%{http_code}" \
             -X GET \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
-            "${{ secrets.APP_URL }}/api/gps/batch")
+            "${{ secrets.APP_URL }}/api/gps/batch" 2>&1)
 
-          status_code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | sed '$d')
+          echo "📝 Full response:"
+          echo "$RESPONSE"
 
-          echo "📡 Status: $status_code"
-          echo "📦 Response: $body"
+          # Extract status code
+          STATUS_CODE=$(echo "$RESPONSE" | tail -n1)
+          echo "📡 Status code: $STATUS_CODE"
 
-          if [ "$status_code" -ge 400 ]; then
-            echo "❌ Failed with status $status_code"
+          if [ "$STATUS_CODE" -ge 400 ]; then
+            echo "❌ Request failed with status $STATUS_CODE"
             exit 1
           fi
 
       - name: Log Completion
         if: always()
-        run: echo "✅ Collection finished at $(date)"
+        run: |
+          echo "⏱️ Job completed at $(date)"
+          echo "Final status: ${{ job.status }}"
