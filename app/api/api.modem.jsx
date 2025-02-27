@@ -66,51 +66,34 @@ export const loader = async ({ params }) => {
 					};
 				}
 
-				const currentStatus = determineModemStatus(modem);
-				modem.status = currentStatus;
+			const currentStatus = determineModemStatus(modem);
+			modem.status = currentStatus;
 
-				// Safely extract data with fallbacks
-				const latencyData = modem.data?.latency?.data || [];
-				const throughputData = modem.data?.throughput?.data || [];
-				const signalQualityData = modem.data?.signal?.data || [];
-				const obstructionData = modem.data?.obstruction?.data || [];
-				const usageData = modem.usage || [];
-				const uptimeData = modem.data?.uptime?.data || [];
+			const latencyData = modem.data.latency.data || [];
+			const throughputData = modem.data.throughput.data || [];
+			const signalQualityData = modem.data.signal.data || [];
+			const obstructionData = modem.data.obstruction.data || [];
+			const usageData = modem.usage || [];
+			const uptimeData = modem.data.uptime.data || [];
+			const mapsAPIKey = process.env.GOOGLE_MAPS_API_KEY;
 
-				const mapsAPIKey = process.env.GOOGLE_MAPS_API_KEY;
+			const modemDetails = {
+				modem,
+				mapsAPIKey,
+				latencyData,
+				throughputData,
+				signalQualityData,
+				obstructionData,
+				usageData,
+				uptimeData,
+				status: currentStatus,
+			};
 
-				// Handle GPS data separately to prevent entire request failure
-				let gpsData = {};
-				try {
-					const gpsResponse = await fetchGPS(provider, [modemId], accessToken);
-					gpsData = gpsResponse[modemId] || {};
-				} catch (gpsError) {
-					console.warn('⚠️ Error fetching GPS data:', gpsError);
-					// Continue with empty GPS data
-				}
-
-				return {
-					modem,
-					mapsAPIKey,
-					gpsData,
-					latencyData,
-					throughputData,
-					signalQualityData,
-					obstructionData,
-					usageData,
-					uptimeData,
-					status: currentStatus,
-				};
-			} catch (modemError) {
-				if (modemError.response?.status === 404) {
-					return {
-						status: 'not_found',
-						error: 'Modem not found',
-						modem: null,
-					};
-				}
-				throw modemError;
+			if (!modemDetails) {
+				return json({ error: 'No data available for modem 🦤' }, { status: 404 });
 			}
+
+			return modemDetails;
 		});
 
 		return json(cachedData);

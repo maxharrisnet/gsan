@@ -93,9 +93,12 @@ export async function authenticateShopifyCustomer(email, password, request) {
 		}
 
 		const customer = customerResponse.data.customer;
-
-		// Handle metafields array
 		const kitsMetafield = customer.metafields.find((m) => m.key === 'kits');
+		if (kitsMetafield?.value === 'ALL') {
+			const { services } = await fetchServicesAndModemData();
+			const allKits = services.flatMap((service) => service.modems?.map((modem) => modem.id)).filter(Boolean);
+			kitsMetafield.value = allKits.join(',');
+		}
 
 		const userData = {
 			customerAccessToken: accessToken,
@@ -105,11 +108,14 @@ export async function authenticateShopifyCustomer(email, password, request) {
 			metafields: {
 				kits: kitsMetafield?.value || '',
 			},
+			primaryKitPath: `/modem/starlink/${kitsMetafield?.value?.split(',')[0]?.trim()}`,
 		};
 
 		console.log('✅ Authentication successful, creating session with:', userData);
 
 		const kits = userData.metafields.kits.split(',').map((kit) => kit.trim());
+		const primaryKitPath = userData.primaryKitPath;
+
 		if (kits.length === 0) {
 			return createUserSession(userData, '/no-kits');
 		}
@@ -132,8 +138,10 @@ export async function authenticateShopifyCustomer(email, password, request) {
 					return createUserSession(userData, '/no-kits');
 				}
 
-				console.log('🎯 Selected first available kit:', firstAvailableKit);
-				return createUserSession(userData, `/modem/starlink/${firstAvailableKit}`);
+				const kitPath = `/modem/starlink/${firstAvailableKit}`;
+
+				console.log('🎯 Selected first available kit:', kitPath);
+				return createUserSession(userData, kitPath);
 			} catch (error) {
 				console.error('❌ Error fetching services for ALL kits:', error);
 				return { error: 'Failed to fetch available kits' };
@@ -141,8 +149,8 @@ export async function authenticateShopifyCustomer(email, password, request) {
 		}
 
 		// For non-ALL cases, use the first kit from the user's list
-		const firstKitId = kits[0];
-		return createUserSession(userData, `/modem/starlink/${firstKitId}`);
+		console.log('🎯 Redirecting to:', primaryKitPath);
+		return createUserSession(userData, primaryKitPath);
 	} catch (error) {
 		console.error('❌ Authentication error:', error);
 		return { error: 'An unexpected error occurred during authentication' };

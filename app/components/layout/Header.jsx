@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useUser } from '../../context/UserContext';
-import { Link, Form, NavLink } from '@remix-run/react';
+import { Link, Form } from '@remix-run/react';
 
 const Header = () => {
 	const location = useLocation();

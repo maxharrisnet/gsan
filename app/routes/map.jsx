@@ -4,7 +4,6 @@ import { useLoaderData, Await, Link } from '@remix-run/react';
 import { Suspense, useState, useEffect, useMemo } from 'react';
 import { fetchServicesAndModemData, getCompassAccessToken } from '../compass.server';
 import { fetchGPS } from '../api/api.gps';
-import { loader as modemApiLoader } from '../api/api.modem';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -12,6 +11,7 @@ import { APIProvider, Map, Marker, InfoWindow } from '@vis.gl/react-google-maps'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import dashboardStyles from '../styles/performance.css?url';
 import { useUser } from '../context/UserContext';
+import ClientOnly from '../components/ClientOnly';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -80,7 +80,7 @@ export async function loader({ request }) {
 		});
 
 		// Fetch both GPS and status data with improved error handling
-		const [gpsResults, statusResults] = await Promise.all([
+		const [gpsResults] = await Promise.all([
 			// GPS data fetching with provider-specific error handling
 			Promise.all(
 				Object.entries(modemsByProvider).map(async ([provider, ids]) => {
@@ -102,43 +102,6 @@ export async function loader({ request }) {
 					}
 				})
 			),
-
-			// Status data fetching with individual modem error handling
-			Promise.all(
-				Object.entries(modemsByProvider).flatMap(([provider, ids]) =>
-					ids.map(async (modemId) => {
-						try {
-							const modemResponse = await modemApiLoader({
-								params: { provider, modemId },
-								request,
-							});
-
-							if (!modemResponse.ok) {
-								throw new Error(`HTTP ${modemResponse.status}: ${modemResponse.statusText}`);
-							}
-
-							const data = await modemResponse.json();
-							return {
-								modemId,
-								status: data.error ? 'offline' : data.status || 'offline',
-								error: data.error ? data.details : null,
-							};
-						} catch (error) {
-							console.error(`🔴 Status fetch error for modem ${modemId}:`, error);
-							return {
-								modemId,
-								status: 'offline',
-								error: {
-									message: error.message,
-									timestamp: new Date().toISOString(),
-									provider,
-									modemId,
-								},
-							};
-						}
-					})
-				)
-			),
 		]);
 
 		// Combine GPS data with error tracking
@@ -151,23 +114,13 @@ export async function loader({ request }) {
 			{}
 		);
 
-		// Create status lookup with error tracking
-		const statusLookup = statusResults.reduce((acc, { modemId, status, error }) => {
-			acc[modemId] = status;
-			if (error) {
-				acc._errors = [...(acc._errors || []), error];
-			}
-			return acc;
-		}, {});
-
-		// Combine services with status data
+		// Combine services data without status lookup
 		const servicesWithStatus = await servicesPromise.then((services) =>
 			services.map((service) => ({
 				...service,
 				modems: service.modems?.map((modem) => ({
 					...modem,
-					status: statusLookup[modem.id] || 'offline',
-					hasError: Boolean(statusLookup._errors?.find((e) => e.modemId === modem.id)),
+					status: modem.details?.data?.latency ? 'online' : 'offline',
 				})),
 			}))
 		);
@@ -178,7 +131,6 @@ export async function loader({ request }) {
 				gpsData,
 				errors: {
 					gps: gpsData._errors || [],
-					status: statusLookup._errors || [],
 				},
 			},
 			googleMapsApiKey,
@@ -354,11 +306,9 @@ export default function Dashboard() {
 						{(resolvedData) => (
 							// Progressive loading of components
 							<>
-								<div className={`map-loading ${isMapLoaded ? 'hidden' : ''}`}>
-									<LoadingSpinner />
-								</div>
-								<APIProvider apiKey={googleMapsApiKey}>
-									<div className='map-container'>
+								{!isMapLoaded && <LoadingSpinner />}
+								<ClientOnly fallback={<LoadingSpinner />}>
+									<APIProvider apiKey={googleMapsApiKey}>
 										<Map
 											onLoad={() => setIsMapLoaded(true)}
 											{...mapConfig}
@@ -400,8 +350,8 @@ export default function Dashboard() {
 												</InfoWindow>
 											)}
 										</Map>
-									</div>
-								</APIProvider>
+									</APIProvider>
+								</ClientOnly>
 							</>
 						)}
 					</Await>

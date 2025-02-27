@@ -31,3 +31,18 @@ model Session {
   collaborator  Boolean?  @default(false)
   emailVerified Boolean?  @default(false)
 }
+
+model ModemGPS {
+  id        String   @id @default(cuid())
+  modemId   String
+  provider  String
+  latitude  Float
+  longitude Float
+  timestamp DateTime
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([modemId, provider], name: "modemId_provider")
+  @@index([timestamp])
+  @@index([modemId])
+  @@index([provider])
+}
