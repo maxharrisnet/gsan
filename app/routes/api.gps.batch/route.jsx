@@ -6,26 +6,23 @@ import axios from 'axios';
 import { PrismaClient } from '@prisma/client';
 console.log('🔄 Route module loaded');
 
-// Initialize Prisma with basic configuration
+// Initialize Prisma with correct configuration
 const prisma = new PrismaClient({
-	log: [
-		{ level: 'warn', emit: 'event' },
-		{ level: 'error', emit: 'event' },
-		{ level: 'info', emit: 'event' },
-	],
+	log: ['error', 'warn', 'info'],
+	datasources: {
+		db: {
+			url: process.env.DATABASE_URL,
+		},
+	},
 });
 
-// Add logging listeners
+// Add event listeners for better logging
+prisma.$on('query', (e) => {
+	console.log('🔍 Query:', e.query);
+});
+
 prisma.$on('error', (e) => {
-	console.error('💥 Prisma Error:', e);
-});
-
-prisma.$on('warn', (e) => {
-	console.warn('⚠️ Prisma Warning:', e);
-});
-
-prisma.$on('info', (e) => {
-	console.log('ℹ️ Prisma Info:', e);
+	console.error('💥 Database Error:', e);
 });
 
 // Improve connection management
@@ -53,22 +50,12 @@ const connectDB = async () => {
 	}
 };
 
-// Add cleanup function
-const disconnectDB = async () => {
-	if (isConnected) {
-		try {
-			await prisma.$disconnect();
-			isConnected = false;
-			console.log('👋 Database disconnected successfully');
-		} catch (error) {
-			console.error('💥 Error disconnecting from database:', error);
-		}
-	}
-};
+// Update timeout and retry settings
+const API_TIMEOUT = 30000; // 30 seconds
+const RETRYABLE_STATUS_CODES = [429, 502, 503, 504, 524]; // Added 524
 
-// Add retry logic with reasonable timeouts for cron
-const fetchWithRetry = async (fn, retries = 2, initialDelay = 1000) => {
-	const MAX_DELAY = 10000; // Maximum 10 second delay
+const fetchWithRetry = async (fn, retries = 3, initialDelay = 1000) => {
+	const MAX_DELAY = 10000;
 	let lastError;
 
 	for (let attempt = 1; attempt <= retries; attempt++) {
@@ -76,34 +63,22 @@ const fetchWithRetry = async (fn, retries = 2, initialDelay = 1000) => {
 			return await fn();
 		} catch (error) {
 			lastError = error;
+			const statusCode = error.response?.status;
 
-			// Check specifically for rate limit error
-			if (error.response?.status === 429) {
-				const retryAfter = error.response.headers['retry-after'];
-				// Cap the delay at MAX_DELAY
-				const delayMs = Math.min(retryAfter ? retryAfter * 1000 : initialDelay * Math.pow(2, attempt - 1), MAX_DELAY);
-				console.log(`🕒 Rate limited. Waiting ${delayMs / 1000}s before retry ${attempt}/${retries}`);
+			if (RETRYABLE_STATUS_CODES.includes(statusCode)) {
+				const delayMs = Math.min(initialDelay * Math.pow(2, attempt - 1), MAX_DELAY);
+				console.log(`🕒 Timeout/Gateway error (${statusCode}). Attempt ${attempt}/${retries}. Waiting ${delayMs / 1000}s before retry`);
 				await new Promise((resolve) => setTimeout(resolve, delayMs));
 				continue;
 			}
 
+			console.error(`❌ Non-retryable error (${statusCode}):`, error.message);
 			throw error;
 		}
 	}
 
-	// If we've exhausted retries, log it for monitoring
-	console.warn('⚠️ Rate limit retries exhausted, will try again next cron run');
+	console.warn('⚠️ All retry attempts failed');
 	throw lastError;
-};
-
-// Add URL normalization helper
-const normalizeUrl = (base, path) => {
-	// Remove trailing slash from base
-	const cleanBase = base.replace(/\/+$/, '');
-	// Remove leading slash from path
-	const cleanPath = path.replace(/^\/+/, '');
-	// Join with single slash
-	return `${cleanBase}/${cleanPath}`;
 };
 
 export async function loader({ request }) {
@@ -159,14 +134,12 @@ export async function loader({ request }) {
 		for (const [provider, modemIds] of Object.entries(modemsByProvider)) {
 			const accessToken = await getCompassAccessToken();
 			console.log('🔑 Access token retrieved for provider:', provider);
-			const url = normalizeUrl(process.env.APP_URL, getGPSURL(provider));
+			const url = getGPSURL(provider);
 
 			if (!url) {
 				console.warn(`⚠️ No GPS URL for provider: ${provider}`);
 				continue;
 			}
-
-			console.log('🔗 Constructed URL:', url); // Log to verify the URL
 
 			try {
 				const response = await fetchWithRetry(async () => {
@@ -177,7 +150,12 @@ export async function loader({ request }) {
 							headers: {
 								Authorization: `Bearer ${accessToken}`,
 								'Content-Type': 'application/json',
+								Accept: 'application/json',
 							},
+							timeout: API_TIMEOUT,
+							// Add additional axios config for better timeout handling
+							timeoutErrorMessage: 'Request timed out - server took too long to respond',
+							maxRedirects: 5,
 						}
 					);
 				});
@@ -229,6 +207,10 @@ export async function loader({ request }) {
 			{ status: 500 }
 		);
 	} finally {
-		await disconnectDB();
+		// Disconnect from database
+		if (isConnected) {
+			await prisma.$disconnect();
+			isConnected = false;
+		}
 	}
 }
