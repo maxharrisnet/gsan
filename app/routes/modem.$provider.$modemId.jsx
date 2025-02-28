@@ -447,17 +447,38 @@ export default function ModemDetails() {
 					</div>
 				)}
 
-				<section className='map-wrapper'>
-					<ClientOnly fallback={<LoadingSpinner />}>
+				<Suspense
+					fallback={
+						<div className='map-wrapper'>
+							<LoadingSpinner />
+						</div>
+					}
+				>
+					<Await
+						resolve={servicesData}
+						errorElement={
+							<div className='error-container'>
+								<h3>Error loading modem data</h3>
+								<button onClick={() => window.location.reload()}>Retry Loading</button>
+							</div>
+						}
+					>
 						{() => (
-							<ModemMap
-								mapsAPIKey={mapsAPIKey}
-								modem={modem}
-								gpsFetcher={gpsFetcher}
-							/>
+							<section className='map-wrapper'>
+								<ClientOnly fallback={<LoadingSpinner />}>
+									{() => (
+										<ModemMap
+											mapsAPIKey={mapsAPIKey}
+											modem={modem}
+											gpsFetcher={gpsFetcher}
+										/>
+									)}
+								</ClientOnly>
+							</section>
 						)}
-					</ClientOnly>
-				</section>
+					</Await>
+				</Suspense>
+
 				<section className='chart-container'>
 					<div className='overview-charts-container'>
 						{renderChartSection(
