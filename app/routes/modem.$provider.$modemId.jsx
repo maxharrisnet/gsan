@@ -98,10 +98,10 @@ export default function ModemDetails() {
 	}, []);
 
 	useEffect(() => {
-		if (modem?.id && !gpsFetcher.data) {
+		if (modem?.id && !gpsFetcher.data && gpsFetcher.state !== 'loading') {
 			gpsFetcher.load(`/api/gps/query?modemIds=${modem.id}`);
 		}
-	}, [modem?.id, gpsFetcher]);
+	}, [modem?.id]);
 
 	console.log('🌍 GPS Fetcher State:', {
 		data: gpsFetcher.data,
@@ -418,31 +418,23 @@ export default function ModemDetails() {
 				{mapPosition && (
 					<section className='map-wrapper'>
 						<APIProvider apiKey={mapsAPIKey}>
+							{/* <LoadingSpinner /> */}
 							<Map
 								style={{ width: '100%', height: '60vh' }}
 								center={gpsFetcher.data?.data?.[modem.id]?.[0] ? mapPosition : { lat: 56.1304, lng: -106.3468 }}
-								zoom={8}
+								zoom={6}
 								gestureHandling={'greedy'}
 								disableDefaultUI={true}
 							>
 								{gpsFetcher.state === 'loading' && (
 									<div className='map-loading-overlay'>
 										<LoadingSpinner />
-										<p>Loading GPS data...</p>
 									</div>
 								)}
 
 								{/* Only show marker when we have GPS data and not loading */}
 								{gpsFetcher.state !== 'loading' && gpsFetcher.data?.data?.[modem.id]?.[0] && (
 									<>
-										{/* Show warning banner for stale data */}
-										{Date.now() - new Date(gpsFetcher.data.data[modem.id][0].timestamp * 1000) > 1800000 && (
-											<div className='warning-banner'>
-												<span className='material-icons'>warning</span>
-												<p>GPS data may be outdated. Last update: {new Date(gpsFetcher.data.data[modem.id][0].timestamp * 1000).toLocaleString()}</p>
-											</div>
-										)}
-
 										<Marker
 											position={mapPosition}
 											icon={{

@@ -207,22 +207,24 @@ export default function Dashboard() {
 	const [isMapLoaded, setIsMapLoaded] = useState(false);
 	const gpsFetcher = useFetcher();
 
-	// Use effect to fetch GPS data when services are loaded
+	// Memoize the modem IDs to prevent unnecessary recalculations
+	const modemIds = useMemo(() => {
+		if (!servicesData?.services) return [];
+
+		return servicesData.services
+			.flatMap((service) => service.modems || [])
+			.filter((modem) => userKits.includes('ALL') || userKits.includes(modem.id))
+			.map((modem) => modem.id);
+	}, [servicesData?.services, userKits]);
+
+	// Use effect with memoized value
 	useEffect(() => {
-		if (servicesData instanceof Promise) {
-			servicesData.then((data) => {
-				const modemIds = data.services
-					.flatMap((service) => service.modems || [])
-					.filter((modem) => userKits.includes('ALL') || userKits.includes(modem.id))
-					.map((modem) => modem.id);
-
-				if (modemIds.length > 0) {
-					gpsFetcher.load(`/api/gps/query?modemIds=${modemIds.join(',')}`);
-				}
-			});
+		if (modemIds.length > 0 && !gpsFetcher.data && gpsFetcher.state !== 'loading') {
+			gpsFetcher.load(`/api/gps/query?modemIds=${modemIds.join(',')}`);
 		}
-	}, [servicesData, userKits, gpsFetcher]);
+	}, [modemIds]); // Only depend on memoized modemIds
 
+	// Memoize the modem locations
 	const modemLocations = useMemo(() => {
 		if (!servicesData?.services || !gpsFetcher.data?.data) return [];
 
@@ -234,22 +236,26 @@ export default function Dashboard() {
 				.filter((modem) => showAllModems || userKits.includes(modem.id))
 				.map((modem) => {
 					const gpsInfo = gpsData[modem.id]?.[0];
-					return gpsInfo
-						? {
-								id: modem.id,
-								name: modem.name,
-								status: modem.status || 'offline',
-								type: modem.type,
-								position: {
-									lat: parseFloat(gpsInfo.lat),
-									lng: parseFloat(gpsInfo.lon),
-								},
-							}
-						: null;
+					if (!gpsInfo) return null;
+
+					const timestamp = new Date(gpsInfo.timestamp * 1000);
+					const isStale = Date.now() - timestamp > 1800000; // 30 minutes
+
+					return {
+						id: modem.id,
+						name: modem.name,
+						status: isStale ? 'stale' : modem.status || 'offline',
+						type: modem.type,
+						position: {
+							lat: parseFloat(gpsInfo.lat),
+							lng: parseFloat(gpsInfo.lon),
+						},
+						lastUpdate: timestamp,
+					};
 				})
 				.filter(Boolean)
 		);
-	}, [servicesData, gpsFetcher.data, userKits]);
+	}, [servicesData?.services, gpsFetcher.data, userKits]);
 
 	// Update mapConfig to include North America bounds
 	const mapConfig = useMemo(
@@ -347,9 +353,11 @@ export default function Dashboard() {
 						{(resolvedData) => (
 							// Progressive loading of components
 							<>
-								<div className={`map-loading ${isMapLoaded ? 'hidden' : ''}`}>
-									<LoadingSpinner />
-								</div>
+								{gpsFetcher.state === 'loading' && (
+									<div className='loading-overlay'>
+										<LoadingSpinner />
+									</div>
+								)}
 								<APIProvider apiKey={googleMapsApiKey}>
 									<div className='map-container'>
 										<Map
@@ -362,7 +370,7 @@ export default function Dashboard() {
 													position={modem.position}
 													title={modem.name}
 													icon={{
-														url: `/assets/images/markers/pin-${modem.status || 'offline'}.svg`,
+														url: `/assets/images/markers/pin-${modem.status}.svg`,
 														scaledSize: { width: 32, height: 40 },
 														anchor: { x: 16, y: 40 },
 													}}
@@ -378,6 +386,7 @@ export default function Dashboard() {
 													<div className='info-window'>
 														<h3>{selectedModem.name}</h3>
 														<p>Status: {selectedModem.status}</p>
+														<p>Last Update: {selectedModem.lastUpdate.toLocaleString()}</p>
 														<p>Lat: {selectedModem.position.lat.toFixed(6)}</p>
 														<p>Lng: {selectedModem.position.lng.toFixed(6)}</p>
 														{selectedModem.type && (

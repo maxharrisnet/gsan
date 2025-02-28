@@ -38,8 +38,6 @@ export async function loader({ request }) {
 			return acc;
 		}, {});
 
-		console.log('🔍 Formatted data:', formattedData);
-
 		return json({ data: formattedData });
 	} catch (error) {
 		console.error('🚨 Error querying GPS data:', error);
