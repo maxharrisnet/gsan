@@ -101,9 +101,8 @@ function ModemMap({ mapsAPIKey, modem, gpsFetcher }) {
 				style={{ width: '100%', height: '60vh' }}
 				center={mapPosition}
 				zoom={6}
-				gestureHandling={'greedy'}
-				disableDefaultUI={true}
 				options={{
+					gestureHandling: 'cooperative',
 					minZoom: 3,
 					maxZoom: 18,
 					restriction: {
@@ -115,6 +114,16 @@ function ModemMap({ mapsAPIKey, modem, gpsFetcher }) {
 						},
 						strictBounds: true,
 					},
+					zoomControl: true,
+					scrollwheel: true,
+					draggable: true,
+					mapTypeControl: false,
+					scaleControl: true,
+					streetViewControl: false,
+					rotateControl: false,
+					fullscreenControl: false,
+					backgroundColor: '#f8f9fa',
+					clickableIcons: false,
 				}}
 			>
 				{gpsFetcher.state === 'loading' && (
@@ -134,6 +143,7 @@ function ModemMap({ mapsAPIKey, modem, gpsFetcher }) {
 						options={{
 							optimized: true,
 							zIndex: 1000,
+							clickable: true,
 						}}
 					/>
 				)}

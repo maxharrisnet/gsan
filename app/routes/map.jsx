@@ -12,6 +12,7 @@ import { APIProvider, Map, Marker, InfoWindow } from '@vis.gl/react-google-maps'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import dashboardStyles from '../styles/performance.css?url';
 import { useUser } from '../context/UserContext';
+import { ClientOnly } from 'remix-utils/client-only';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -200,14 +201,99 @@ export async function loader({ request }) {
 	}
 }
 
+// Create a separate Map component for client-side rendering
+function DashboardMap({ googleMapsApiKey, modemLocations, onSelectModem, selectedModem }) {
+	const mapConfig = useMemo(
+		() => ({
+			center: modemLocations[0]?.position || { lat: 56.1304, lng: -106.3468 },
+			zoom: modemLocations[0]?.position ? 4 : 3,
+			options: {
+				gestureHandling: 'cooperative',
+				minZoom: 3,
+				maxZoom: 18,
+				restriction: {
+					latLngBounds: {
+						north: 83.5,
+						south: 41.7,
+						west: -141,
+						east: -52.6,
+					},
+					strictBounds: true,
+				},
+				zoomControl: true,
+				scrollwheel: true,
+				draggable: true,
+				mapTypeControl: false,
+				scaleControl: true,
+				streetViewControl: false,
+				rotateControl: false,
+				fullscreenControl: false,
+				backgroundColor: '#f8f9fa',
+				clickableIcons: false,
+			},
+		}),
+		[modemLocations]
+	);
+
+	return (
+		<APIProvider apiKey={googleMapsApiKey}>
+			<div className='map-container'>
+				<Map {...mapConfig}>
+					{modemLocations.map((modem) => (
+						<Marker
+							key={modem.id}
+							position={modem.position}
+							title={modem.name}
+							icon={{
+								url: `/assets/images/markers/pin-${modem.status}.svg`,
+								scaledSize: { width: 32, height: 40 },
+								anchor: { x: 16, y: 40 },
+							}}
+							options={{
+								optimized: true,
+								zIndex: 1000,
+								clickable: true,
+							}}
+							onClick={() => onSelectModem(modem)}
+						/>
+					))}
+
+					{selectedModem && (
+						<InfoWindow
+							position={selectedModem.position}
+							onCloseClick={() => onSelectModem(null)}
+						>
+							<div className='info-window'>
+								<h3>{selectedModem.name}</h3>
+								<p>Status: {selectedModem.status}</p>
+								<p>Last Update: {selectedModem.lastUpdate.toLocaleString()}</p>
+								<p>Lat: {selectedModem.position.lat.toFixed(6)}</p>
+								<p>Lng: {selectedModem.position.lng.toFixed(6)}</p>
+								{selectedModem.type && (
+									<Link
+										to={`/modem/${selectedModem.type.toLowerCase()}/${selectedModem.id}`}
+										className='info-window-link'
+									>
+										<span className='modem-name'>{selectedModem.name.toUpperCase()}</span>
+										<span className='modem-chevron material-icons'>chevron_right</span>
+									</Link>
+								)}
+							</div>
+						</InfoWindow>
+					)}
+				</Map>
+			</div>
+		</APIProvider>
+	);
+}
+
 export default function Dashboard() {
 	const { servicesData, googleMapsApiKey, error } = useLoaderData();
 	const { userKits } = useUser();
 	const [selectedModem, setSelectedModem] = useState(null);
-	const [isMapLoaded, setIsMapLoaded] = useState(false);
 	const gpsFetcher = useFetcher();
 
-	// Memoize the modem IDs to prevent unnecessary recalculations
+	// Memoize the modem IDs
 	const modemIds = useMemo(() => {
 		if (!servicesData?.services) return [];
 
@@ -217,14 +303,14 @@ export default function Dashboard() {
 			.map((modem) => modem.id);
 	}, [servicesData?.services, userKits]);
 
-	// Use effect with memoized value
+	// Fetch GPS data once
 	useEffect(() => {
 		if (modemIds.length > 0 && !gpsFetcher.data && gpsFetcher.state !== 'loading') {
 			gpsFetcher.load(`/api/gps/query?modemIds=${modemIds.join(',')}`);
 		}
-	}, [modemIds]); // Only depend on memoized modemIds
+	}, [modemIds]);
 
-	// Memoize the modem locations
+	// Memoize modem locations
 	const modemLocations = useMemo(() => {
 		if (!servicesData?.services || !gpsFetcher.data?.data) return [];
 
@@ -238,41 +324,23 @@ export default function Dashboard() {
 					const gpsInfo = gpsData[modem.id]?.[0];
 					if (!gpsInfo) return null;
 
-					const timestamp = new Date(gpsInfo.timestamp * 1000);
+					const lat = parseFloat(gpsInfo.lat);
+					const lng = parseFloat(gpsInfo.lon);
+
+					if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return null;
 
 					return {
 						id: modem.id,
 						name: modem.name,
 						status: modem.status || 'offline',
 						type: modem.type,
-						position: {
-							lat: parseFloat(gpsInfo.lat),
-							lng: parseFloat(gpsInfo.lon),
-						},
-						lastUpdate: timestamp,
+						position: { lat, lng },
+						lastUpdate: new Date(gpsInfo.timestamp * 1000),
 					};
 				})
 				.filter(Boolean)
 		);
 	}, [servicesData?.services, gpsFetcher.data, userKits]);
-
-	// Update mapConfig to include North America bounds
-	const mapConfig = useMemo(
-		() => ({
-			center: modemLocations[0]?.position || { lat: 56.1304, lng: -106.3468 }, // Center of Canada
-			zoom: modemLocations[0]?.position ? 6 : 4,
-			restriction: {
-				latLngBounds: {
-					north: 83.5, // Northern edge of Canadian territory (including Arctic islands)
-					south: 41.7, // Southern edge of Canada
-					west: -141, // Western edge of Canada (Alaska border)
-					east: -52.6, // Eastern edge of Canada (Newfoundland)
-				},
-				strictBounds: true,
-			},
-		}),
-		[modemLocations]
-	);
 
 	// Handle critical errors
 	if (error) {
@@ -349,60 +417,24 @@ export default function Dashboard() {
 							</div>
 						}
 					>
-						{(resolvedData) => (
-							// Progressive loading of components
+						{() => (
 							<>
 								{gpsFetcher.state === 'loading' && (
 									<div className='loading-overlay'>
 										<LoadingSpinner />
 									</div>
 								)}
-								<APIProvider apiKey={googleMapsApiKey}>
-									<div className='map-container'>
-										<Map
-											onLoad={() => setIsMapLoaded(true)}
-											{...mapConfig}
-										>
-											{modemLocations.map((modem) => (
-												<Marker
-													key={modem.id}
-													position={modem.position}
-													title={modem.name}
-													icon={{
-														url: `/assets/images/markers/pin-${modem.status}.svg`,
-														scaledSize: { width: 32, height: 40 },
-														anchor: { x: 16, y: 40 },
-													}}
-													onClick={() => setSelectedModem(modem)}
-												/>
-											))}
 
-											{selectedModem && (
-												<InfoWindow
-													position={selectedModem.position}
-													onCloseClick={() => setSelectedModem(null)}
-												>
-													<div className='info-window'>
-														<h3>{selectedModem.name}</h3>
-														<p>Status: {selectedModem.status}</p>
-														<p>Last Update: {selectedModem.lastUpdate.toLocaleString()}</p>
-														<p>Lat: {selectedModem.position.lat.toFixed(6)}</p>
-														<p>Lng: {selectedModem.position.lng.toFixed(6)}</p>
-														{selectedModem.type && (
-															<Link
-																to={`/modem/${selectedModem.type.toLowerCase()}/${selectedModem.id}`}
-																className='info-window-link'
-															>
-																<span className='modem-name'>{selectedModem.name.toUpperCase()}</span>
-																<span className='modem-chevron material-icons'>chevron_right</span>
-															</Link>
-														)}
-													</div>
-												</InfoWindow>
-											)}
-										</Map>
-									</div>
-								</APIProvider>
+								<ClientOnly fallback={<LoadingSpinner />}>
+									{() => (
+										<DashboardMap
+											googleMapsApiKey={googleMapsApiKey}
+											modemLocations={modemLocations}
+											selectedModem={selectedModem}
+											onSelectModem={setSelectedModem}
+										/>
+									)}
+								</ClientOnly>
 							</>
 						)}
 					</Await>
