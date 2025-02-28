@@ -6,6 +6,7 @@ export default defineConfig({
 	plugins: [remix()],
 	build: {
 		manifest: true,
+		sourcemap: true,
 		rollupOptions: {
 			output: {
 				assetFileNames: 'assets/[name]-[hash][extname]',
@@ -18,5 +19,8 @@ export default defineConfig({
 	server: {
 		port: 3000,
 		host: true,
+		fs: {
+			allow: ['..'],
+		},
 	},
 });
