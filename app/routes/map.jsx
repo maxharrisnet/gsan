@@ -206,7 +206,7 @@ function DashboardMap({ googleMapsApiKey, modemLocations, onSelectModem, selecte
 	const mapConfig = useMemo(
 		() => ({
 			center: modemLocations[0]?.position || { lat: 56.1304, lng: -106.3468 },
-			zoom: modemLocations[0]?.position ? 4 : 3,
+			zoom: modemLocations[0]?.position ? 5 : 3,
 			options: {
 				gestureHandling: 'cooperative',
 				minZoom: 3,
