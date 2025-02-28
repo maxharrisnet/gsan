@@ -239,12 +239,11 @@ export default function Dashboard() {
 					if (!gpsInfo) return null;
 
 					const timestamp = new Date(gpsInfo.timestamp * 1000);
-					const isStale = Date.now() - timestamp > 1800000; // 30 minutes
 
 					return {
 						id: modem.id,
 						name: modem.name,
-						status: isStale ? 'stale' : modem.status || 'offline',
+						status: modem.status || 'offline',
 						type: modem.type,
 						position: {
 							lat: parseFloat(gpsInfo.lat),

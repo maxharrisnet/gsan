@@ -1,4 +1,4 @@
-import { useEffect, useRef, Suspense, useMemo } from 'react';
+import { useEffect, useRef, Suspense, useMemo, useState } from 'react';
 import { useLoaderData, Link, Await, useRouteError, isRouteErrorResponse, useFetcher } from '@remix-run/react';
 import { loader as modemApiLoader } from '../api/api.modem';
 import Layout from '../components/layout/Layout';
@@ -12,6 +12,7 @@ import { useUser } from '../context/UserContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { defer } from '@remix-run/node';
 import { fetchServicesAndModemData } from '../compass.server';
+import { ClientOnly } from 'remix-utils/client-only';
 
 export const links = () => [
 	{ rel: 'stylesheet', href: chartStyles },
@@ -69,6 +70,78 @@ const formatTimestamp = (timestamp) => {
 	});
 };
 
+// Add these map options outside the component
+const mapOptions = {
+	gestureHandling: 'greedy',
+	disableDefaultUI: true,
+	minZoom: 3,
+	maxZoom: 18,
+};
+
+// Create a separate Map component to handle client-side rendering
+function ModemMap({ mapsAPIKey, modem, gpsFetcher }) {
+	const mapPosition = useMemo(() => {
+		const gpsData = gpsFetcher.data?.data?.[modem.id]?.[0];
+
+		if (gpsData) {
+			const lat = parseFloat(gpsData.lat);
+			const lng = parseFloat(gpsData.lon);
+
+			if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+				return { lat, lng };
+			}
+		}
+
+		return { lat: 56.1304, lng: -106.3468 }; // Default Canada center
+	}, [modem?.id, gpsFetcher.data?.data]);
+
+	return (
+		<APIProvider apiKey={mapsAPIKey}>
+			<Map
+				style={{ width: '100%', height: '60vh' }}
+				center={mapPosition}
+				zoom={6}
+				gestureHandling={'greedy'}
+				disableDefaultUI={true}
+				options={{
+					minZoom: 3,
+					maxZoom: 18,
+					restriction: {
+						latLngBounds: {
+							north: 83.5,
+							south: 41.7,
+							west: -141,
+							east: -52.6,
+						},
+						strictBounds: true,
+					},
+				}}
+			>
+				{gpsFetcher.state === 'loading' && (
+					<div className='map-loading-overlay'>
+						<LoadingSpinner />
+					</div>
+				)}
+
+				{gpsFetcher.data?.data?.[modem.id]?.[0] && (
+					<Marker
+						position={mapPosition}
+						icon={{
+							url: `/assets/images/markers/pin-online.svg`,
+							scaledSize: { width: 32, height: 40 },
+							anchor: { x: 16, y: 40 },
+						}}
+						options={{
+							optimized: true,
+							zIndex: 1000,
+						}}
+					/>
+				)}
+			</Map>
+		</APIProvider>
+	);
+}
+
 export default function ModemDetails() {
 	const { error, details, modem = {}, mapsAPIKey, latencyData = [], throughputData = [], signalQualityData = [], obstructionData = [], usageData = [], uptimeData = [], servicesData } = useLoaderData();
 	const { userKits } = useUser();
@@ -102,57 +175,6 @@ export default function ModemDetails() {
 			gpsFetcher.load(`/api/gps/query?modemIds=${modem.id}`);
 		}
 	}, [modem?.id]);
-
-	console.log('🌍 GPS Fetcher State:', {
-		data: gpsFetcher.data,
-		state: gpsFetcher.state,
-		modemId: modem?.id,
-		isLoading: gpsFetcher.state === 'loading',
-		hasError: gpsFetcher.data?.error,
-		timestamp: gpsFetcher.data?.data?.[modem.id]?.[0]?.timestamp,
-		date: new Date(gpsFetcher.data?.data?.[modem.id]?.[0]?.timestamp * 1000),
-	});
-
-	const mapPosition = useMemo(() => {
-		try {
-			if (gpsFetcher.state === 'loading') {
-				console.log('🌍 GPS data is loading...');
-				return { lat: 56.1304, lng: -106.3468 }; // Default Canada center
-			}
-
-			if (!gpsFetcher.data || gpsFetcher.data?.error) {
-				console.warn('⚠️ No GPS data available:', gpsFetcher.data?.error || 'Data not found');
-				return { lat: 56.1304, lng: -106.3468 }; // Default Canada center
-			}
-
-			const gpsData = gpsFetcher.data?.data?.[modem.id]?.[0];
-
-			if (!gpsData) {
-				console.warn('⚠️ No GPS entries found for modem:', modem.id);
-				return { lat: 56.1304, lng: -106.3468 }; // Default Canada center
-			}
-
-			const lat = parseFloat(gpsData.lat);
-			const lng = parseFloat(gpsData.lon);
-			const timestamp = new Date(gpsData.timestamp * 1000);
-			const isStale = Date.now() - timestamp > 1800000; // 30 minutes
-
-			if (isStale) {
-				console.warn('⚠️ GPS data is stale. Last update:', timestamp.toLocaleString());
-			}
-
-			if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
-				console.log('📍 Valid GPS coordinates found:', { lat, lng, timestamp: timestamp.toLocaleString() });
-				return { lat, lng };
-			}
-
-			console.warn('⚠️ Invalid GPS coordinates:', { lat, lng });
-			return { lat: 56.1304, lng: -106.3468 }; // Default Canada center
-		} catch (error) {
-			console.error('🚨 Error processing GPS data:', error);
-			return { lat: 56.1304, lng: -106.3468 }; // Default Canada center
-		}
-	}, [gpsFetcher.data, gpsFetcher.state, modem?.id]);
 
 	if (error) {
 		return (
@@ -415,40 +437,17 @@ export default function ModemDetails() {
 					</div>
 				)}
 
-				{mapPosition && (
-					<section className='map-wrapper'>
-						<APIProvider apiKey={mapsAPIKey}>
-							{/* <LoadingSpinner /> */}
-							<Map
-								style={{ width: '100%', height: '60vh' }}
-								center={gpsFetcher.data?.data?.[modem.id]?.[0] ? mapPosition : { lat: 56.1304, lng: -106.3468 }}
-								zoom={6}
-								gestureHandling={'greedy'}
-								disableDefaultUI={true}
-							>
-								{gpsFetcher.state === 'loading' && (
-									<div className='map-loading-overlay'>
-										<LoadingSpinner />
-									</div>
-								)}
-
-								{/* Only show marker when we have GPS data and not loading */}
-								{gpsFetcher.state !== 'loading' && gpsFetcher.data?.data?.[modem.id]?.[0] && (
-									<>
-										<Marker
-											position={mapPosition}
-											icon={{
-												url: `/assets/images/markers/pin-${Date.now() - new Date(gpsFetcher.data.data[modem.id][0].timestamp * 1000) > 1800000 ? 'stale' : modem.status || 'offline'}.svg`,
-												scaledSize: { width: 32, height: 40 },
-												anchor: { x: 16, y: 40 },
-											}}
-										/>
-									</>
-								)}
-							</Map>
-						</APIProvider>
-					</section>
-				)}
+				<section className='map-wrapper'>
+					<ClientOnly fallback={<LoadingSpinner />}>
+						{() => (
+							<ModemMap
+								mapsAPIKey={mapsAPIKey}
+								modem={modem}
+								gpsFetcher={gpsFetcher}
+							/>
+						)}
+					</ClientOnly>
+				</section>
 				<section className='chart-container'>
 					<div className='overview-charts-container'>
 						{renderChartSection(
