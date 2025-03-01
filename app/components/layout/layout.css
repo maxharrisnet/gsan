@@ -62,7 +62,7 @@
 	flex-flow: column;
 	padding: var(--spacing-xlarge);
 	background-color: var(--color-background);
-	overflow: hidden;
+	/* overflow: hidden; */
 	position: relative;
 	gap: var(--spacing-large);
 }

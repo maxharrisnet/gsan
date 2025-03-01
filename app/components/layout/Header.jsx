@@ -5,7 +5,6 @@ import { Link, Form, NavLink } from '@remix-run/react';
 
 const Header = () => {
 	const location = useLocation();
-	const path = location.pathname;
 	const userContext = useUser();
 	const [showDropdown, setShowDropdown] = useState(false);
 	const dropdownRef = useRef(null);

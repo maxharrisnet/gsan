@@ -1,10 +1,7 @@
 // app/routes/performance.jsx
-import { defer } from '@remix-run/node';
 import { useLoaderData, Await, Link, useFetcher } from '@remix-run/react';
 import { Suspense, useState, useEffect, useMemo } from 'react';
-import { fetchServicesAndModemData, getCompassAccessToken } from '../compass.server';
-import { fetchGPS } from '../api/api.gps';
-import { loader as modemApiLoader } from '../api/api.modem';
+import { fetchServicesAndModemData } from '../compass.server';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -40,164 +37,35 @@ const fetchWithRetry = async (fn, retries = 3, delay = 1000) => {
 
 export async function loader({ request }) {
 	try {
-		const accessToken = await getCompassAccessToken();
-		if (!accessToken) {
-			throw new Error('Failed to obtain access token');
-		}
-
+		// Get Maps API key
 		const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
 		if (!googleMapsApiKey) {
 			throw new Error('Google Maps API key is not configured');
 		}
 
-		// Fetch services with retry logic
-		const servicesPromise = fetchWithRetry(async () => {
-			const { services } = await fetchServicesAndModemData();
-			if (!services || !Array.isArray(services)) {
-				throw new Error('Invalid services data received');
-			}
-			return services;
-		});
+		// Fetch services data
+		const { services } = await fetchServicesAndModemData();
+		if (!services || !Array.isArray(services)) {
+			throw new Error('Invalid services data received');
+		}
 
-		// Group modem IDs by provider with validation
-		const modemsByProvider = await servicesPromise.then((services) => {
-			const grouped = services.reduce((acc, service) => {
-				if (!service.modems) return acc;
+		// Update services to determine status based on latency data
+		const servicesWithStatus = services.map((service) => ({
+			...service,
+			modems: service.modems?.map((modem) => ({
+				...modem,
+				// Modem is online if it has latency data (same as modem detail page)
+				status: modem.details?.data?.latency ? 'online' : 'offline',
+			})),
+		}));
 
-				service.modems.forEach((modem) => {
-					if (modem?.id && modem?.type) {
-						const provider = modem.type.toLowerCase();
-						acc[provider] = acc[provider] || [];
-						acc[provider].push(modem.id);
-					}
-				});
-				return acc;
-			}, {});
-
-			if (Object.keys(grouped).length === 0) {
-				console.warn('⚠️ No valid modems found in services');
-			}
-			return grouped;
-		});
-
-		// Fetch both GPS and status data with improved error handling
-		const [gpsResults, statusResults] = await Promise.all([
-			// GPS data fetching with provider-specific error handling
-			Promise.all(
-				Object.entries(modemsByProvider).map(async ([provider, ids]) => {
-					try {
-						const data = await fetchGPS(provider, ids, accessToken);
-						return { provider, data, error: null };
-					} catch (error) {
-						console.error(`🔴 GPS fetch error for ${provider}:`, error);
-						return {
-							provider,
-							data: {},
-							error: {
-								message: error.message,
-								timestamp: new Date().toISOString(),
-								provider,
-								ids,
-							},
-						};
-					}
-				})
-			),
-
-			// Status data fetching with individual modem error handling
-			Promise.all(
-				Object.entries(modemsByProvider).flatMap(([provider, ids]) =>
-					ids.map(async (modemId) => {
-						try {
-							const modemResponse = await modemApiLoader({
-								params: { provider, modemId },
-								request,
-							});
-
-							if (!modemResponse.ok) {
-								throw new Error(`HTTP ${modemResponse.status}: ${modemResponse.statusText}`);
-							}
-
-							const data = await modemResponse.json();
-							return {
-								modemId,
-								status: data.error ? 'offline' : data.status || 'offline',
-								error: data.error ? data.details : null,
-							};
-						} catch (error) {
-							console.error(`🔴 Status fetch error for modem ${modemId}:`, error);
-							return {
-								modemId,
-								status: 'offline',
-								error: {
-									message: error.message,
-									timestamp: new Date().toISOString(),
-									provider,
-									modemId,
-								},
-							};
-						}
-					})
-				)
-			),
-		]);
-
-		// Combine GPS data with error tracking
-		const gpsData = gpsResults.reduce(
-			(acc, { data, error }) => ({
-				...acc,
-				...data,
-				...(error ? { _errors: [...(acc._errors || []), error] } : {}),
-			}),
-			{}
-		);
-
-		// Create status lookup with error tracking
-		const statusLookup = statusResults.reduce((acc, { modemId, status, error }) => {
-			acc[modemId] = status;
-			if (error) {
-				acc._errors = [...(acc._errors || []), error];
-			}
-			return acc;
-		}, {});
-
-		// Combine services with status data
-		const servicesWithStatus = await servicesPromise.then((services) =>
-			services.map((service) => ({
-				...service,
-				modems: service.modems?.map((modem) => ({
-					...modem,
-					status: statusLookup[modem.id] || 'offline',
-					hasError: Boolean(statusLookup._errors?.find((e) => e.modemId === modem.id)),
-				})),
-			}))
-		);
-
-		return defer({
-			servicesData: {
-				services: servicesWithStatus,
-				gpsData,
-				errors: {
-					gps: gpsData._errors || [],
-					status: statusLookup._errors || [],
-				},
-			},
-			googleMapsApiKey,
-		});
+		return {
+			services: servicesWithStatus,
+			mapsAPIKey: googleMapsApiKey,
+		};
 	} catch (error) {
-		console.error('🚨 Critical error in map loader:', error);
-		return json(
-			{
-				error: true,
-				message: 'Failed to load map data',
-				details: {
-					timestamp: new Date().toISOString(),
-					errorType: error.name,
-					message: error.message,
-				},
-			},
-			{ status: 500 }
-		);
+		console.error('🚨 Error in loader:', error);
+		throw new Response('Error loading data', { status: 500 });
 	}
 }
 
@@ -205,7 +73,7 @@ export async function loader({ request }) {
 function DashboardMap({ googleMapsApiKey, modemLocations, onSelectModem, selectedModem }) {
 	const mapConfig = useMemo(
 		() => ({
-			center: modemLocations[0]?.position || { lat: 56.1304, lng: -106.3468 },
+			// center: modemLocations[0]?.position || { lat: 56.1304, lng: -106.3468 },
 			zoom: modemLocations[0]?.position ? 5 : 3,
 			options: {
 				gestureHandling: 'cooperative',
