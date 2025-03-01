@@ -1,5 +1,5 @@
 import { useEffect, useRef, Suspense, useMemo, useState } from 'react';
-import { useLoaderData, Link, Await, useRouteError, isRouteErrorResponse, useFetcher } from '@remix-run/react';
+import { useLoaderData, Link, Await, useRouteError, isRouteErrorResponse, useFetcher, useLocation } from '@remix-run/react';
 import { loader as modemApiLoader } from '../api/api.modem';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
@@ -80,8 +80,14 @@ const mapOptions = {
 
 // Create a separate Map component to handle client-side rendering
 function ModemMap({ mapsAPIKey, modem, gpsFetcher }) {
+	const location = useLocation();
+	const mapRef = useRef(null);
+	const [isInitialized, setIsInitialized] = useState(false);
+
+	// Calculate the current position
 	const mapPosition = useMemo(() => {
 		const gpsData = gpsFetcher.data?.data?.[modem.id]?.[0];
+		console.log('🗺️ GPS Data for modem:', modem.id, gpsData);
 
 		if (gpsData) {
 			const lat = parseFloat(gpsData.lat);
@@ -95,12 +101,29 @@ function ModemMap({ mapsAPIKey, modem, gpsFetcher }) {
 		return { lat: 56.1304, lng: -106.3468 }; // Default Canada center
 	}, [modem?.id, gpsFetcher.data?.data]);
 
+	// Reset initialization when modem changes
+	useEffect(() => {
+		setIsInitialized(false);
+	}, [modem?.id]);
+
+	// Handle map updates when position changes or modem changes
+	useEffect(() => {
+		if (mapRef.current && mapPosition && !isInitialized) {
+			console.log('🎯 Centering map on:', mapPosition);
+			mapRef.current.panTo(mapPosition);
+			setIsInitialized(true);
+		}
+	}, [mapPosition, isInitialized]);
+
 	return (
 		<APIProvider apiKey={mapsAPIKey}>
 			<Map
-				style={{ width: '100%', height: '60vh' }}
+				key={modem.id}
+				ref={mapRef}
 				center={mapPosition}
-				zoom={6}
+				style={{ width: '100%', height: '60vh' }}
+				defaultCenter={mapPosition}
+				defaultZoom={6}
 				options={{
 					gestureHandling: 'cooperative',
 					minZoom: 3,
@@ -122,7 +145,7 @@ function ModemMap({ mapsAPIKey, modem, gpsFetcher }) {
 					streetViewControl: false,
 					rotateControl: false,
 					fullscreenControl: false,
-					backgroundColor: '#f8f9fa',
+					backgroundColor: '#e8d8c3',
 					clickableIcons: false,
 				}}
 			>
@@ -409,7 +432,11 @@ export default function ModemDetails() {
 														<Link
 															className='list-button'
 															to={`/modem/${modemItem.type.toLowerCase()}/${modemItem.id}`}
-															prefetch='intent'
+															onClick={(e) => {
+																e.preventDefault();
+																window.location.href = `/modem/${modemItem.type.toLowerCase()}/${modemItem.id}`;
+															}}
+															// prefetch='intent'
 														>
 															<span className='modem-name'>{modemItem.name}</span>
 															<span
