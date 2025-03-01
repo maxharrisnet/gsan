@@ -133,7 +133,7 @@ export async function authenticateShopifyCustomer(email, password, request) {
 				}
 
 				console.log('🎯 Selected first available kit:', firstAvailableKit);
-				return createUserSession(userData, `/modem/starlink/${firstAvailableKit}`);
+				return createUserSession(userData, `/map`);
 			} catch (error) {
 				console.error('❌ Error fetching services for ALL kits:', error);
 				return { error: 'Failed to fetch available kits' };
@@ -142,7 +142,7 @@ export async function authenticateShopifyCustomer(email, password, request) {
 
 		// For non-ALL cases, use the first kit from the user's list
 		const firstKitId = kits[0];
-		return createUserSession(userData, `/modem/starlink/${firstKitId}`);
+		return createUserSession(userData, `/map`);
 	} catch (error) {
 		console.error('❌ Authentication error:', error);
 		return { error: 'An unexpected error occurred during authentication' };

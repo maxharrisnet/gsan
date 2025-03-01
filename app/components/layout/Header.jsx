@@ -52,6 +52,12 @@ const Header = () => {
 						{showDropdown && (
 							<div className='avatar-dropdown'>
 								<Link
+									to='/map'
+									onClick={() => setShowDropdown(false)}
+								>
+									Map
+								</Link>
+								<Link
 									to='/reports/starlink/usage'
 									onClick={() => setShowDropdown(false)}
 								>
