@@ -5,7 +5,6 @@ import { Link, Form, NavLink } from '@remix-run/react';
 
 const Header = () => {
 	const location = useLocation();
-	const path = location.pathname;
 	const userContext = useUser();
 	const [showDropdown, setShowDropdown] = useState(false);
 	const dropdownRef = useRef(null);
@@ -30,7 +29,7 @@ const Header = () => {
 		<header className='header'>
 			<div className='header-container'>
 				<div className='logo'>
-					<Link to='/'>
+					<Link to='/map'>
 						<img
 							src='/assets/images/switch-logo.png'
 							alt='Switch Logo'

@@ -398,8 +398,9 @@
 .map-wrapper {
 	position: relative;
 	min-height: 60vh;
+	background-color: var(--color-background-light);
 }
-
+/* 
 .map-loading-overlay {
 	position: absolute;
 	top: 0;
@@ -412,7 +413,7 @@
 	align-items: center;
 	justify-content: center;
 	z-index: 1000;
-}
+} */
 
 .map-loading-overlay p {
 	margin-top: 1rem;
