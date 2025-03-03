@@ -87,7 +87,7 @@ function ModemMap({ mapsAPIKey, modem, gpsFetcher }) {
 	// Calculate the current position
 	const mapPosition = useMemo(() => {
 		const gpsData = gpsFetcher.data?.data?.[modem.id]?.[0];
-		console.log('🗺️ GPS Data for modem:', modem.id, gpsData);
+		// console.log('🗺️ GPS Data for modem:', modem.id, gpsData);
 
 		if (gpsData) {
 			const lat = parseFloat(gpsData.lat);

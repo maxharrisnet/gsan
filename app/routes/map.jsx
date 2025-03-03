@@ -51,12 +51,11 @@ export async function loader({ request }) {
 		// Defer the services data loading
 		const servicesPromise = fetchServicesAndModemData()
 			.then(({ services }) => {
-				// Update services to determine status based on latency data
+				console.log('📡 Loaded services:', services);
 				const updatedServices = services.map((service) => ({
 					...service,
 					modems: service.modems?.map((modem) => ({
 						...modem,
-						// Modem is online if it has latency data
 						status: modem.details?.data?.latency ? 'online' : 'offline',
 					})),
 				}));
@@ -145,13 +144,24 @@ function DashboardMap({ mapsAPIKey, services, gpsFetcher, selectedModem, onSelec
 			>
 				{services.map((service) =>
 					service.modems?.map((modem) => {
+						// Add debug logging
+						console.log('🗺️ Checking modem:', modem.id, 'GPS Data:', gpsFetcher.data?.data?.[modem.id]);
+
 						const gpsData = gpsFetcher.data?.data?.[modem.id]?.[0];
-						if (!gpsData) return null;
+						if (!gpsData) {
+							console.log('⚠️ No GPS data for modem:', modem.id);
+							return null;
+						}
 
 						const lat = parseFloat(gpsData.lat);
 						const lng = parseFloat(gpsData.lon);
-						if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return null;
 
+						if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
+							console.log('⚠️ Invalid coordinates for modem:', modem.id, { lat, lng });
+							return null;
+						}
+
+						console.log('📍 Plotting marker for modem:', modem.id, { lat, lng });
 						return (
 							<Marker
 								key={modem.id}
@@ -190,24 +200,31 @@ function DashboardMap({ mapsAPIKey, services, gpsFetcher, selectedModem, onSelec
 export default function Dashboard() {
 	const { servicesData, mapsAPIKey } = useLoaderData();
 	const { userKits } = useUser();
-	const [selectedModem, setSelectedModem] = useState(null);
 	const gpsFetcher = useFetcher();
 
-	// Get all modem IDs for GPS fetching
+	// Simplified modemIds - just use userKits directly
 	const modemIds = useMemo(() => {
-		if (!servicesData?.services) return [];
-		return servicesData.services
-			.flatMap((service) => service.modems || [])
-			.filter((modem) => userKits.includes('ALL') || userKits.includes(modem.id))
-			.map((modem) => modem.id);
-	}, [servicesData?.services, userKits]);
+		// If userKits includes 'ALL', we'll get the modem IDs from services data
+		if (userKits.includes('ALL')) {
+			return servicesData?.services?.flatMap((service) => service.modems || [])?.map((modem) => modem.id) || [];
+		}
+		// Otherwise, use the userKits array (excluding 'ALL' if present)
+		return userKits.filter((kit) => kit !== 'ALL');
+	}, [userKits, servicesData?.services]);
 
 	// Fetch GPS data
 	useEffect(() => {
 		if (modemIds.length && !gpsFetcher.data && gpsFetcher.state !== 'loading') {
+			console.log('🔄 Fetching GPS data for modems:', modemIds);
 			gpsFetcher.load(`/api/gps/query?modemIds=${modemIds.join(',')}`);
 		}
 	}, [modemIds]);
+
+	useEffect(() => {
+		if (gpsFetcher.data) {
+			console.log('📡 Received GPS data:', gpsFetcher.data);
+		}
+	}, [gpsFetcher.data]);
 
 	return (
 		<Layout>
@@ -271,8 +288,8 @@ export default function Dashboard() {
 										mapsAPIKey={mapsAPIKey}
 										services={resolvedData.services}
 										gpsFetcher={gpsFetcher}
-										selectedModem={selectedModem}
-										onSelectModem={setSelectedModem}
+										selectedModem={null}
+										onSelectModem={null}
 									/>
 								)}
 							</ClientOnly>
