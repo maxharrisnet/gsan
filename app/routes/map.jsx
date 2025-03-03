@@ -93,7 +93,7 @@ function DashboardMap({ mapsAPIKey, services, gpsFetcher, selectedModem, onSelec
 				}
 			}
 		}
-		return { lat: 56.1304, lng: -106.3468 }; // Default Canada center
+		return { lat: 53.5461, lng: -110.2472 }; // Default center - between Edmonton and Saskatoon
 	}, [selectedModem, gpsFetcher.data]);
 
 	// Reset initialization when selected modem changes
@@ -116,7 +116,7 @@ function DashboardMap({ mapsAPIKey, services, gpsFetcher, selectedModem, onSelec
 				onLoad={(map) => setMap(map)}
 				style={{ width: '100%', height: '100vh' }}
 				defaultCenter={mapPosition}
-				defaultZoom={4}
+				defaultZoom={5}
 				options={{
 					gestureHandling: 'greedy',
 					minZoom: 3,
@@ -213,6 +213,7 @@ export default function Dashboard() {
 	}, [userKits, servicesData?.services]);
 
 	// Fetch GPS data
+	console.log('🔍 modemIds:', modemIds, 'gpsFetcher:', gpsFetcher);
 	useEffect(() => {
 		if (modemIds.length && !gpsFetcher.data && gpsFetcher.state !== 'loading') {
 			console.log('🔄 Fetching GPS data for modems:', modemIds);
@@ -239,7 +240,9 @@ export default function Dashboard() {
 								const filteredServices = services
 									.map((service) => ({
 										...service,
-										modems: service.modems?.filter((modem) => showAllModems || userKits.includes(modem.id)) || [],
+										modems: showAllModems
+											? service.modems || [] // Show all modems if ALL is present
+											: service.modems?.filter((modem) => userKits.includes(modem.id)) || [],
 									}))
 									.filter((service) => service.modems.length > 0);
 
