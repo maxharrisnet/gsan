@@ -2,7 +2,7 @@
 import { defer } from '@remix-run/node';
 import { useLoaderData, Await, Link, useFetcher } from '@remix-run/react';
 import { Suspense, useState, useEffect, useMemo, useRef } from 'react';
-import { fetchServicesAndModemData, getCompassAccessToken } from '../compass.server';
+import { fetchServicesAndModemData, getCompassAccessToken, getGoogleMapsApiKey } from '../compass.server';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -11,6 +11,8 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement
 import dashboardStyles from '../styles/performance.css?url';
 import { useUser } from '../context/UserContext';
 import { ClientOnly } from 'remix-utils/client-only';
+import { getSession } from '../utils/session.server';
+import { json } from '@remix-run/node';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -38,38 +40,41 @@ const fetchWithRetry = async (fn, retries = 3, delay = 1000) => {
 
 export async function loader({ request }) {
 	try {
+		const session = await getSession(request.headers.get('Cookie'));
+		const userData = session.get('userData');
+
 		const accessToken = await getCompassAccessToken();
 		if (!accessToken) {
 			throw new Error('Failed to obtain access token');
 		}
 
-		const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
+		// Get API key from compass.server.js
+		const googleMapsApiKey = getGoogleMapsApiKey();
 		if (!googleMapsApiKey) {
 			throw new Error('Google Maps API key is not configured');
 		}
 
+		// Create a promise that resolves immediately if we have prefetched data
+		const servicesPromise = userData?.initialServices ? Promise.resolve({ services: userData.initialServices }) : fetchServicesAndModemData();
+
 		// Defer the services data loading
-		const servicesPromise = fetchServicesAndModemData()
-			.then(({ services }) => {
-				console.log('📡 Loaded services:', services);
-				const updatedServices = services.map((service) => ({
-					...service,
-					modems: service.modems?.map((modem) => ({
-						...modem,
-						status: modem.details?.data?.latency ? 'online' : 'offline',
-					})),
-				}));
+		const servicesDataPromise = servicesPromise.then(({ services }) => {
+			const updatedServices = services.map((service) => ({
+				...service,
+				modems: service.modems?.map((modem) => ({
+					...modem,
+					status: modem.details?.data?.latency ? 'online' : 'offline',
+				})),
+			}));
 
-				return { services: updatedServices };
-			})
-			.catch((error) => {
-				console.error('🍎 Error fetching services:', error);
-				return { services: [] };
-			});
+			return { services: updatedServices };
+		});
 
+		// Return both the services data and the API key
+		console.log('🔑 Google Maps API Key:', googleMapsApiKey);
 		return defer({
-			servicesData: servicesPromise,
-			mapsAPIKey: googleMapsApiKey,
+			servicesData: servicesDataPromise,
+			mapsAPIKey: googleMapsApiKey, // Pass the API key to the client
 		});
 	} catch (error) {
 		console.error('🚨 Error in loader:', error);
@@ -148,6 +153,7 @@ function DashboardMap({ mapsAPIKey, services, gpsFetcher, selectedModem, onSelec
 						console.log('🗺️ Checking modem:', modem.id, 'GPS Data:', gpsFetcher.data?.data?.[modem.id]);
 
 						const gpsData = gpsFetcher.data?.data?.[modem.id]?.[0];
+						console.log('🗺️ GPS Data for modem:', modem.id, gpsData);
 						if (!gpsData) {
 							console.log('⚠️ No GPS data for modem:', modem.id);
 							return null;
@@ -200,6 +206,7 @@ function DashboardMap({ mapsAPIKey, services, gpsFetcher, selectedModem, onSelec
 export default function Dashboard() {
 	const { servicesData, mapsAPIKey } = useLoaderData();
 	const { userKits } = useUser();
+	const [selectedModem, setSelectedModem] = useState(null);
 	const gpsFetcher = useFetcher();
 
 	// Simplified modemIds - just use userKits directly
@@ -212,19 +219,13 @@ export default function Dashboard() {
 		return userKits.filter((kit) => kit !== 'ALL');
 	}, [userKits, servicesData?.services]);
 
-	// Fetch GPS data
+	// Fetch GPS data when modemIds are available
 	useEffect(() => {
 		if (modemIds.length && !gpsFetcher.data && gpsFetcher.state !== 'loading') {
 			console.log('🔄 Fetching GPS data for modems:', modemIds);
 			gpsFetcher.load(`/api/gps/query?modemIds=${modemIds.join(',')}`);
 		}
 	}, [modemIds]);
-
-	useEffect(() => {
-		if (gpsFetcher.data) {
-			console.log('📡 Received GPS data:', gpsFetcher.data);
-		}
-	}, [gpsFetcher.data]);
 
 	return (
 		<Layout>
@@ -288,8 +289,8 @@ export default function Dashboard() {
 										mapsAPIKey={mapsAPIKey}
 										services={resolvedData.services}
 										gpsFetcher={gpsFetcher}
-										selectedModem={null}
-										onSelectModem={null}
+										selectedModem={selectedModem}
+										onSelectModem={setSelectedModem}
 									/>
 								)}
 							</ClientOnly>
