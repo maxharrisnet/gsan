@@ -104,7 +104,6 @@ function DashboardMap({ mapsAPIKey, services, gpsFetcher, selectedModem, onSelec
 	// Handle map updates when position changes
 	useEffect(() => {
 		if (map && mapPosition && !isInitialized) {
-			console.log('🎯 Centering map on:', mapPosition);
 			map.panTo(mapPosition);
 			setIsInitialized(true);
 		}
