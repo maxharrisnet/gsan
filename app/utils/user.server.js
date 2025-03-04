@@ -85,8 +85,6 @@ export async function authenticateShopifyCustomer(email, password, request) {
 			variables: { customerAccessToken: accessToken },
 		});
 
-		console.log('👤 Customer Response:', customerResponse);
-
 		if (!customerResponse?.data?.customer) {
 			console.error('❌ No customer data in response:', customerResponse);
 			return { error: 'Failed to fetch customer data' };

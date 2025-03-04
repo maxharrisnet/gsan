@@ -16,9 +16,6 @@ export const sessionStorage = createCookieSessionStorage({
 export async function createUserSession(data, redirectTo) {
 	const session = await getSession();
 
-	console.log('📝 Creating session with data:', data);
-
-	// Store the entire data object as userData
 	session.set('userData', data);
 
 	return redirect(redirectTo, {
