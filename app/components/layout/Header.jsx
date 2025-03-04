@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from '@remix-run/react';
 import { useUser } from '../../context/UserContext';
 import { Link, Form, NavLink } from '@remix-run/react';
 
@@ -9,6 +9,7 @@ const Header = () => {
 	const userContext = useUser();
 	const [showDropdown, setShowDropdown] = useState(false);
 	const dropdownRef = useRef(null);
+	const hideNav = path === '/' || path.startsWith('/auth');
 
 	useEffect(() => {
 		const handleClickOutside = (event) => {
@@ -37,43 +38,45 @@ const Header = () => {
 						/>
 					</Link>
 				</div>
-				<nav className='nav'>
-					<div
-						className='user-avatar'
-						ref={dropdownRef}
-					>
-						<button
-							className='menu-button'
-							onClick={() => setShowDropdown(!showDropdown)}
+				{!hideNav && (
+					<nav className='nav'>
+						<div
+							className='user-avatar'
+							ref={dropdownRef}
 						>
-							<span className='material-icons'>menu</span>
-						</button>
+							<button
+								className='menu-button'
+								onClick={() => setShowDropdown(!showDropdown)}
+							>
+								<span className='material-icons'>menu</span>
+							</button>
 
-						{showDropdown && (
-							<div className='avatar-dropdown'>
-								<Link
-									to='/map'
-									onClick={() => setShowDropdown(false)}
-								>
-									Map
-								</Link>
-								<Link
-									to='/reports/starlink/usage'
-									onClick={() => setShowDropdown(false)}
-								>
-									Reports
-								</Link>
-								<Link
-									to='/auth/logout'
-									method='post'
-									action='/auth/logout'
-								>
-									Logout
-								</Link>
-							</div>
-						)}
-					</div>
-				</nav>
+							{showDropdown && (
+								<div className='avatar-dropdown'>
+									<Link
+										to='/map'
+										onClick={() => setShowDropdown(false)}
+									>
+										Map
+									</Link>
+									<Link
+										to='/reports/starlink/usage'
+										onClick={() => setShowDropdown(false)}
+									>
+										Reports
+									</Link>
+									<Link
+										to='/auth/logout'
+										method='post'
+										action='/auth/logout'
+									>
+										Logout
+									</Link>
+								</div>
+							)}
+						</div>
+					</nav>
+				)}
 			</div>
 		</header>
 	);

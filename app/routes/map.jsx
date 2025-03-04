@@ -135,7 +135,7 @@ function DashboardMap({ mapsAPIKey, services, gpsFetcher, selectedModem, onSelec
 					service.modems?.map((modem) => {
 						const gpsData = gpsFetcher.data?.data?.[modem.id]?.[0];
 						if (!gpsData) {
-							console.log('⚠️ No GPS data for modem:', modem.id);
+							// console.log('⚠️ No GPS data for modem:', modem.id);
 							return null;
 						}
 
@@ -209,13 +209,23 @@ export default function Dashboard() {
 
 		async function resolveData() {
 			try {
+				// Add additional error handling when resolving the promise
+				if (!servicesData) {
+					console.error('❌ No services data available');
+					return;
+				}
+
 				const data = await servicesData;
 				if (isMounted && data?.services) {
 					console.log('📊 Services data resolved with', data.services.length, 'services');
 					setResolvedServices(data.services);
 				}
 			} catch (error) {
-				console.error('Error resolving services:', error);
+				console.error('❌ Error resolving services:', error.message);
+				// Provide a fallback to prevent cascading errors
+				if (isMounted) {
+					setResolvedServices([]);
+				}
 			}
 		}
 
@@ -303,23 +313,35 @@ export default function Dashboard() {
 						errorElement={
 							<div className='error-container'>
 								<h3>Error loading map data</h3>
-								<button onClick={() => window.location.reload()}>Retry Loading</button>
+								<p>There was a problem loading the map. Please try again.</p>
+								<button
+									onClick={() => window.location.reload()}
+									className='retry-button'
+								>
+									Retry Loading
+								</button>
 							</div>
 						}
 					>
-						{(resolvedData) => (
-							<ClientOnly fallback={<LoadingSpinner />}>
-								{() => (
-									<DashboardMap
-										mapsAPIKey={mapsAPIKey}
-										services={resolvedData.services}
-										gpsFetcher={fetcher}
-										selectedModem={selectedModem}
-										onSelectModem={handleSelectModem}
-									/>
-								)}
-							</ClientOnly>
-						)}
+						{(resolvedData) => {
+							if (!resolvedData || !resolvedData.services) {
+								return <div>No map data available</div>;
+							}
+
+							return (
+								<ClientOnly fallback={<LoadingSpinner />}>
+									{() => (
+										<DashboardMap
+											mapsAPIKey={mapsAPIKey}
+											services={resolvedData.services}
+											gpsFetcher={fetcher}
+											selectedModem={selectedModem}
+											onSelectModem={handleSelectModem}
+										/>
+									)}
+								</ClientOnly>
+							);
+						}}
 					</Await>
 				</Suspense>
 			</main>
