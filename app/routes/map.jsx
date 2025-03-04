@@ -224,13 +224,19 @@ export default function Dashboard() {
 
 	// Use initialServices for immediate render
 	const [services, setServices] = useState(initialServices);
+	const filteredServices = services
+		.map((service) => ({
+			...service,
+			modems: service.modems?.filter((modem) => userKits.includes('ALL') || userKits.some((kit) => kit === modem.id)) || [],
+		}))
+		.filter((service) => service.modems.length > 0);
 
 	return (
 		<Layout>
 			<Sidebar>
 				<div className='dashboard-sidebar'>
 					<ul className='modem-list'>
-						{services.map((service) =>
+						{filteredServices.map((service) =>
 							service.modems?.map((modem) => (
 								<li
 									key={modem.id}
