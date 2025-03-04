@@ -109,7 +109,6 @@ function ModemMap({ mapsAPIKey, modem, gpsFetcher }) {
 	// Handle map updates when position changes or modem changes
 	useEffect(() => {
 		if (mapRef.current && mapPosition && !isInitialized) {
-			console.log('🎯 Centering map on:', mapPosition);
 			mapRef.current.panTo(mapPosition);
 			setIsInitialized(true);
 		}
