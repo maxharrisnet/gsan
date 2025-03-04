@@ -1,7 +1,7 @@
 // app/routes/performance.jsx
 import { defer } from '@remix-run/node';
-import { useLoaderData, Await, Link, useFetcher } from '@remix-run/react';
-import { Suspense, useState, useEffect, useMemo, useRef } from 'react';
+import { useLoaderData, Await, Link, useFetcher, useLocation } from '@remix-run/react';
+import { Suspense, useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { fetchServicesAndModemData, getCompassAccessToken } from '../compass.server';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
@@ -51,7 +51,7 @@ export async function loader({ request }) {
 		// Defer the services data loading
 		const servicesPromise = fetchServicesAndModemData()
 			.then(({ services }) => {
-				console.log('📡 Loaded services:', services);
+				// console.log('📡 Loaded services:', services);
 				const updatedServices = services.map((service) => ({
 					...service,
 					modems: service.modems?.map((modem) => ({
@@ -201,30 +201,71 @@ export default function Dashboard() {
 	const { servicesData, mapsAPIKey } = useLoaderData();
 	const { userKits } = useUser();
 	const gpsFetcher = useFetcher();
+	const [selectedModem, setSelectedModem] = useState(null);
+	const location = useLocation();
+	const hasInitializedRef = useRef(false);
+	const [resolvedServices, setResolvedServices] = useState(null);
 
-	// Simplified modemIds - just use userKits directly
-	const modemIds = useMemo(() => {
-		// If userKits includes 'ALL', we'll get the modem IDs from services data
-		if (userKits.includes('ALL')) {
-			return servicesData?.services?.flatMap((service) => service.modems || [])?.map((modem) => modem.id) || [];
+	// Force refresh if coming from login
+	useEffect(() => {
+		// Check for refresh parameter in URL
+		if (location.search.includes('refresh=true') && !sessionStorage.getItem('mapRefreshed')) {
+			console.log('🔄 Post-login refresh triggered');
+			// Set a flag in session storage to prevent infinite refresh
+			sessionStorage.setItem('mapRefreshed', 'true');
+			// Force a refresh
+			window.location.href = '/map';
 		}
-		// Otherwise, use the userKits array (excluding 'ALL' if present)
-		return userKits.filter((kit) => kit !== 'ALL');
-	}, [userKits, servicesData?.services]);
+	}, [location]);
 
-	// Fetch GPS data
+	// Handle services data resolution
+	useEffect(() => {
+		let isMounted = true;
+
+		async function resolveData() {
+			try {
+				const data = await servicesData;
+				if (isMounted && data?.services) {
+					console.log('📊 Services data resolved with', data.services.length, 'services');
+					setResolvedServices(data.services);
+				}
+			} catch (error) {
+				console.error('Error resolving services:', error);
+			}
+		}
+
+		resolveData();
+		return () => {
+			isMounted = false;
+		};
+	}, [servicesData]);
+
+	// Calculate modemIds once we have both resolvedServices and userKits
+	const modemIds = useMemo(() => {
+		if (!resolvedServices || !userKits?.length) return [];
+
+		if (userKits.includes('ALL')) {
+			return resolvedServices
+				.flatMap((service) => service.modems || [])
+				.map((modem) => modem.id)
+				.filter(Boolean);
+		}
+
+		return userKits.filter((kit) => kit !== 'ALL');
+	}, [resolvedServices, userKits]);
+
+	// Fetch GPS data when modemIds are available
 	useEffect(() => {
 		if (modemIds.length && !gpsFetcher.data && gpsFetcher.state !== 'loading') {
-			console.log('🔄 Fetching GPS data for modems:', modemIds);
+			console.log('🔄 Fetching GPS data for', modemIds.length, 'modems');
 			gpsFetcher.load(`/api/gps/query?modemIds=${modemIds.join(',')}`);
 		}
-	}, [modemIds]);
+	}, [modemIds, gpsFetcher]);
 
-	useEffect(() => {
-		if (gpsFetcher.data) {
-			console.log('📡 Received GPS data:', gpsFetcher.data);
-		}
-	}, [gpsFetcher.data]);
+	// Handle modem selection
+	const handleSelectModem = useCallback((modem) => {
+		setSelectedModem((prevSelected) => (prevSelected?.id === modem?.id ? null : modem));
+	}, []);
 
 	return (
 		<Layout>
@@ -288,8 +329,8 @@ export default function Dashboard() {
 										mapsAPIKey={mapsAPIKey}
 										services={resolvedData.services}
 										gpsFetcher={gpsFetcher}
-										selectedModem={null}
-										onSelectModem={null}
+										selectedModem={selectedModem}
+										onSelectModem={handleSelectModem}
 									/>
 								)}
 							</ClientOnly>
