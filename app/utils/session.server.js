@@ -16,10 +16,8 @@ export const sessionStorage = createCookieSessionStorage({
 export async function createUserSession(data, redirectTo) {
 	const session = await getSession();
 
-	console.log('📝 Creating session with data:', data);
-
-	// Store the entire data object as userData
 	session.set('userData', data);
+	console.log('🔑 Creating user session with:', data);
 
 	return redirect(redirectTo, {
 		headers: {
@@ -52,4 +50,15 @@ export async function createAdminSession({ accessToken, shop }, redirectTo) {
 		},
 		status: 302,
 	});
+}
+
+export async function updateUserSession(request, updates) {
+	const session = await getSession(request.headers.get('Cookie'));
+	const userData = session.get('userData');
+
+	if (userData) {
+		session.set('userData', { ...userData, ...updates });
+	}
+
+	return commitSession(session);
 }

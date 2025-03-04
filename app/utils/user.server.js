@@ -85,8 +85,6 @@ export async function authenticateShopifyCustomer(email, password, request) {
 			variables: { customerAccessToken: accessToken },
 		});
 
-		console.log('👤 Customer Response:', customerResponse);
-
 		if (!customerResponse?.data?.customer) {
 			console.error('❌ No customer data in response:', customerResponse);
 			return { error: 'Failed to fetch customer data' };
@@ -105,6 +103,7 @@ export async function authenticateShopifyCustomer(email, password, request) {
 			metafields: {
 				kits: kitsMetafield?.value || '',
 			},
+			mapRefreshed: false,
 		};
 
 		console.log('✅ Authentication successful, creating session with:', userData);
@@ -133,7 +132,7 @@ export async function authenticateShopifyCustomer(email, password, request) {
 				}
 
 				console.log('🎯 Selected first available kit:', firstAvailableKit);
-				return createUserSession(userData, `/map`);
+				return createUserSession(userData, `/map?refresh=true`);
 			} catch (error) {
 				console.error('❌ Error fetching services for ALL kits:', error);
 				return { error: 'Failed to fetch available kits' };
@@ -142,7 +141,7 @@ export async function authenticateShopifyCustomer(email, password, request) {
 
 		// For non-ALL cases, use the first kit from the user's list
 		const firstKitId = kits[0];
-		return createUserSession(userData, `/map`);
+		return createUserSession(userData, `/map?refresh=true`);
 	} catch (error) {
 		console.error('❌ Authentication error:', error);
 		return { error: 'An unexpected error occurred during authentication' };

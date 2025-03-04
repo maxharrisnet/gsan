@@ -2,12 +2,19 @@ import { PrismaClient } from '@prisma/client';
 
 let prisma;
 
-// Prevent multiple instances of Prisma Client in development
+// Check if we're in production
 if (process.env.NODE_ENV === 'production') {
 	prisma = new PrismaClient();
 } else {
+	// In development, use a global variable to prevent multiple instances
 	if (!global.__db) {
-		global.__db = new PrismaClient();
+		global.__db = new PrismaClient({
+			log: ['query', 'error', 'warn'],
+			// Configure connection timeout
+			connection: {
+				timeout: 20000, // 20 seconds
+			},
+		});
 	}
 	prisma = global.__db;
 }
