@@ -1,23 +1,16 @@
 import { PrismaClient } from '@prisma/client';
 
-let prisma;
+// PrismaClient is attached to the `global` object in development to prevent
+// exhausting your database connection limit.
+const globalForPrisma = global;
 
-// Check if we're in production
-if (process.env.NODE_ENV === 'production') {
-	prisma = new PrismaClient();
-} else {
-	// In development, use a global variable to prevent multiple instances
-	if (!global.__db) {
-		global.__db = new PrismaClient({
-			log: ['query', 'error', 'warn'],
-			// Configure connection timeout
-			connection: {
-				timeout: 20000, // 20 seconds
-			},
-		});
-	}
-	prisma = global.__db;
-}
+export const prisma =
+	globalForPrisma.prisma ||
+	new PrismaClient({
+		log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+	});
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
 // Test the connection!
 async function testConnection() {
@@ -37,6 +30,5 @@ async function testConnection() {
 
 testConnection().catch(console.error);
 
-export { prisma };
-export default prisma;
 export { testConnection };
+export default prisma;
