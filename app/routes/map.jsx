@@ -48,27 +48,23 @@ export async function loader({ request }) {
 			throw new Error('Google Maps API key is not configured');
 		}
 
-		// Defer the services data loading
-		const servicesPromise = fetchServicesAndModemData()
-			.then(({ services }) => {
-				console.log('📡 Loaded services:', services);
-				const updatedServices = services.map((service) => ({
-					...service,
-					modems: service.modems?.map((modem) => ({
-						...modem,
-						status: modem.details?.data?.latency ? 'online' : 'offline',
-					})),
-				}));
+		// Get initial services data immediately
+		const initialServices = await fetchServicesAndModemData();
 
-				return { services: updatedServices };
-			})
-			.catch((error) => {
-				console.error('🍎 Error fetching services:', error);
-				return { services: [] };
-			});
+		// Defer the full data refresh
+		const servicesPromise = Promise.resolve(initialServices).then(({ services }) => ({
+			services: services.map((service) => ({
+				...service,
+				modems: service.modems?.map((modem) => ({
+					...modem,
+					status: modem.details?.data?.latency ? 'online' : 'offline',
+				})),
+			})),
+		}));
 
 		return defer({
-			servicesData: servicesPromise,
+			initialServices: initialServices.services, // Immediate data
+			servicesData: servicesPromise, // Deferred full data
 			mapsAPIKey: googleMapsApiKey,
 		});
 	} catch (error) {
@@ -198,7 +194,7 @@ function DashboardMap({ mapsAPIKey, services, gpsFetcher, selectedModem, onSelec
 }
 
 export default function Dashboard() {
-	const { servicesData, mapsAPIKey } = useLoaderData();
+	const { initialServices, servicesData, mapsAPIKey } = useLoaderData();
 	const { userKits } = useUser();
 	const gpsFetcher = useFetcher();
 
@@ -206,11 +202,11 @@ export default function Dashboard() {
 	const modemIds = useMemo(() => {
 		// If userKits includes 'ALL', we'll get the modem IDs from services data
 		if (userKits.includes('ALL')) {
-			return servicesData?.services?.flatMap((service) => service.modems || [])?.map((modem) => modem.id) || [];
+			return initialServices?.flatMap((service) => service.modems || [])?.map((modem) => modem.id) || [];
 		}
 		// Otherwise, use the userKits array (excluding 'ALL' if present)
 		return userKits.filter((kit) => kit !== 'ALL');
-	}, [userKits, servicesData?.services]);
+	}, [userKits, initialServices]);
 
 	// Fetch GPS data
 	useEffect(() => {
@@ -226,76 +222,57 @@ export default function Dashboard() {
 		}
 	}, [gpsFetcher.data]);
 
+	// Use initialServices for immediate render
+	const [services, setServices] = useState(initialServices);
+
 	return (
 		<Layout>
 			<Sidebar>
 				<div className='dashboard-sidebar'>
-					<Suspense fallback={<LoadingSpinner />}>
+					<ul className='modem-list'>
+						{services.map((service) =>
+							service.modems?.map((modem) => (
+								<li
+									key={modem.id}
+									className={`modem-item ${modem.details?.data?.latency ? 'online' : 'offline'}`}
+								>
+									<Link
+										className='list-button'
+										to={`/modem/${modem.type.toLowerCase()}/${modem.id}`}
+										prefetch='intent'
+									>
+										<span className='modem-name'>{modem.name}</span>
+										<span className={`status-indicator ${modem.details?.data?.latency ? 'online' : 'offline'}`} />
+										<span className='modem-chevron material-icons'>chevron_right</span>
+									</Link>
+								</li>
+							))
+						)}
+					</ul>
+
+					{/* Update with full data when available */}
+					<Suspense fallback={null}>
 						<Await resolve={servicesData}>
 							{(resolvedData) => {
-								const { services } = resolvedData;
-								const showAllModems = userKits.includes('ALL');
-
-								const filteredServices = services
-									.map((service) => ({
-										...service,
-										modems: service.modems?.filter((modem) => showAllModems || userKits.includes(modem.id)) || [],
-									}))
-									.filter((service) => service.modems.length > 0);
-
-								return (
-									<ul className='modem-list'>
-										{filteredServices.flatMap((service) =>
-											service.modems?.map((modem) => (
-												<li
-													key={modem.id}
-													className={`modem-item ${modem.details?.data?.latency ? 'online' : 'offline'}`}
-												>
-													<Link
-														className='list-button'
-														to={`/modem/${modem.type.toLowerCase()}/${modem.id}`}
-														prefetch='intent'
-													>
-														<span className='modem-name'>{modem.name}</span>
-														<span className={`status-indicator ${modem.details?.data?.latency ? 'online' : 'offline'}`} />
-														<span className='modem-chevron material-icons'>chevron_right</span>
-													</Link>
-												</li>
-											))
-										)}
-									</ul>
-								);
+								setServices(resolvedData.services);
+								return null;
 							}}
 						</Await>
 					</Suspense>
 				</div>
 			</Sidebar>
 			<main className='content content-full-width'>
-				<Suspense fallback={<LoadingSpinner />}>
-					<Await
-						resolve={servicesData}
-						errorElement={
-							<div className='error-container'>
-								<h3>Error loading map data</h3>
-								<button onClick={() => window.location.reload()}>Retry Loading</button>
-							</div>
-						}
-					>
-						{(resolvedData) => (
-							<ClientOnly fallback={<LoadingSpinner />}>
-								{() => (
-									<DashboardMap
-										mapsAPIKey={mapsAPIKey}
-										services={resolvedData.services}
-										gpsFetcher={gpsFetcher}
-										selectedModem={null}
-										onSelectModem={null}
-									/>
-								)}
-							</ClientOnly>
-						)}
-					</Await>
-				</Suspense>
+				<ClientOnly fallback={<LoadingSpinner />}>
+					{() => (
+						<DashboardMap
+							mapsAPIKey={mapsAPIKey}
+							services={services}
+							gpsFetcher={gpsFetcher}
+							selectedModem={null}
+							onSelectModem={null}
+						/>
+					)}
+				</ClientOnly>
 			</main>
 		</Layout>
 	);
