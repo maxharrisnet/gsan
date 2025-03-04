@@ -97,6 +97,9 @@ export async function authenticateShopifyCustomer(email, password, request) {
 		// Handle metafields array
 		const kitsMetafield = customer.metafields.find((m) => m.key === 'kits');
 
+		// Fetch services data before creating session
+		const { services } = await fetchServicesAndModemData();
+
 		const userData = {
 			customerAccessToken: accessToken,
 			shop: process.env.SHOPIFY_STORE_DOMAIN,
@@ -105,6 +108,8 @@ export async function authenticateShopifyCustomer(email, password, request) {
 			metafields: {
 				kits: kitsMetafield?.value || '',
 			},
+			// Include the services data in the session
+			initialServices: services,
 		};
 
 		console.log('✅ Authentication successful, creating session with:', userData);
@@ -114,34 +119,16 @@ export async function authenticateShopifyCustomer(email, password, request) {
 			return createUserSession(userData, '/no-kits');
 		}
 
-		// If kits includes 'ALL', fetch all available kits from the API
+		// If kits includes 'ALL', we already have the services data
 		if (kits.includes('ALL')) {
-			try {
-				const { services } = await fetchServicesAndModemData();
-				// Ensure we await and properly handle the services data
-				if (!services || services.length === 0) {
-					console.error('🚫 No services found');
-					return createUserSession(userData, '/no-kits');
-				}
-
-				// Get the first available kit ID from the services
-				const firstAvailableKit = services.flatMap((service) => service.modems?.map((modem) => modem.id)).filter(Boolean)[0];
-
-				if (!firstAvailableKit) {
-					console.error('🚫 No available kits found in services');
-					return createUserSession(userData, '/no-kits');
-				}
-
-				console.log('🎯 Selected first available kit:', firstAvailableKit);
-				return createUserSession(userData, `/map`);
-			} catch (error) {
-				console.error('❌ Error fetching services for ALL kits:', error);
-				return { error: 'Failed to fetch available kits' };
+			if (!services || services.length === 0) {
+				console.error('🚫 No services found');
+				return createUserSession(userData, '/no-kits');
 			}
+			return createUserSession(userData, `/map`);
 		}
 
-		// For non-ALL cases, use the first kit from the user's list
-		const firstKitId = kits[0];
+		// For non-ALL cases
 		return createUserSession(userData, `/map`);
 	} catch (error) {
 		console.error('❌ Authentication error:', error);
