@@ -63,17 +63,13 @@ const Header = () => {
 								>
 									Reports
 								</Link>
-								<Form
+								<Link
+									to='/auth/logout'
 									method='post'
 									action='/auth/logout'
 								>
-									<button
-										type='submit'
-										className='logout-button'
-									>
-										Logout
-									</button>
-								</Form>
+									Logout
+								</Link>
 							</div>
 						)}
 					</div>

@@ -103,6 +103,7 @@ export async function authenticateShopifyCustomer(email, password, request) {
 			metafields: {
 				kits: kitsMetafield?.value || '',
 			},
+			mapRefreshed: false,
 		};
 
 		console.log('✅ Authentication successful, creating session with:', userData);

@@ -1,7 +1,7 @@
 // app/routes/performance.jsx
 import { defer } from '@remix-run/node';
 import { useLoaderData, Await, Link, useFetcher, useLocation } from '@remix-run/react';
-import { Suspense, useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { Suspense, useState, useEffect, useMemo, useCallback } from 'react';
 import { fetchServicesAndModemData, getCompassAccessToken } from '../compass.server';
 import Layout from '../components/layout/Layout';
 import Sidebar from '../components/layout/Sidebar';
@@ -11,30 +11,11 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement
 import dashboardStyles from '../styles/performance.css?url';
 import { useUser } from '../context/UserContext';
 import { ClientOnly } from 'remix-utils/client-only';
+import { updateUserSession } from '../utils/session.server';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 export const links = () => [{ rel: 'stylesheet', href: dashboardStyles }];
-
-// Add retry logic for data fetching with better error handling
-const fetchWithRetry = async (fn, retries = 3, delay = 1000) => {
-	let lastError;
-
-	for (let attempt = 1; attempt <= retries; attempt++) {
-		try {
-			return await fn();
-		} catch (error) {
-			lastError = error;
-			console.warn(`⚠️ Attempt ${attempt}/${retries} failed:`, error.message);
-
-			if (attempt < retries) {
-				await new Promise((resolve) => setTimeout(resolve, delay * attempt));
-			}
-		}
-	}
-
-	throw lastError;
-};
 
 export async function loader({ request }) {
 	try {
@@ -76,6 +57,14 @@ export async function loader({ request }) {
 		throw new Response('Error loading data', { status: 500 });
 	}
 }
+
+export const action = async ({ request }) => {
+	const cookie = await updateUserSession(request, { mapRefreshed: true });
+	console.log('🔄 Action executed, updated session with:', cookie);
+	return new Response(null, {
+		headers: { 'Set-Cookie': cookie },
+	});
+};
 
 function DashboardMap({ mapsAPIKey, services, gpsFetcher, selectedModem, onSelectModem }) {
 	const [map, setMap] = useState(null);
@@ -144,9 +133,6 @@ function DashboardMap({ mapsAPIKey, services, gpsFetcher, selectedModem, onSelec
 			>
 				{services.map((service) =>
 					service.modems?.map((modem) => {
-						// Add debug logging
-						console.log('🗺️ Checking modem:', modem.id, 'GPS Data:', gpsFetcher.data?.data?.[modem.id]);
-
 						const gpsData = gpsFetcher.data?.data?.[modem.id]?.[0];
 						if (!gpsData) {
 							console.log('⚠️ No GPS data for modem:', modem.id);
@@ -200,21 +186,20 @@ function DashboardMap({ mapsAPIKey, services, gpsFetcher, selectedModem, onSelec
 export default function Dashboard() {
 	const { servicesData, mapsAPIKey } = useLoaderData();
 	const { userKits } = useUser();
-	const gpsFetcher = useFetcher();
+	const fetcher = useFetcher();
 	const [selectedModem, setSelectedModem] = useState(null);
 	const location = useLocation();
-	const hasInitializedRef = useRef(false);
 	const [resolvedServices, setResolvedServices] = useState(null);
 
 	// Force refresh if coming from login
 	useEffect(() => {
 		// Check for refresh parameter in URL
-		if (location.search.includes('refresh=true') && !sessionStorage.getItem('mapRefreshed')) {
+		if (location.search.includes('refresh=true')) {
 			console.log('🔄 Post-login refresh triggered');
-			// Set a flag in session storage to prevent infinite refresh
-			sessionStorage.setItem('mapRefreshed', 'true');
-			// Force a refresh
-			window.location.href = '/map';
+			// Remove refresh parameter from URL with a clean navigation
+			window.history.replaceState({}, '', '/map');
+			// Force a refresh of the data
+			window.location.reload();
 		}
 	}, [location]);
 
@@ -256,11 +241,11 @@ export default function Dashboard() {
 
 	// Fetch GPS data when modemIds are available
 	useEffect(() => {
-		if (modemIds.length && !gpsFetcher.data && gpsFetcher.state !== 'loading') {
+		if (modemIds.length && !fetcher.data && fetcher.state !== 'loading') {
 			console.log('🔄 Fetching GPS data for', modemIds.length, 'modems');
-			gpsFetcher.load(`/api/gps/query?modemIds=${modemIds.join(',')}`);
+			fetcher.load(`/api/gps/query?modemIds=${modemIds.join(',')}`);
 		}
-	}, [modemIds, gpsFetcher]);
+	}, [modemIds, fetcher]);
 
 	// Handle modem selection
 	const handleSelectModem = useCallback((modem) => {
@@ -328,7 +313,7 @@ export default function Dashboard() {
 									<DashboardMap
 										mapsAPIKey={mapsAPIKey}
 										services={resolvedData.services}
-										gpsFetcher={gpsFetcher}
+										gpsFetcher={fetcher}
 										selectedModem={selectedModem}
 										onSelectModem={handleSelectModem}
 									/>
