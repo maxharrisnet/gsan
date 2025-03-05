@@ -1,0 +1,70 @@
+.maintenance-container {
+	min-height: 100vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: #f8fafc;
+	padding: 1rem;
+}
+
+.maintenance-content {
+	background: white;
+	padding: 2rem;
+	border-radius: 8px;
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	text-align: center;
+	max-width: 500px;
+	width: 100%;
+}
+
+.maintenance-icon {
+	font-size: 4rem !important;
+	color: #3986a8;
+	margin-bottom: 1rem;
+}
+
+.maintenance-content h1 {
+	color: #1f2937;
+	margin-bottom: 1rem;
+	font-size: 2rem;
+}
+
+.maintenance-content p {
+	color: #4b5563;
+	margin-bottom: 1rem;
+	line-height: 1.5;
+}
+
+.maintenance-details {
+	background-color: #f3f4f6;
+	padding: 1rem;
+	border-radius: 6px;
+	margin: 1.5rem 0;
+}
+
+.maintenance-contact {
+	margin-top: 2rem;
+	padding-top: 1rem;
+	border-top: 1px solid #e5e7eb;
+}
+
+.contact-link {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	color: #3986a8;
+	text-decoration: none;
+	margin: 0.5rem 0;
+	padding: 0.5rem;
+	border-radius: 4px;
+	transition: background-color 0.2s;
+}
+
+.contact-link:hover {
+	background-color: #f3f4f6;
+}
+
+.contact-link .material-icons {
+	font-size: 1.2rem;
+}

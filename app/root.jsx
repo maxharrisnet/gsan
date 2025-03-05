@@ -6,6 +6,9 @@ import Layout from './components/layout/Layout';
 import globalStyles from './styles/global.css?url';
 import errorStyles from './styles/error.css?url';
 
+const MAINTENANCE_MODE = process.env.MAINTENANCE_MODE === 'true';
+const MAINTENANCE_BYPASS_KEY = process.env.MAINTENANCE_BYPASS_KEY;
+
 export function links() {
 	return [
 		...Layout.links(),
@@ -19,24 +22,31 @@ export function links() {
 }
 
 export const loader = async ({ request }) => {
-	const session = await getSession(request.headers.get('Cookie'));
 	const url = new URL(request.url);
-	const userData = session.get('userData');
 	const currentPage = url.pathname;
-	console.log('🚀 currentPage:', currentPage);
+	const bypassKey = url.searchParams.get('bypass');
+
+	// Check for maintenance mode
+	if (MAINTENANCE_MODE && currentPage !== '/maintenance' && bypassKey !== MAINTENANCE_BYPASS_KEY) {
+		console.log('🔧 Maintenance mode active, redirecting to maintenance page');
+		return redirect('/maintenance');
+	}
+
+	const session = await getSession(request.headers.get('Cookie'));
+	const userData = session.get('userData');
 
 	// Public routes that don't require authentication
-	const publicRoutes = ['/auth', '/login', '/'];
+	const publicRoutes = ['/auth', '/login', '/', '/maintenance'];
 	const isPublicRoute = publicRoutes.includes(url.pathname);
 
 	// If we have userData and we're on a public route, redirect to dashboard
-	if (userData && isPublicRoute) {
+	if (userData && isPublicRoute && currentPage !== '/maintenance') {
 		console.log('👉 Authenticated user on public route, redirecting to map');
 		return redirect('/map');
 	}
 
 	// If we don't have userData and we're not on a public route, redirect to auth
-	if (!userData && !isPublicRoute) {
+	if (!userData && !isPublicRoute && currentPage !== '/maintenance') {
 		console.log('👉 Unauthenticated user on protected route, redirecting to auth');
 		return redirect('/auth');
 	}
