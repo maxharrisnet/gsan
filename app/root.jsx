@@ -95,7 +95,7 @@ export function ErrorBoundary() {
 							to='/map'
 							className='error-button'
 						>
-							Return to Dashboard
+							Return to Map
 						</Link>
 					</div>
 				</div>

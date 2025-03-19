@@ -1,29 +1,32 @@
 import { Form, useActionData } from '@remix-run/react';
-import { authenticateShopifyCustomer } from '../utils/user.server';
 import authenticateSonarUser from '../sonar.server';
 import Layout from '../components/layout/Layout';
 import { json } from '@remix-run/node';
+import { createUserSession } from '../utils/session.server';
 
 export async function action({ request }) {
 	const formData = await request.formData();
-	const loginType = formData.get('loginType');
-	const email = formData.get('email');
+	const username = formData.get('username');
 	const password = formData.get('password');
 
+	console.log('🔍 Login attempt for username:', username);
+
 	try {
-		if (loginType === 'shopify') {
-			const result = await authenticateShopifyCustomer(email, password, request);
-			if (result.error) {
-				return json({ error: result.error });
-			}
-			return result;
-		} else if (loginType === 'sonar') {
-			return authenticateSonarUser(formData);
+		console.log('🔄 Calling authenticateSonarUser...');
+		const result = await authenticateSonarUser(username, password);
+		console.log('🔄 Authentication result:', JSON.stringify(result, null, 2));
+
+		if (!result || !result.success) {
+			console.log('❌ Authentication failed:', result?.error || 'No error details');
+			return json({ error: result?.error || 'Authentication failed' });
 		}
 
-		return json({ error: 'Invalid login type' });
+		console.log('✅ Authentication successful, creating session');
+		// Create user session if authentication successful
+		return createUserSession(result.userData, '/map');
 	} catch (error) {
-		console.error('❌ Login error:', error);
+		console.error('❌ Login error:', error.message);
+		console.error('Error stack:', error.stack);
 		return json({ error: 'An unexpected error occurred during login' });
 	}
 }
@@ -42,14 +45,10 @@ export default function Auth() {
 					/>
 					<Form method='post'>
 						<div className='form-group'>
-							<select name='loginType'>
-								<option value='shopify'>Switch Customer</option>
-								<option value='sonar'>Sonar User</option>
-							</select>
 							<input
 								type='text'
-								name='email'
-								placeholder='Email/Username'
+								name='username'
+								placeholder='Username'
 								required
 							/>
 							<input
