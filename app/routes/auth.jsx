@@ -22,7 +22,6 @@ export async function action({ request }) {
 		}
 
 		console.log('✅ Authentication successful, creating session');
-		// Create user session if authentication successful
 		return createUserSession(result.userData, '/map');
 	} catch (error) {
 		console.error('❌ Login error:', error.message);

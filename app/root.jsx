@@ -23,7 +23,7 @@ export const loader = async ({ request }) => {
 	const url = new URL(request.url);
 	const userData = session.get('userData');
 	const currentPage = url.pathname;
-	console.log('🚀 currentPage:', currentPage);
+	console.log('🚀 Navigating to:', currentPage);
 
 	// Public routes that don't require authentication
 	const publicRoutes = ['/auth', '/login', '/'];

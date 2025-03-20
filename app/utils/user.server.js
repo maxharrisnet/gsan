@@ -1,7 +1,6 @@
 import { getSession, createUserSession } from './session.server';
 import { fetchServicesAndModemData } from '../compass.server';
 
-// Helper for Storefront API
 const fetchStorefrontApi = async ({ shop, storefrontAccessToken, query, variables }) => {
 	try {
 		const response = await fetch(`https://${shop}/api/2024-01/graphql.json`, {
