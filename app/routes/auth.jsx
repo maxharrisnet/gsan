@@ -1,4 +1,4 @@
-import { Form, useActionData } from '@remix-run/react';
+import { Form, useActionData, Link } from '@remix-run/react';
 import authenticateSonarUser from '../sonar.server';
 import Layout from '../components/layout/Layout';
 import { json } from '@remix-run/node';
@@ -60,6 +60,9 @@ export default function Auth() {
 						</div>
 						{actionData?.error && <p className='error'>{actionData.error}</p>}
 					</Form>
+					<div className='auth-links'>
+						<Link to='/reset-password'>Forgot Password?</Link>
+					</div>
 				</div>
 			</div>
 		</Layout>
