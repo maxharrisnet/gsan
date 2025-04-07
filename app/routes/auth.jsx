@@ -1,31 +1,22 @@
-import { Form, useActionData } from '@remix-run/react';
-import { authenticateShopifyCustomer } from '../utils/user.server';
-import authenticateSonarUser from '../sonar.server';
-import Layout from '../components/layout/Layout';
+import { Form, useActionData, Link } from '@remix-run/react';
 import { json } from '@remix-run/node';
+import { verifyLogin } from '../utils/auth.server';
+import { createUserSession } from '../utils/session.server';
+import Layout from '../components/layout/Layout';
 
 export async function action({ request }) {
 	const formData = await request.formData();
-	const loginType = formData.get('loginType');
 	const email = formData.get('email');
 	const password = formData.get('password');
 
-	try {
-		if (loginType === 'shopify') {
-			const result = await authenticateShopifyCustomer(email, password, request);
-			if (result.error) {
-				return json({ error: result.error });
-			}
-			return result;
-		} else if (loginType === 'sonar') {
-			return authenticateSonarUser(formData);
-		}
+	const user = await verifyLogin(email, password);
+	console.log(user);
 
-		return json({ error: 'Invalid login type' });
-	} catch (error) {
-		console.error('❌ Login error:', error);
-		return json({ error: 'An unexpected error occurred during login' });
+	if (!user) {
+		return json({ error: 'Invalid email or password' });
 	}
+
+	return createUserSession(user, '/map');
 }
 
 export default function Auth() {
@@ -33,34 +24,43 @@ export default function Auth() {
 
 	return (
 		<Layout>
-			<div className='container'>
+			<div className='container auth-container'>
 				<div className='content-centered'>
 					<img
 						src='/assets/images/switch-logo.png'
 						alt='Switch Logo'
 						className='login-logo'
 					/>
-					<Form method='post'>
-						<div className='form-group'>
-							<select name='loginType'>
-								<option value='shopify'>Switch Customer</option>
-								<option value='sonar'>Sonar User</option>
-							</select>
+					<h1>Login</h1>
+					<Form
+						method='post'
+						className='auth-form'
+					>
+						<div className='form-group '>
+							<label htmlFor='email'>Email</label>
 							<input
-								type='text'
+								type='email'
 								name='email'
-								placeholder='Email/Username'
+								id='email'
 								required
 							/>
+						</div>
+						<div className='form-group'>
+							<label htmlFor='password'>Password</label>
 							<input
 								type='password'
 								name='password'
-								placeholder='Password'
+								id='password'
 								required
 							/>
-							<button type='submit'>Login</button>
 						</div>
-						{actionData?.error && <p className='error'>{actionData.error}</p>}
+						{actionData?.error && <div className='error-message'>{actionData.error}</div>}
+						<button
+							type='submit'
+							className='btn btn-primary'
+						>
+							Login
+						</button>
 					</Form>
 				</div>
 			</div>

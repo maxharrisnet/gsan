@@ -1,164 +1,112 @@
 import { json } from '@remix-run/node';
-import { useLoaderData, useRouteLoaderData } from '@remix-run/react';
+import { useLoaderData, useRouteLoaderData, Form, useActionData } from '@remix-run/react';
 import { getCustomerData } from '../gsan.server';
 import Layout from '../components/layout/Layout';
 import styles from '../styles/profile.css?url';
 import { getSession } from '../utils/session.server';
 import { getSonarServicePlan } from '../sonar.server';
+import { requireUser, getUserById, updateUserPassword } from '../utils/auth.server';
+import bcrypt from 'bcryptjs';
 
 export function links() {
 	return [{ rel: 'stylesheet', href: styles }];
 }
 
 export async function loader({ request }) {
-	try {
-		const session = await getSession(request.headers.get('Cookie'));
-		const userData = session.get('userData');
+	const user = await requireUser(request);
+	const userData = await getUserById(user.id);
+	return json({ user: userData });
+}
 
-		const { customerAccessToken, shop, type } = userData;
+export async function action({ request }) {
+	const user = await requireUser(request);
+	const formData = await request.formData();
+	const currentPassword = formData.get('currentPassword');
+	const newPassword = formData.get('newPassword');
+	const confirmPassword = formData.get('confirmPassword');
 
-		// Get Shopify customer data
-		const shopifyCustomer = await getCustomerData(customerAccessToken, shop);
-		console.log('🛍️ Shopify Customer Data:', shopifyCustomer);
-
-		// Check if user is a Sonar user
-		const isSonarUser = type === 'sonar';
-
-		// Get Sonar service plan if user is a Sonar user
-		const sonarServicePlan = isSonarUser ? await getSonarServicePlan(userData) : null;
-
-		return json({
-			sonarServicePlan,
-			isSonarUser,
-			shopifyCustomer,
-		});
-	} catch (error) {
-		console.error('🔴 Profile loader error:', error);
-		console.error('🔴 Error stack:', error.stack);
-
-		return json(
-			{
-				message: 'Failed to load profile data',
-				details: error.message,
-				sonarServicePlan: null,
-				isSonarUser: false,
-				shopifyCustomer: null,
-			},
-			{ status: 500 }
-		);
+	if (newPassword !== confirmPassword) {
+		return json({ error: 'New passwords do not match' });
 	}
+
+	// Verify current password
+	const currentUser = await getUserById(user.id);
+	if (!currentUser) {
+		return json({ error: 'User not found' });
+	}
+
+	const isValid = await bcrypt.compare(currentPassword, currentUser.password);
+	if (!isValid) {
+		return json({ error: 'Current password is incorrect' });
+	}
+
+	await updateUserPassword(user.id, newPassword);
+	return json({ success: true });
 }
 
 export default function Profile() {
-	const { sonarServicePlan, isSonarUser, shopifyCustomer } = useLoaderData();
-
-	console.log('🔍 Profile Component Data:', {
-		sonarServicePlan,
-		isSonarUser,
-		shopifyCustomer,
-	});
-
-	// Get company name from metafields
-	const companyName = shopifyCustomer?.metafields?.edges?.find((edge) => edge.node.namespace === 'gsan' && edge.node.key === 'company_name')?.node.value;
+	const { user } = useLoaderData();
+	const actionData = useActionData();
 
 	return (
 		<Layout>
-			<main className='content'>
-				<div className='container'>
-					{/* Profile Header */}
-					<header className='section'>
-						<h1>{companyName || 'Profile'}</h1>
-					</header>
+			<div className='profile-container'>
+				<h1>My Profile</h1>
 
-					{/* Customer Info Section */}
-					{shopifyCustomer ? (
-						<div className='section'>
-							<h2>Customer Information</h2>
-							<div className='info-grid'>
-								<div className='info-item'>
-									<label>Name</label>
-									<p>
-										{shopifyCustomer.firstName} {shopifyCustomer.lastName}
-									</p>
-								</div>
-								<div className='info-item'>
-									<label>Email</label>
-									<p>{shopifyCustomer.email}</p>
-								</div>
-								{shopifyCustomer.phone && (
-									<div className='info-item'>
-										<label>Phone</label>
-										<p>{shopifyCustomer.phone}</p>
-									</div>
-								)}
-							</div>
-
-							{/* Address Section */}
-							{shopifyCustomer.defaultAddress && (
-								<div className='address-info'>
-									<h3>Default Address</h3>
-									<div className='info-grid'>
-										<div className='info-item'>
-											<label>Street</label>
-											<p>{shopifyCustomer.defaultAddress.address1}</p>
-											{shopifyCustomer.defaultAddress.address2 && <p>{shopifyCustomer.defaultAddress.address2}</p>}
-										</div>
-										<div className='info-item'>
-											<label>Location</label>
-											<p>
-												{shopifyCustomer.defaultAddress.city}, {shopifyCustomer.defaultAddress.province} {shopifyCustomer.defaultAddress.zip}
-											</p>
-											<p>{shopifyCustomer.defaultAddress.country}</p>
-										</div>
-									</div>
-								</div>
-							)}
-						</div>
-					) : (
-						<div className='section'>
-							<p>No customer information available</p>
-						</div>
-					)}
-
-					{/* Orders Section */}
-					{shopifyCustomer?.orders?.edges?.length > 0 && (
-						<div className='section'>
-							<h2>Recent Orders</h2>
-							<div className='orders-grid'>
-								{shopifyCustomer.orders.edges.map(({ node: order }) => (
-									<div
-										key={order.id}
-										className='order-item'
-									>
-										<h4>Order #{order.orderNumber}</h4>
-										<p>
-											Total: {order.totalPrice.amount} {order.totalPrice.currencyCode}
-										</p>
-										<p>Status: {order.fulfillmentStatus}</p>
-									</div>
-								))}
-							</div>
-						</div>
-					)}
-
-					{/* Service Plan Section */}
-					{isSonarUser && (
-						<div className='section'>
-							<h2>Service Plan Details</h2>
-							{sonarServicePlan ? (
-								<div className='info-grid'>
-									<div className='info-item'>
-										<label>Plan Name</label>
-										<p>{sonarServicePlan.name}</p>
-									</div>
-								</div>
-							) : (
-								<p>Unable to load service plan information</p>
-							)}
-						</div>
-					)}
+				<div className='profile-info'>
+					<h2>Account Information</h2>
+					<p>
+						<strong>Email:</strong> {user.email}
+					</p>
+					<p>
+						<strong>Name:</strong> {`${user.firstName || ''} ${user.lastName || ''}`}
+					</p>
+					<p>
+						<strong>Role:</strong> {user.role}
+					</p>
 				</div>
-			</main>
+
+				<div className='password-form'>
+					<h2>Change Password</h2>
+					<Form method='post'>
+						<div className='form-group'>
+							<label htmlFor='currentPassword'>Current Password</label>
+							<input
+								type='password'
+								name='currentPassword'
+								id='currentPassword'
+								required
+							/>
+						</div>
+						<div className='form-group'>
+							<label htmlFor='newPassword'>New Password</label>
+							<input
+								type='password'
+								name='newPassword'
+								id='newPassword'
+								required
+							/>
+						</div>
+						<div className='form-group'>
+							<label htmlFor='confirmPassword'>Confirm New Password</label>
+							<input
+								type='password'
+								name='confirmPassword'
+								id='confirmPassword'
+								required
+							/>
+						</div>
+						{actionData?.error && <div className='error-message'>{actionData.error}</div>}
+						{actionData?.success && <div className='success-message'>Password updated successfully</div>}
+						<button
+							type='submit'
+							className='btn btn-primary'
+						>
+							Update Password
+						</button>
+					</Form>
+				</div>
+			</div>
 		</Layout>
 	);
 }
