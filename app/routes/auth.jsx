@@ -62,6 +62,9 @@ export default function Auth() {
 							Login
 						</button>
 					</Form>
+					<div>
+						<Link to='reset-password'>Forgot Password</Link>
+					</div>
 				</div>
 			</div>
 		</Layout>
