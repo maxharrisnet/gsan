@@ -22,7 +22,7 @@ export async function handleLogin(loginType, credentials) {
 	return authResult;
 }
 
-export async function createUser({ email, password, firstName, lastName, role = 'USER' }) {
+export async function createUser({ email, password, firstName, lastName, companyName, kits = [], role = 'USER' }) {
 	const hashedPassword = await bcrypt.hash(password, 10);
 
 	return prisma.user.create({
@@ -31,6 +31,8 @@ export async function createUser({ email, password, firstName, lastName, role = 
 			password: hashedPassword,
 			firstName,
 			lastName,
+			companyName,
+			kits,
 			role,
 		},
 	});
@@ -70,6 +72,8 @@ export async function getAllUsers() {
 			email: true,
 			firstName: true,
 			lastName: true,
+			companyName: true,
+			kits: true,
 			role: true,
 			createdAt: true,
 			updatedAt: true,
@@ -85,6 +89,8 @@ export async function getUserById(id) {
 			email: true,
 			firstName: true,
 			lastName: true,
+			companyName: true,
+			kits: true,
 			role: true,
 			createdAt: true,
 			updatedAt: true,
@@ -92,14 +98,15 @@ export async function getUserById(id) {
 	});
 }
 
-export async function updateUser(id, data) {
+export async function updateUser(userId, data) {
 	return prisma.user.update({
-		where: { id },
+		where: { id: userId },
 		data: {
 			email: data.email,
 			firstName: data.firstName,
 			lastName: data.lastName,
-			role: data.role,
+			companyName: data.companyName,
+			kits: data.kits,
 		},
 	});
 }
@@ -112,19 +119,21 @@ export async function deleteUser(id) {
 
 export async function requireUser(request) {
 	const session = await getSession(request.headers.get('Cookie'));
-	const userId = session.get('userId');
+	const userData = session.get('userData');
 
-	if (!userId) {
+	if (!userData) {
 		throw redirect('/auth');
 	}
 
 	const user = await prisma.user.findUnique({
-		where: { id: userId },
+		where: { id: userData.id },
 		select: {
 			id: true,
 			email: true,
 			firstName: true,
 			lastName: true,
+			companyName: true,
+			kits: true,
 			role: true,
 		},
 	});

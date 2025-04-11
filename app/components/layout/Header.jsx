@@ -66,6 +66,12 @@ const Header = () => {
 										Reports
 									</Link>
 									<Link
+										to='/profile'
+										onClick={() => setShowDropdown(false)}
+									>
+										Profile
+									</Link>
+									<Link
 										to='/auth/logout'
 										method='post'
 										action='/auth/logout'
