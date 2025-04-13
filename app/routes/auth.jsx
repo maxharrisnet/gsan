@@ -1,20 +1,8 @@
-import { Form, useActionData, Link, redirect } from '@remix-run/react';
+import { Form, useActionData, Link } from '@remix-run/react';
 import { json } from '@remix-run/node';
 import { verifyLogin } from '../utils/auth.server';
-import { createUserSession, getSession } from '../utils/session.server';
+import { createUserSession } from '../utils/session.server';
 import Layout from '../components/layout/Layout';
-
-export async function loader({ request }) {
-	const session = await getSession(request.headers.get('Cookie'));
-	const userData = session.get('userData');
-
-	if (userData) {
-		console.log('🔒 User already authenticated, redirecting to map');
-		return redirect('/map');
-	}
-
-	return null;
-}
 
 export async function action({ request }) {
 	const formData = await request.formData();
@@ -22,13 +10,12 @@ export async function action({ request }) {
 	const password = formData.get('password');
 
 	const user = await verifyLogin(email, password);
-	console.log('👤 Login attempt for:', email, user ? 'successful' : 'failed');
+	console.log(user);
 
 	if (!user) {
 		return json({ error: 'Invalid email or password' });
 	}
 
-	console.log('✅ Login successful, creating session and redirecting to map');
 	return createUserSession(user, '/map');
 }
 

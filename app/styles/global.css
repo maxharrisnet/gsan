@@ -281,7 +281,7 @@ button:hover,
 	flex-flow: column;
 	align-items: center;
 	gap: var(--spacing-base);
-	padding: 0 var(--spacing-base);
+	/* padding: 0 var(--spacing-base); */
 }
 
 .form-group label {

@@ -101,8 +101,6 @@ const ReportsContent = ({ services }) => {
 			})
 	);
 
-	console.log('🍎 flattenedData:', flattenedData);
-
 	if (flattenedData.length === 0) {
 		return (
 			<div className='no-data-message'>

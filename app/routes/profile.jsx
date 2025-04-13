@@ -68,137 +68,140 @@ export default function Profile() {
 
 	return (
 		<Layout>
-			<div className='profile-container'>
-				<h1>My Profile</h1>
+			<section className='content'>
+				<div className='profile-container'>
+					<h1>My Profile</h1>
+					<div class='profile-wrapper'>
+						<div className='profile-info'>
+							<h2>Account Information</h2>
+							<Form
+								method='post'
+								className='profile-form'
+							>
+								<input
+									type='hidden'
+									name='actionType'
+									value='updateProfile'
+								/>
 
-				<div className='profile-info'>
-					<h2>Account Information</h2>
-					<Form
-						method='post'
-						className='profile-form'
-					>
-						<input
-							type='hidden'
-							name='actionType'
-							value='updateProfile'
-						/>
+								<div className='form-group'>
+									<label htmlFor='email'>Email</label>
+									<input
+										type='email'
+										name='email'
+										id='email'
+										defaultValue={user.email}
+										required
+									/>
+								</div>
 
-						<div className='form-group'>
-							<label htmlFor='email'>Email</label>
-							<input
-								type='email'
-								name='email'
-								id='email'
-								defaultValue={user.email}
-								required
-							/>
+								<div className='form-group'>
+									<label htmlFor='firstName'>First Name</label>
+									<input
+										type='text'
+										name='firstName'
+										id='firstName'
+										defaultValue={user.firstName || ''}
+									/>
+								</div>
+
+								<div className='form-group'>
+									<label htmlFor='lastName'>Last Name</label>
+									<input
+										type='text'
+										name='lastName'
+										id='lastName'
+										defaultValue={user.lastName || ''}
+									/>
+								</div>
+
+								<div className='form-group'>
+									<label htmlFor='companyName'>Company Name</label>
+									<input
+										type='text'
+										name='companyName'
+										id='companyName'
+										defaultValue={user.companyName || ''}
+									/>
+								</div>
+
+								<div className='form-group'>
+									<label htmlFor='kits'>Kits (comma-separated)</label>
+									<input
+										type='text'
+										name='kits'
+										id='kits'
+										defaultValue={user.kits?.join(', ') || ''}
+										placeholder='e.g., kit1, kit2, ALL'
+									/>
+								</div>
+
+								<div className='form-group'>
+									<label>Role</label>
+									<p className='role-display'>{user.role}</p>
+								</div>
+
+								{actionData?.error && <div className='error-message'>{actionData.error}</div>}
+								{actionData?.success && <div className='success-message'>{actionData.message}</div>}
+
+								<button
+									type='submit'
+									className='btn btn-primary'
+								>
+									Update Profile
+								</button>
+							</Form>
 						</div>
 
-						<div className='form-group'>
-							<label htmlFor='firstName'>First Name</label>
-							<input
-								type='text'
-								name='firstName'
-								id='firstName'
-								defaultValue={user.firstName || ''}
-							/>
+						<div className='password-form'>
+							<h2>Change Password</h2>
+							<Form method='post'>
+								<input
+									type='hidden'
+									name='actionType'
+									value='updatePassword'
+								/>
+
+								<div className='form-group'>
+									<label htmlFor='currentPassword'>Current Password</label>
+									<input
+										type='password'
+										name='currentPassword'
+										id='currentPassword'
+										required
+									/>
+								</div>
+								<div className='form-group'>
+									<label htmlFor='newPassword'>New Password</label>
+									<input
+										type='password'
+										name='newPassword'
+										id='newPassword'
+										required
+									/>
+								</div>
+								<div className='form-group'>
+									<label htmlFor='confirmPassword'>Confirm New Password</label>
+									<input
+										type='password'
+										name='confirmPassword'
+										id='confirmPassword'
+										required
+									/>
+								</div>
+								{actionData?.error && <div className='error-message'>{actionData.error}</div>}
+								{actionData?.success && <div className='success-message'>{actionData.message}</div>}
+								<button
+									type='submit'
+									className='btn btn-primary'
+								>
+									Update Password
+								</button>
+							</Form>
 						</div>
-
-						<div className='form-group'>
-							<label htmlFor='lastName'>Last Name</label>
-							<input
-								type='text'
-								name='lastName'
-								id='lastName'
-								defaultValue={user.lastName || ''}
-							/>
-						</div>
-
-						<div className='form-group'>
-							<label htmlFor='companyName'>Company Name</label>
-							<input
-								type='text'
-								name='companyName'
-								id='companyName'
-								defaultValue={user.companyName || ''}
-							/>
-						</div>
-
-						<div className='form-group'>
-							<label htmlFor='kits'>Kits (comma-separated)</label>
-							<input
-								type='text'
-								name='kits'
-								id='kits'
-								defaultValue={user.kits?.join(', ') || ''}
-								placeholder='e.g., kit1, kit2, ALL'
-							/>
-						</div>
-
-						<div className='form-group'>
-							<label>Role</label>
-							<p className='role-display'>{user.role}</p>
-						</div>
-
-						{actionData?.error && <div className='error-message'>{actionData.error}</div>}
-						{actionData?.success && <div className='success-message'>{actionData.message}</div>}
-
-						<button
-							type='submit'
-							className='btn btn-primary'
-						>
-							Update Profile
-						</button>
-					</Form>
+					</div>
 				</div>
-
-				<div className='password-form'>
-					<h2>Change Password</h2>
-					<Form method='post'>
-						<input
-							type='hidden'
-							name='actionType'
-							value='updatePassword'
-						/>
-
-						<div className='form-group'>
-							<label htmlFor='currentPassword'>Current Password</label>
-							<input
-								type='password'
-								name='currentPassword'
-								id='currentPassword'
-								required
-							/>
-						</div>
-						<div className='form-group'>
-							<label htmlFor='newPassword'>New Password</label>
-							<input
-								type='password'
-								name='newPassword'
-								id='newPassword'
-								required
-							/>
-						</div>
-						<div className='form-group'>
-							<label htmlFor='confirmPassword'>Confirm New Password</label>
-							<input
-								type='password'
-								name='confirmPassword'
-								id='confirmPassword'
-								required
-							/>
-						</div>
-						{actionData?.error && <div className='error-message'>{actionData.error}</div>}
-						{actionData?.success && <div className='success-message'>{actionData.message}</div>}
-						<button
-							type='submit'
-							className='btn btn-primary'
-						>
-							Update Password
-						</button>
-					</Form>
-				</div>
-			</div>
+			</section>
 		</Layout>
 	);
 }

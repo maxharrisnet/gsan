@@ -2,12 +2,18 @@
 	max-width: 1200px;
 	margin: 0 auto;
 	padding: var(--spacing-large);
+	background: white;
+	border-radius: var(--border-radius-large);
+	box-shadow: var(--shadow-lg);
 }
 
-.profile-container h1 {
-	margin-bottom: var(--spacing-xlarge);
-	font-size: var(--font-size-xxlarge);
-	color: var(--color-text);
+.profile-wrapper {
+	display: flex;
+}
+
+.profile-wrapper > div {
+	flex: 1 1 50%;
+	padding: var(--spacing-large);
 }
 
 .info-grid {
@@ -24,7 +30,7 @@
 }
 
 .info-item label {
-	display: block;
+	/* display: block; */
 	font-size: 0.875rem;
 	font-weight: 500;
 	color: var(--color-text-secondary);
@@ -107,9 +113,10 @@
 	gap: 0.5rem;
 }
 
-.field-group label {
+.profile-container .field-group label {
 	font-size: 0.875rem;
 	color: #666;
+	width: auto;
 }
 
 .field-group input {
