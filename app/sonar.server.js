@@ -92,7 +92,7 @@ export const getSonarAccountGroupData = async function (group_id) {
 	}
 };
 
-export const getSonarAccoutUsageData = async function (accountId) {
+export const getSonarAccountUsageData = async function (accountId) {
 	const endTime = Math.floor(Date.now() / 1000); // Current time in Unix timestamp
 	const startTime = endTime - 24 * 60 * 60; // 24 hours ago in Unix timestamp
 

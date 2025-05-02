@@ -4,6 +4,7 @@ import { createUserSession, getSession } from './session.server';
 import prisma from '../db.server';
 import bcrypt from 'bcryptjs';
 import { redirect } from '@remix-run/node';
+import { get } from 'http';
 
 export async function authenticateUser(loginType, credentials, request) {
 	if (loginType === 'shopify') {
@@ -119,14 +120,17 @@ export async function deleteUser(id) {
 
 export async function requireUser(request) {
 	const session = await getSession(request.headers.get('Cookie'));
-	const userData = session.get('userData');
+	console.log('Session:', session);
+	console.log(getSession(request.headers.get('Cookie')));
+	const userId = session.get('userId');
 
-	if (!userData) {
+	if (!userId) {
+		console.log('No user ID found in session');
 		throw redirect('/auth');
 	}
 
 	const user = await prisma.user.findUnique({
-		where: { id: userData.id },
+		where: { id: userId },
 		select: {
 			id: true,
 			email: true,
@@ -149,7 +153,7 @@ export async function requireAdmin(request) {
 	const user = await requireUser(request);
 
 	if (user.role !== 'ADMIN') {
-		throw redirect('/dashboard');
+		throw redirect('/map');
 	}
 
 	return user;

@@ -1,7 +1,7 @@
 import { Form, useLoaderData, useActionData } from '@remix-run/react';
 import { json } from '@remix-run/node';
-import { requireAdmin } from '~/utils/auth.server';
-import { getAllUsers, createUser, updateUser, deleteUser } from '~/utils/auth.server';
+import { requireAdmin } from './utils/auth.server';
+import { getAllUsers, createUser, updateUser, deleteUser } from './utils/auth.server';
 import Layout from '~/components/layout/Layout';
 
 export async function loader({ request }) {

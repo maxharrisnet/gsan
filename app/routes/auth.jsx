@@ -10,7 +10,6 @@ export async function action({ request }) {
 	const password = formData.get('password');
 
 	const user = await verifyLogin(email, password);
-	console.log(user);
 
 	if (!user) {
 		return json({ error: 'Invalid email or password' });

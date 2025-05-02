@@ -10,8 +10,6 @@ export async function loader({ request }) {
 			return json({ error: 'No modem IDs provided' }, { status: 400 });
 		}
 
-		console.log('🔍 Querying GPS data for modems:', modemIds);
-
 		const gpsData = await prisma.$transaction(async (tx) => {
 			return await tx.modemGPS.findMany({
 				where: {

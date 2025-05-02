@@ -140,7 +140,6 @@ export async function authenticateShopifyCustomer(email, password, request) {
 		}
 
 		// For non-ALL cases, use the first kit from the user's list
-		const firstKitId = kits[0];
 		return createUserSession(userData, `/map?refresh=true`);
 	} catch (error) {
 		console.error('❌ Authentication error:', error);

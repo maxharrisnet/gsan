@@ -4,8 +4,7 @@ const UserContext = createContext();
 
 export const UserProvider = ({ children, initialUser, shop }) => {
 	const [currentUser, setCurrentUser] = useState(initialUser);
-
-	const userKits = currentUser?.metafields?.kits ? (Array.isArray(currentUser.metafields.kits) ? currentUser.metafields.kits : currentUser.metafields.kits.split(',').map((kit) => kit.trim())) : [];
+	const userKits = currentUser?.kits ? (Array.isArray(currentUser.kits) ? currentUser.kits : currentUser.kits.split(',').map((kit) => kit.trim())) : [];
 
 	return (
 		<UserContext.Provider
